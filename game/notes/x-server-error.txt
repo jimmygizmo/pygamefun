@@ -1,0 +1,32 @@
+error: XDG_RUNTIME_DIR is invalid or not set in the environment.
+^CTraceback (most recent call last):
+  File "/home/bilbo/repos/pyarcade/game/./main.py", line 23, in <module>
+    pygame.display.update()
+
+
+
+Some links - no solution yet:
+
+https://askubuntu.com/questions/456689/error-xdg-runtime-dir-not-set-in-the-environment-when-attempting-to-run-naut
+
+https://stackoverflow.com/questions/70469462/wsl-ubuntu-20-04-3-error-xdg-runtime-dir-not-set-in-the-environment
+
+https://stackoverflow.com/questions/59790350/qstandardpaths-xdg-runtime-dir-not-set-defaulting-to-tmp-runtime-aadithyasb
+
+==============================================================================
+
+fix try:
+I exported the ENV VAR for a test dir I created:
+env:
+XDG_RUNTIME_DIR=/home/bilbo/test-xdg-runtime-dir
+
+This made the error go away, but I see nothing, so I think I need to be pointing to a directory
+with the XDG runtime in it.
+
+I re-launched my WSL Ubuntu consoles after doing a WSL update and now I have X and the issues are solved.
+Possibly I was on WSL 1 before the update and got capabilities added, but I did not update/upgrade Ubuntu/apt ..
+I only did wsl --update.
+
+Normally I develop on Mac but now with WSL and for many reasons, I will be doing Python and other dev just as
+much on Windows as on Mac, possibly more on Windows because all my good GPUs are on Windows.
+
