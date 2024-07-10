@@ -11,7 +11,9 @@ Gaming platforms can also work well for many real-time applications requiring ex
 
 PyGame and Arcade are also excellent tools for data scientists and anyone seeking easy access to custom data visualization.
 
-Simulation and unique user input and user-interaction applications are often perfect for gaming platforms and Python just magnifies the potential value in the cases mentioned, because of it's power and flexibility anc capability for extremely rapid prototyping and development all the way to high-perfomrance production deployments.
+Simulation applications, unique user input requirements and non-standard user-interaction applications are often perfect for gaming platforms.
+
+Python magnifies the potential value in the cases mentioned, because of it's power and flexibility and capability for extremely rapid prototyping and development all the way to high-perfomrance production deployments.
 
 The PyGame (and Arcade) Python gaming libraries/SDKs are not only for fun 2D games.
 
