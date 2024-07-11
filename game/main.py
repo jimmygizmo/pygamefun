@@ -3,8 +3,6 @@
 import pygame
 
 
-# Display surface, event loop
-
 pygame.init()
 
 SCREEN_WIDTH = 1280
@@ -15,7 +13,7 @@ ONECOLOR = 'aqua'
 ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
 MONSTER_ONE = 'assets/grumpy-cat-sm.png'
 MONSTER_TWO = 'assets/gold-retriever-sm.png'
-MONSTER_TWO = 'assets/frog-red-eye-front-lg.png'
+MONSTER_THREE = 'assets/frog-red-eye-front-lg.png'
 
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
@@ -45,15 +43,17 @@ while running:
             running = False
 
     #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
-    #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
+    display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
 
     #display_surface.blit(one_surf, (one_x, one_y))
-    display_surface.blit(monster_surf_one, (one_x, one_y))  # Might not be right for transparency.
-    # NOPE, not this eaither. Bad posting or outdated info for PyGame-CE - Transp still not working.
-    #display_surface.blit(monster_surf_one, monster_surf_one.get_rect(center = display_surface.get_rect().center))
+    display_surface.blit(monster_surf_one, (one_x, one_y))
 
-    #pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
-    pygame.display.flip()  # Tried flip at this point, ONLY for t-shooting transp. Same transp prob as update(). No fix.
+    pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+    #pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
+
+    # WALL BOUNCING:
+    # Really, to calculate limits like this for an object requires using half the object width etc.
+    # It also requires images with no buffer/margin of transparency in the image. TODO: Fix this in our images.
 
     # Bounce off wall in X Axis - If either limit is hit, reverse the speed/velocity
     if one_x < 0 or one_x > 1170:
@@ -69,7 +69,6 @@ while running:
 
     one_x += one_vel_x
     one_y += one_vel_y
-
 
 
 pygame.quit()
