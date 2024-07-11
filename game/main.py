@@ -13,6 +13,7 @@ GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'tan4'
 ONECOLOR = 'aqua'
 ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
+MONSTER_ONE = 'assets/frog-red-eye-front.png'
 
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
@@ -31,17 +32,26 @@ one_vel_y = 0.2
 
 running = True
 
+
+# Import image
+monster_surf_one = pygame.image.load(MONSTER_ONE).convert_alpha()
+
 while running:
     # #### ####   EVENT LOOP    #### ####
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't do this, moving things leave a trail.
+    #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
+    display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
 
-    display_surface.blit(one_surf, (one_x, one_y))
+    #display_surface.blit(one_surf, (one_x, one_y))
+    display_surface.blit(monster_surf_one, (one_x, one_y))  # Might not be right for transparency.
+    # NOPE, not this eaither. Bad posting or outdated info for PyGame-CE - Transp still not working.
+    #display_surface.blit(monster_surf_one, monster_surf_one.get_rect(center = display_surface.get_rect().center))
 
-    pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+    #pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+    pygame.display.flip()  # Tried flip at this point, ONLY for t-shooting transp. Same transp prob as update(). No fix.
 
     # Bounce off wall in X Axis - If either limit is hit, reverse the speed/velocity
     if one_x < 0 or one_x > 1260:
