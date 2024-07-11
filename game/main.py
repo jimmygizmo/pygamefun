@@ -14,6 +14,8 @@ BGCOLOR = 'tan4'
 ONECOLOR = 'aqua'
 ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
 MONSTER_ONE = 'assets/grumpy-cat-sm.png'
+MONSTER_TWO = 'assets/gold-retriever-sm.png'
+MONSTER_TWO = 'assets/frog-red-eye-front-lg.png'
 
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
@@ -27,14 +29,14 @@ one_surf.fill(ONECOLOR)
 
 one_x = 100
 one_y = 150
-one_vel_x = 0.3
-one_vel_y = 0.2
+one_vel_x = 1.3
+one_vel_y = 0.7
 
 running = True
 
 
 # Import image
-monster_surf_one = pygame.image.load(MONSTER_ONE).convert_alpha()
+monster_surf_one = pygame.image.load(MONSTER_TWO).convert_alpha()
 
 while running:
     # #### ####   EVENT LOOP    #### ####
