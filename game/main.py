@@ -7,16 +7,29 @@ import pygame
 
 pygame.init()
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-# SCREEN_TITLE = "PyArcade Game One"
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 GAME_TITLE = 'Space Blasto'
+BGCOLOR = 'tan4'
+ONECOLOR = 'aqua'
+ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
 
-surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
+# NOTE: Two different things: a "Surface" v.s. a "display surface". First we used a "display surface".
+# Next we use a "Surface". (They are very similar. "display surface" is the main surface we draw on. The ONE we see.
+# We can attach multiple "Surface" objects to the one official "display surface".
+
+one_surf = pygame.Surface(ONESIZE)
+one_surf.fill(ONECOLOR)
+
+one_x = 100
+one_y = 150
+one_vel_x = 0.3
+one_vel_y = 0.2
+
 running = True
-BGCOLOR = 'blue4'
 
 while running:
     # event loop
@@ -24,9 +37,27 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    surface.fill(BGCOLOR)
+    display_surface.fill(BGCOLOR)
+
+    display_surface.blit(one_surf, (one_x, one_y))
 
     pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+
+    # Bounce off wall in X Axis - If either limit is hit, reverse the speed/velocity
+    if one_x < 0 or one_x > 1260:
+        one_vel_x = one_vel_x * -1
+
+    # Bounce off wall in Y Axis - If either limit is hit, reverse the speed/velocity
+    if one_y < 0 or one_y > 700:
+        one_vel_y = one_vel_y * -1
+
+    # Technically a speed is an absolute value, but a velocity (in one dimension as we are currently dealing with it)
+    # is just a speed with a positive or negative sign. (A speed with direction indicated.)
+    # A velocity is both a speed and a direction, and direction has dimensions, one, two or three, usually.
+
+    one_x += one_vel_x
+    one_y += one_vel_y
+
 
 
 pygame.quit()
