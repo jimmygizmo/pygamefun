@@ -13,7 +13,7 @@ GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'tan4'
 ONECOLOR = 'aqua'
 ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
-MONSTER_ONE = 'assets/frog-red-eye-front.png'
+MONSTER_ONE = 'assets/grumpy-cat-sm.png'
 
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
@@ -43,7 +43,7 @@ while running:
             running = False
 
     #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
-    display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
+    #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
 
     #display_surface.blit(one_surf, (one_x, one_y))
     display_surface.blit(monster_surf_one, (one_x, one_y))  # Might not be right for transparency.
@@ -54,11 +54,11 @@ while running:
     pygame.display.flip()  # Tried flip at this point, ONLY for t-shooting transp. Same transp prob as update(). No fix.
 
     # Bounce off wall in X Axis - If either limit is hit, reverse the speed/velocity
-    if one_x < 0 or one_x > 1260:
+    if one_x < 0 or one_x > 1170:
         one_vel_x = one_vel_x * -1
 
     # Bounce off wall in Y Axis - If either limit is hit, reverse the speed/velocity
-    if one_y < 0 or one_y > 700:
+    if one_y < 0 or one_y > 600:
         one_vel_y = one_vel_y * -1
 
     # Technically a speed is an absolute value, but a velocity (in one dimension, as we are currently dealing with it)
