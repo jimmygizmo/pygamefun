@@ -2,6 +2,7 @@
 
 import pygame
 import os.path
+import random
 
 
 pygame.init()
@@ -11,43 +12,83 @@ SCREEN_HEIGHT = 720
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
+DEBUG = False
+PROP_SPRAY_COUNT = 40
+PROP_SPRAY_RADIUS = 400
 
 
 # MONSTER DATA
 monsters = []
+monster = {'name': 'red-flower-floaty',
+           'img':  'red-flower-66x64.png',
+           'w': 66,
+           'h': 64,
+           'color': 'red1',
+           'x': 240,
+           'y': 300,
+           'xv': -0.03,
+           'yv': 0.01,
+           }
+monsters.append(monster)
+monster = {'name': 'red-flower-drifty',
+           'img':  'red-flower-66x64.png',
+           'w': 66,
+           'h': 64,
+           'color': 'orangered',
+           'x': 240,
+           'y': 300,
+           'xv': 0.032,
+           'yv': -0.033,
+           }
+monsters.append(monster)
 monster = {'name': 'goldie',
            'img':  'gold-retriever-160x142.png',
            'w': 160,
            'h': 142,
-           'color': 'red',
+           'color': 'gold',
            'x': 500,
            'y': 300,
            'xv': 0.042,
            'yv': -0.03,
            }
 monsters.append(monster)
-monster = {'name': 'grumpy',
-           'img':  'grumpy-cat-110x120.png',
-           'w': 110,
-           'h': 120,
-           'color': 'blue',
-           'x': 780,
-           'y': 300,
-           'xv': 0.11,
-           'yv': 0.04,
-           }
-monsters.append(monster)
 monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
            'w': 280,
            'h': 220,
-           'color': 'blue',
+           'color': 'darkgoldenrod1',
            'x': 840,
            'y': 300,
            'xv': -0.07,
            'yv': -0.15,
            }
 monsters.append(monster)
+monster = {'name': 'grumpy',
+           'img':  'grumpy-cat-110x120.png',
+           'w': 110,
+           'h': 120,
+           'color': 'blanchedalmond',
+           'x': 780,
+           'y': 300,
+           'xv': 0.11,
+           'yv': 0.04,
+           }
+monsters.append(monster)
+
+
+# PROP DATA
+prop_templates = []
+prop_template = {'name': 'red-flower',
+           'img':  'red-flower-66x64.png',
+           'w': 66,
+           'h': 64,
+           'color': 'purple',
+           'x': 640,
+           'y': 360,
+           'spray_count': 40,
+           'spray_radius': 600,
+           }
+prop_templates.append(prop_template)
 
 
 # DISPLAY SURFACE
@@ -56,16 +97,60 @@ pygame.display.set_caption(GAME_TITLE)
 
 # INITIALIZE MONSTERS
 for monster in monsters:
-    # monster['surface'] = pygame.Surface((monster['w'], monster['h']))
-    # monster['surface'].fill(monster['color'])
-    imgpath = os.path.join(ASSET_PATH, monster['img'])
-    print(imgpath)
-    monster['surface'] = pygame.image.load(imgpath).convert_alpha()
-    # TODO: For performance, pre-calculate/populate values like half-width, half-height, etc. etc. etc.
-    # Don't do this if we find built in methods for FRect. This is probably well-covered by FRect/PyGame.
-    monster['Hw'] = monster['w'] / 2
-    monster['Hh'] = monster['h'] / 2
+    if DEBUG:
+        monster['surface'] = pygame.Surface((monster['w'], monster['h']))
+        monster['surface'].fill(monster['color'])
+    else:
+        imgpath = os.path.join(ASSET_PATH, monster['img'])
+        print(f"MONSTER: {imgpath}")  # ----DEBUG----
+        monster['surface'] = pygame.image.load(imgpath).convert_alpha()
 
+    # FRect/PyGame probably have facilities making such pre-calculations unnecessary, but the concept is very
+    # general and there are always many kinds of pre-calculation/caching performance-boost options one can
+    # apply in performance-critical areas. Leaving this here to show the concept. Monsters can carry some of their
+    # pre-calculated custom values they will use often (like for collision-detection). The trade-off is the speed
+    # to retrieve those values vs. calculate them each time. Such things need to be profiled appropriately to
+    # understand if you gain anything and how much.
+    monster['Hw'] = monster['w'] / 2  # Not using yet. May not need. (Good pre-calculation performance strategy.)
+    monster['Hh'] = monster['h'] / 2  # Not using yet. May not need. (Good pre-calculation performance strategy.)
+
+
+# INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius)
+props = []
+for prop_t in prop_templates:
+    for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
+        # We must create a NEW prop dictionary object each time, otherwise they would all be the same reference.
+        prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before we customize any.
+                'w': prop_t['w'],
+                'h': prop_t['h'],
+                'color': prop_t['color'],
+                }
+        # As we iterate (spray), we will customize only some of the attributes.
+
+        diameter = 2 * prop_t['spray_radius']  # This variable makes if easier to read/understand. Remove for perf.
+        prop['name'] = prop_t['name'] + "-" + str(index)
+        print(f"SPRAYED PROP: {prop['name']}")  # ----DEBUG----
+        x_offset = random.randint(0, diameter) - prop_t['spray_radius']
+        y_offset = random.randint(0, diameter) - prop_t['spray_radius']
+        print(x_offset)  # ----DEBUG----
+        print(y_offset)  # ----DEBUG----
+        prop['x'] = prop_t['x'] + x_offset
+        prop['y'] = prop_t['y'] + y_offset
+
+        if DEBUG:
+            prop['surface'] = pygame.Surface((prop['w'], prop['h']))
+            prop['surface'].fill(prop['color'])
+        else:
+            imgpath = os.path.join(ASSET_PATH, prop['img'])
+            print(f"PROP: {imgpath}")
+            prop['surface'] = pygame.image.load(imgpath).convert_alpha()
+
+        props.append(prop)
+
+
+print(props)
+
+# ###############################################    MAIN EXECUTION    #################################################
 
 running = True
 while running:
@@ -104,7 +189,11 @@ while running:
     #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
     display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
 
-    #display_surface.blit(one_surf, (one_x, one_y))
+    # DRAW PROPS
+    for prop in props:
+        display_surface.blit(prop['surface'], (prop['x'], prop['y']))
+
+    # DRAW MONSTERS
     for monster in monsters:
         display_surface.blit(monster['surface'], (monster['x'], monster['y']))
 
