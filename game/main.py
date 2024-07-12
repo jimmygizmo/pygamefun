@@ -7,70 +7,68 @@ import random
 
 pygame.init()
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1280.0
+SCREEN_HEIGHT = 720.0
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
-PROP_SPRAY_COUNT = 40
-PROP_SPRAY_RADIUS = 400
 
 
 # MONSTER DATA
 monsters = []
 monster = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
-           'w': 66,
-           'h': 64,
+           'w': 66.0,
+           'h': 64.0,
            'color': 'red1',
-           'x': 240,
-           'y': 300,
+           'x': 240.0,
+           'y': 300.0,
            'xv': -0.03,
            'yv': 0.01,
            }
 monsters.append(monster)
 monster = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
-           'w': 66,
-           'h': 64,
+           'w': 66.0,
+           'h': 64.0,
            'color': 'orangered',
-           'x': 240,
-           'y': 300,
+           'x': 240.0,
+           'y': 300.0,
            'xv': 0.032,
            'yv': -0.033,
            }
 monsters.append(monster)
 monster = {'name': 'goldie',
            'img':  'gold-retriever-160x142.png',
-           'w': 160,
-           'h': 142,
+           'w': 160.0,
+           'h': 142.0,
            'color': 'gold',
-           'x': 500,
-           'y': 300,
+           'x': 500.0,
+           'y': 300.0,
            'xv': 0.042,
            'yv': -0.03,
            }
 monsters.append(monster)
 monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
-           'w': 280,
-           'h': 220,
+           'w': 280.0,
+           'h': 220.0,
            'color': 'darkgoldenrod1',
-           'x': 840,
-           'y': 300,
+           'x': 840.0,
+           'y': 300.0,
            'xv': -0.07,
            'yv': -0.15,
            }
 monsters.append(monster)
 monster = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
-           'w': 110,
-           'h': 120,
+           'w': 110.0,
+           'h': 120.0,
            'color': 'blanchedalmond',
-           'x': 780,
-           'y': 300,
+           'x': 780.0,
+           'y': 300.0,
            'xv': 0.11,
            'yv': 0.04,
            }
@@ -81,13 +79,13 @@ monsters.append(monster)
 prop_templates = []
 prop_template = {'name': 'red-flower',
            'img':  'red-flower-66x64.png',
-           'w': 66,
-           'h': 64,
+           'w': 66.0,
+           'h': 64.0,
            'color': 'purple',
-           'x': 640,
-           'y': 360,
+           'x': 640.0,
+           'y': 360.0,
            'spray_count': 40,
-           'spray_radius': 600,
+           'spray_radius': 600.0,
            }
 prop_templates.append(prop_template)
 
@@ -99,7 +97,7 @@ pygame.display.set_caption(GAME_TITLE)
 # INITIALIZE MONSTERS
 for monster in monsters:
     if DEBUG:
-        monster['surface'] = pygame.Surface((monster['w'], monster['h']))
+        monster['surface'] = pygame.Surface(monster['w'], monster['h'])
         monster['surface'].fill(monster['color'])
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
@@ -131,8 +129,8 @@ for prop_t in prop_templates:
         diameter = 2 * prop_t['spray_radius']  # This variable makes if easier to read/understand. Remove for perf.
         prop['name'] = prop_t['name'] + "-" + str(index)
         print(f"SPRAYED PROP: {prop['name']}")  # ----DEBUG----
-        x_offset = random.randint(0, diameter) - prop_t['spray_radius']
-        y_offset = random.randint(0, diameter) - prop_t['spray_radius']
+        x_offset = random.uniform(0, diameter) - prop_t['spray_radius']
+        y_offset = random.uniform(0, diameter) - prop_t['spray_radius']
         print(x_offset)  # ----DEBUG----
         print(y_offset)  # ----DEBUG----
         prop['x'] = prop_t['x'] + x_offset
