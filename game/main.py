@@ -1,6 +1,7 @@
 #! /usr/bin/env -vS python
 
 import pygame
+import os.path
 
 
 pygame.init()
@@ -9,7 +10,7 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
-ASSET_PATH = 'assets/'
+ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 
 
 # MONSTER DATA
@@ -19,8 +20,8 @@ monster = {'name': 'goldie',
            'w': 160,
            'h': 142,
            'color': 'red',
-           'x': 150,
-           'y': 150,
+           'x': 0,
+           'y': 0,
            'xv': 0.042,
            'yv': -0.03,
            }
@@ -30,8 +31,8 @@ monster = {'name': 'grumpy',
            'w': 110,
            'h': 120,
            'color': 'blue',
-           'x': 150,
-           'y': 150,
+           'x': 55,
+           'y': 60,
            'xv': 0.11,
            'yv': 0.04,
            }
@@ -46,10 +47,12 @@ pygame.display.set_caption(GAME_TITLE)
 for monster in monsters:
     # monster['surface'] = pygame.Surface((monster['w'], monster['h']))
     # monster['surface'].fill(monster['color'])
-    imgpath = ASSET_PATH + monster['img']
+    imgpath = os.path.join(ASSET_PATH, monster['img'])
     monster['surface'] = pygame.image.load(imgpath).convert_alpha()
     # TODO: For performance, pre-calculate/populate values like half-width, half-height, etc. etc. etc.
     # Don't do this if we find built in methods for FRect. This is probably well-covered by FRect/PyGame.
+    monster['Hw'] = monster['w'] / 2
+    monster['Hh'] = monster['h'] / 2
 
 
 running = True
@@ -58,6 +61,33 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+
+    # CALCULATIONS FOR NEW POSITIONS, BOUNCING
+    for monster in monsters:
+        # Really, to calculate limits like this for an object requires using half the object width etc.
+        # It also requires images with no buffer/margin of transparency in the image. TODO: Fix this in our images.
+
+        monster['x'] += monster['xv']
+        monster['y'] += monster['yv']
+
+        # Bounce off LEFT wall in X Axis
+        if monster['x'] < 0:
+            monster['x'] = 0  # Stop at the LEFT edge instead of passing it.
+            monster['xv'] = monster['xv'] * -1
+        # Bounce off RIGHT wall in X Axis
+        if monster['x'] > (SCREEN_WIDTH - monster['h']):
+            monster['x'] = (SCREEN_WIDTH - monster['h'])  # Stop at the RIGHT edge instead of passing it.
+            monster['xv'] = monster['xv'] * -1
+
+        # Bounce off TOP wall in Y Axis
+        if monster['y'] < 0:
+            monster['yv'] = monster['yv'] * -1
+        # Bounce off BOTTOM wall in Y Axis
+        if monster['y'] > (SCREEN_HEIGHT - monster['h']):
+            monster['y'] = (SCREEN_HEIGHT - monster['h'])  # Stop at the BOTTOM edge instead of passing it.
+            monster['yv'] = monster['yv'] * -1
+
 
     #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
     display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
@@ -68,22 +98,6 @@ while running:
 
     pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
     #pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
-
-    # CALCULATIONS FOR NEW POSITIONS FOR THE NEXT LOOP:
-    for monster in monsters:
-        # Really, to calculate limits like this for an object requires using half the object width etc.
-        # It also requires images with no buffer/margin of transparency in the image. TODO: Fix this in our images.
-
-        # Bounce off wall in X Axis - If either limit is hit, reverse the speed/velocity
-        if monster['x'] < 0 or monster['x'] > 1170:
-            monster['xv'] = monster['xv'] * -1
-
-        # Bounce off wall in Y Axis - If either limit is hit, reverse the speed/velocity
-        if monster['y'] < 0 or monster['y'] > 600:
-            monster['yv'] = monster['yv'] * -1
-
-        monster['x'] += monster['xv']
-        monster['y'] += monster['yv']
 
 
 pygame.quit()
