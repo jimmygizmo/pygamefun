@@ -20,8 +20,8 @@ monster = {'name': 'goldie',
            'w': 160,
            'h': 142,
            'color': 'red',
-           'x': 0,
-           'y': 0,
+           'x': 500,
+           'y': 300,
            'xv': 0.042,
            'yv': -0.03,
            }
@@ -31,10 +31,21 @@ monster = {'name': 'grumpy',
            'w': 110,
            'h': 120,
            'color': 'blue',
-           'x': 55,
-           'y': 60,
+           'x': 780,
+           'y': 300,
            'xv': 0.11,
            'yv': 0.04,
+           }
+monsters.append(monster)
+monster = {'name': 'fishy',
+           'img':  'goldfish-280x220.png',
+           'w': 280,
+           'h': 220,
+           'color': 'blue',
+           'x': 840,
+           'y': 300,
+           'xv': -0.07,
+           'yv': -0.15,
            }
 monsters.append(monster)
 
@@ -48,6 +59,7 @@ for monster in monsters:
     # monster['surface'] = pygame.Surface((monster['w'], monster['h']))
     # monster['surface'].fill(monster['color'])
     imgpath = os.path.join(ASSET_PATH, monster['img'])
+    print(imgpath)
     monster['surface'] = pygame.image.load(imgpath).convert_alpha()
     # TODO: For performance, pre-calculate/populate values like half-width, half-height, etc. etc. etc.
     # Don't do this if we find built in methods for FRect. This is probably well-covered by FRect/PyGame.
@@ -76,8 +88,8 @@ while running:
             monster['x'] = 0  # Stop at the LEFT edge instead of passing it.
             monster['xv'] = monster['xv'] * -1
         # Bounce off RIGHT wall in X Axis
-        if monster['x'] > (SCREEN_WIDTH - monster['h']):
-            monster['x'] = (SCREEN_WIDTH - monster['h'])  # Stop at the RIGHT edge instead of passing it.
+        if monster['x'] > (SCREEN_WIDTH - monster['w']):
+            monster['x'] = (SCREEN_WIDTH - monster['w'])  # Stop at the RIGHT edge instead of passing it.
             monster['xv'] = monster['xv'] * -1
 
         # Bounce off TOP wall in Y Axis
