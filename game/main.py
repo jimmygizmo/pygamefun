@@ -11,6 +11,7 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
+BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 PROP_SPRAY_COUNT = 40
@@ -152,6 +153,9 @@ print(props)
 
 # ###############################################    MAIN EXECUTION    #################################################
 
+bgpath = os.path.join(ASSET_PATH, BGIMG)
+bg_surface = pygame.image.load(bgpath)
+
 running = True
 while running:
     # #### ####   EVENT LOOP    #### ####
@@ -187,7 +191,10 @@ while running:
 
 
     #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
-    display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
+    #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
+
+    # Paint the BG image every time. Paint the bg_surface (blit it) onto the main display_surface at coords (0, 0)
+    display_surface.blit(bg_surface, (0, 0))
 
     # DRAW PROPS
     for prop in props:
