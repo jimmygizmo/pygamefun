@@ -8,35 +8,32 @@ pygame.init()
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 GAME_TITLE = 'Space Blasto'
-BGCOLOR = 'tan4'
-ONECOLOR = 'aqua'
-ONESIZE = (20, 20)  # Using a tuple for x, y in this case.
-MONSTER_ONE = 'assets/grumpy-cat-sm.png'
-MONSTER_TWO = 'assets/gold-retriever-sm.png'
+BGCOLOR = 'olivedrab'
+ASSET_PATH = 'assets/'
 
 
 # MONSTER DATA
 monsters = []
-monster = {'name': 'grumpy',
-           'img':  'assets/grumpy-cat-sm.png',
-           'w': 200,
-           'h': 200,
-           'color': 'blue',
-           'x': 150,
-           'y': 150,
-           'xv': 0.2,
-           'yv': 0.04,
-           }
-monsters.append(monster)
 monster = {'name': 'goldie',
-           'img':  'assets/gold-retriever-sm.png',
-           'w': 200,
-           'h': 200,
+           'img':  'gold-retriever-160x142.png',
+           'w': 160,
+           'h': 142,
            'color': 'red',
            'x': 150,
            'y': 150,
-           'xv': 0.23,
-           'yv': -0.43,
+           'xv': 0.042,
+           'yv': -0.03,
+           }
+monsters.append(monster)
+monster = {'name': 'grumpy',
+           'img':  'grumpy-cat-110x120.png',
+           'w': 110,
+           'h': 120,
+           'color': 'blue',
+           'x': 150,
+           'y': 150,
+           'xv': 0.11,
+           'yv': 0.04,
            }
 monsters.append(monster)
 
@@ -45,26 +42,14 @@ monsters.append(monster)
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
-# NOTE: Two different things: a "Surface" v.s. a "display surface". First we used a "display surface".
-# Next we use a "Surface". (They are very similar. "display surface" is the main surface we draw on. The ONE we see.
-# We can attach multiple "Surface" objects to the one official "display surface".
-
 # INITIALIZE MONSTERS
 for monster in monsters:
     # monster['surface'] = pygame.Surface((monster['w'], monster['h']))
     # monster['surface'].fill(monster['color'])
-    monster['surface'] = pygame.image.load(monster['img']).convert_alpha()
+    imgpath = ASSET_PATH + monster['img']
+    monster['surface'] = pygame.image.load(imgpath).convert_alpha()
     # TODO: For performance, pre-calculate/populate values like half-width, half-height, etc. etc. etc.
     # Don't do this if we find built in methods for FRect. This is probably well-covered by FRect/PyGame.
-
-# Refactoring to use monsters array/list
-# one_surf = pygame.Surface(ONESIZE)
-# one_surf.fill(ONECOLOR)
-# one_x = -1100
-# one_y = -100
-# one_vel_x = 0.2
-# one_vel_y = 0.04
-# monster_surf_one = pygame.image.load(MONSTER_THREE).convert_alpha()
 
 
 running = True
@@ -97,10 +82,6 @@ while running:
         if monster['y'] < 0 or monster['y'] > 600:
             monster['yv'] = monster['yv'] * -1
 
-        # Technically a speed is an absolute value, but a velocity (in one dimension, as we are currently dealing with it)
-        # is just a speed with a positive or negative sign. (A speed with direction indicated.)
-        # A velocity is both a speed and a direction, and direction has dimensions, one, two or three, usually.
-
         monster['x'] += monster['xv']
         monster['y'] += monster['yv']
 
@@ -124,4 +105,13 @@ pygame.quit()
 
 # Named Colors:
 # https://pyga.me/docs/ref/color_list.html
+
+# GENERAL NOTES:
+
+# "Surface" v.s. a "display surface". They are very similar. "display surface" is the main surface we draw on.
+# The ONE we see. We can attach multiple "Surface" objects to the one official "display surface".
+
+# Technically a speed is an absolute value, but a velocity (in one dimension, as we are currently dealing with it)
+# is just a speed with a positive or negative sign. (A speed with direction indicated.)
+# A velocity is both a speed and a direction, and direction has dimensions, one, two or three, usually.
 
