@@ -101,17 +101,10 @@ for monster in monsters:
         monster['surface'].fill(monster['color'])
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
-        print(f"MONSTER: {imgpath}")  # ----DEBUG----
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
 
-    # FRect/PyGame probably have facilities making such pre-calculations unnecessary, but the concept is very
-    # general and there are always many kinds of pre-calculation/caching performance-boost options one can
-    # apply in performance-critical areas. Leaving this here to show the concept. Monsters can carry some of their
-    # pre-calculated custom values they will use often (like for collision-detection). The trade-off is the speed
-    # to retrieve those values vs. calculate them each time. Such things need to be profiled appropriately to
-    # understand if you gain anything and how much.
-    monster['Hw'] = monster['w'] / 2  # Not using yet. May not need. (Good pre-calculation performance strategy.)
-    monster['Hh'] = monster['h'] / 2  # Not using yet. May not need. (Good pre-calculation performance strategy.)
+    # Instantiating the monster's rect will be done later after dynamic position is known. Deprecated here.
+    # monster['rect'] = monster['surface'].get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius)
@@ -119,20 +112,16 @@ props = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
         # We must create a NEW prop dictionary object each time, otherwise they would all be the same reference.
-        prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before we customize any.
+        prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
                 'h': prop_t['h'],
                 'color': prop_t['color'],
                 }
-        # As we iterate (spray), we will customize only some of the attributes.
 
-        diameter = 2 * prop_t['spray_radius']  # This variable makes if easier to read/understand. Remove for perf.
+        diameter = 2.0 * prop_t['spray_radius']  # This variable makes if easier to read/understand. Remove for perf.
         prop['name'] = prop_t['name'] + "-" + str(index)
-        print(f"SPRAYED PROP: {prop['name']}")  # ----DEBUG----
-        x_offset = random.uniform(0, diameter) - prop_t['spray_radius']
-        y_offset = random.uniform(0, diameter) - prop_t['spray_radius']
-        print(x_offset)  # ----DEBUG----
-        print(y_offset)  # ----DEBUG----
+        x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
+        y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
         prop['x'] = prop_t['x'] + x_offset
         prop['y'] = prop_t['y'] + y_offset
 
@@ -141,13 +130,11 @@ for prop_t in prop_templates:
             prop['surface'].fill(prop['color'])
         else:
             imgpath = os.path.join(ASSET_PATH, prop['img'])
-            print(f"PROP: {imgpath}")
+            # print(f"PROP: {imgpath}")
             prop['surface'] = pygame.image.load(imgpath).convert_alpha()
 
         props.append(prop)
 
-
-print(props)
 
 # ###############################################    MAIN EXECUTION    #################################################
 
@@ -164,11 +151,16 @@ while running:
 
     # CALCULATIONS FOR NEW POSITIONS, BOUNCING
     for monster in monsters:
-        # Really, to calculate limits like this for an object requires using half the object width etc.
-        # It also requires images with no buffer/margin of transparency in the image. TODO: Fix this in our images.
 
+        # TODO: We might want to change this logic. Currently we move before collision detect etc. and treat
+        # it like prep for the next iteration. Just doesn't feel right and some of our bounces show it happening
+        # too far from the edge. This might be why we never fully hit the edge sometimes. Regardsless of the bounce
+        # issue, this just does not feel like the right order of things. But we still need to strategically figure
+        # out our major processing steps and their order, so this is working great for an early pass.
         monster['x'] += monster['xv']
         monster['y'] += monster['yv']
+
+        # These calculations are based off using the topleft of the rect. TODO: Change to using center of the rect.
 
         # Bounce off LEFT wall in X Axis
         if monster['x'] < 0:
@@ -187,23 +179,27 @@ while running:
             monster['y'] = (SCREEN_HEIGHT - monster['h'])  # Stop at the BOTTOM edge instead of passing it.
             monster['yv'] = monster['yv'] * -1
 
+        monster['rect'] = monster['surface'].get_rect(topleft=(monster['x'], monster['y']))  # TODO: Refactor to center
 
-    #display_surface.fill(BGCOLOR)  # Vid28:46 Interesting: If we don't always re-draw BG, moving things leave a trail.
+
     #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
 
     # Paint the BG image every time. Paint the bg_surface (blit it) onto the main display_surface at coords (0, 0)
     display_surface.blit(bg_surface, (0, 0))
 
+    # ##################################################    DRAW    ####################################################
+    
     # DRAW PROPS
     for prop in props:
-        display_surface.blit(prop['surface'], (prop['x'], prop['y']))
+        prop['rect'] = prop['surface'].get_rect(topleft=(prop['x'], prop['y']))  # TODO: Refactor to center
+        display_surface.blit(prop['surface'], prop['rect'])
 
     # DRAW MONSTERS
     for monster in monsters:
-        display_surface.blit(monster['surface'], (monster['x'], monster['y']))
+        display_surface.blit(monster['surface'], monster['rect'])
 
-    pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
-    #pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
+    # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+    pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
 
 pygame.quit()
@@ -234,4 +230,22 @@ pygame.quit()
 # Technically a speed is an absolute value, but a velocity (in one dimension, as we are currently dealing with it)
 # is just a speed with a positive or negative sign. (A speed with direction indicated.)
 # A velocity is both a speed and a direction, and direction has dimensions, one, two or three, usually.
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Rectangles (FRects)  (rectangles with a size and position)
+
+# CORNERS  (assign a tuple of coordinates):
+# topleft              midtop              topright
+# midleft                 center             midright
+# bottomleft             midbottom          bottomright
+
+# SIDES  (assign a single axis value):
+#                        top
+# left                                        right
+#                       bottom
+
+# CREATE standalone OR CREATE from SURFACE
+# pygame.FRect(pos, size)  # standalone
+# surface.get_frect(point=pos)
 
