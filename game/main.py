@@ -149,6 +149,8 @@ while running:
             running = False
 
 
+    # ################################################    PHYSICS    ###################################################
+    # Calculations for new object positions, collisions, velocity changes and update of related object state.
     # CALCULATIONS FOR NEW POSITIONS, BOUNCING
     for monster in monsters:
 
@@ -170,48 +172,53 @@ while running:
         # too far from the edge. This might be why we never fully hit the edge sometimes. Regardsless of the bounce
         # issue, this just does not feel like the right order of things. But we still need to strategically figure
         # out our major processing steps and their order, so this is working great for an early pass.
+        # THEN AGAIN, from one perspective, it makes sense that before we draw, we account for the motion that
+        # does exist. This motion was taking place while the last frame was displaying (statically) .. each frame
+        # is a snapshot of a slice of time, but that time keeps moving, so the motion keeps moving, so one might
+        # logically say that accounting for that movement which HAS OCCURRED, since the last frame was frozen is
+        # a good FIRST THING to do, before drawing THE CURRENT FRAME.
+        # This means that our objects will never be displayed in their x, y start positions defined in the initial
+        # config data. (We could add an initialization step prior to the main loop that DID display them in this
+        # initial state, and that would be great, but we are discussing the structure of the main loop and when
+        # we update values vs. when we paint the current state of values.
+        # Right now, I'm OK with calculation physics and new values prior to painting. It sort of does not matter,
+        # but it DOES. There are factors and edge-cases where it does matter, so this is still in flux, but for now,
+        # the current structure is logical to me. I have coded such tight real-time loops before in BOTH ways,
+        # with state updates both before and alternately after the primary actions using the state. It depends what
+        # you are doing. Some state might need to be updated before and then some after. What is important, is to
+        # continually re-asses your design patterns and how it all works currently and how the structure and
+        # design patterns will affect you down the road as the app evolves.
+        # So I will keep the calcs before the drawing for now.
 
-        # ***** RE-ENABLE AFTER ***** TEST. This may still be needed if we cannot use .left += and .right +=
-        monster['x'] += monster['xv']  # Probably deprecate this action later
-        monster['y'] += monster['yv']  # Probably deprecate this action later
+        # NOTE: We must copy and modify rect position values and re-assign rect.center with a composed tuple,
+        # because our intuitive (and per docs) attempts to reference and assign at the same time some rect
+        # position values, failed. LONG-TERM, looking at vectors, SHORT-TERM, using this intermediate tuple is fine.
+        monster['x'] += monster['xv']
+        monster['y'] += monster['yv']
+        # monster['rect'].left += monster['xv']  # Did not work
+        # monster['rect'].top += monster['yv']  # Did not work
+        # SOLUTION: Use intermediate variables (hence a copy and not a reference) and re-assign rect.center with tuple.
+        newx = monster['x']
+        newy = monster['y']
+        monster['rect'].topleft = (newx, newy)
+        # DEBUG OUTPUT
+        # PROBLEM TO ANALYZE: * * * THE RECT VALUES ARE ALWAYS INT * * *
+        # * * * RELATED CONCLUSION - DON'T USE RECT FOR SOURCE OF TRUTH. 'x' and 'y' are the correct design.
+        # * * * SOURCE OF TRUTH MUST BE FLOATS. RECTS ARE --ONLY-- INTS. PURPOSE OF RECTS IS Surface positioning.
+        # * * * RECTS are not intended to hold WORLD source of truth data/position. (Which needs to be floats etc.)
+        print(f"x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
+        print(f"left, top   {monster['rect'].left}, {monster['rect'].top}")  # ----  DEBUG  ----
+        # SUMMARY: The current solution has the source of truth as the 'x' and 'y' attributes of the object.
+        # My goal is to have the source of truth (for position etc.) to be encapsulated in the 'rect' attribute,
+        # which is a PyGame rect object. We want to only update and reference the rect. The x and y can be used for
+        # initial position or similar, but it is redundant to update x and y after we have a rect instantiated inside
+        # the 'rect' attribute. Where I am currently stuck is being able to reference and update the values inside the
+        # rect in the same real-time/simultaneous manner I can do with the scalar values inside 'x' and 'y'. The docs
+        # and intuition imply I can do that, but tests so far have failed.
+        # Again, I need to look at vectors for some of these use-cases, but I STILL feel I can acheive my goal of
+        # ONLY using the rect.
 
-        # newx = monster['rect'].centerx + monster['xv']  # Lets try something else
-        # newy = monster['rect'].centery + monster['yv']  # Lets try something else
 
-        # New test. See ******** above:
-        # monster['rect'].left += monster['xv']
-        # monster['rect'].top += monster['yv']
-        # FAILED. MONSTERS STAY IN INITIAL POS.
-        # THIS WAS ANOTHER ATTEMPT AT -UPDATE-IN-PLACE-. So far the only thing working is a copying of values and
-        # then re-assignment of the rect.center using a tuple. This issue probably has something to do with ref
-        # vs. copy. WE NEED TO LOOK AT VERCTORS ANYHOW. AND OUR WORKING SOLUTION IS FINE. BUT THE DOCS AND DESIGN
-        # SEEM TO IMPLY WE CAN REF AND UPDATE AT THE SAME TIME, BUT MANY VARIATIONS OF THIS HAVE SO FAR FAILED.
-
-        newx = monster['x'] + monster['xv']  # This FIXED it, but I really want to use something like centerx/centery
-        newy = monster['y'] + monster['yv']  # This FIXED it, but I really want to use something like centerx/centery
-        # TUTORIAL COMES DIRECTLY TO THIS ISSUE. SAME CHALLENGE. THE SOLUTION IS SAID TO BE: VECTORS
-        # WHAT WE HAVE HERE WORKS, BUT AS AI NOTED ABOVE, IS NOT THE CLEAN WAY I WAS LOOKING FOR.
-        # ***** FOR ***** TEST DONT NEED THIS:
-        monster['rect'].center = (newx, newy)
-
-        # These calculations are based off using the topleft of the rect. TODO: Change to using center of the rect.
-
-        # # Bounce off LEFT wall in X Axis
-        # if monster['x'] < 0:
-        #     monster['x'] = 0  # Stop at the LEFT edge instead of passing it.
-        #     monster['xv'] = monster['xv'] * -1
-        # # Bounce off RIGHT wall in X Axis
-        # if monster['x'] > (SCREEN_WIDTH - monster['w']):
-        #     monster['x'] = (SCREEN_WIDTH - monster['w'])  # Stop at the RIGHT edge instead of passing it.
-        #     monster['xv'] = monster['xv'] * -1
-        #
-        # # Bounce off TOP wall in Y Axis
-        # if monster['y'] < 0:
-        #     monster['yv'] = monster['yv'] * -1
-        # # Bounce off BOTTOM wall in Y Axis
-        # if monster['y'] > (SCREEN_HEIGHT - monster['h']):
-        #     monster['y'] = (SCREEN_HEIGHT - monster['h'])  # Stop at the BOTTOM edge instead of passing it.
-        #     monster['yv'] = monster['yv'] * -1
 
         # Bounce off LEFT wall in X Axis
         if monster['rect'].left < 0:
@@ -230,9 +237,6 @@ while running:
         if monster['rect'].bottom > SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT  # Stop at the BOTTOM edge instead of passing it.
             monster['yv'] = monster['yv'] * -1  # Reverse Y-Axis speed/velocity
-
-        # Should not need this now.
-        # monster['rect'] = monster['surface'].get_rect(topleft=(monster['x'], monster['y']))
 
 
     #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
