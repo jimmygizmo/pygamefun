@@ -88,6 +88,17 @@ prop_template = {'name': 'red-flower',
            'spray_radius': 600.0,
            }
 prop_templates.append(prop_template)
+prop_template = {'name': 'blue-flower',
+           'img':  'blue-flower-160x158.png',
+           'w': 160.0,
+           'h': 158.0,
+           'color': 'purple',
+           'x': 190.0,
+           'y': 160.0,
+           'spray_count': 20,
+           'spray_radius': 600.0,
+           }
+prop_templates.append(prop_template)
 
 
 # DISPLAY SURFACE
@@ -183,21 +194,17 @@ while running:
 
         # Bounce off LEFT wall in X Axis
         if monster['rect'].left <= 0:
-            monster['rect'].left = 0  # Stop at the LEFT edge instead of passing it.
-            monster['xv'] = monster['xv'] * -1  # Reverse X-Axis speed/velocity
+            monster['xv'] = monster['xv'] * -1
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
-            monster['rect'].right = SCREEN_WIDTH  # Stop at the RIGHT edge instead of passing it.
-            monster['xv'] = monster['xv'] * -1  # Reverse X-Axis speed/velocity
+            monster['xv'] = monster['xv'] * -1
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
-            monster['rect'].top = 0  # Stop at the TOP edge instead of passing it.
-            monster['yv'] = monster['yv'] * -1  # Reverse Y-Axis speed/velocity
+            monster['yv'] = monster['yv'] * -1
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
-            monster['rect'].bottom = SCREEN_HEIGHT  # Stop at the BOTTOM edge instead of passing it.
-            monster['yv'] = monster['yv'] * -1  # Reverse Y-Axis speed/velocity
+            monster['yv'] = monster['yv'] * -1
 
 
     #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
