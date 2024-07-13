@@ -152,17 +152,46 @@ while running:
     # CALCULATIONS FOR NEW POSITIONS, BOUNCING
     for monster in monsters:
 
+        # **************************************************************************************************************
+        # * IDEA: For position updates, we might be able to do this to ANY of the named corners or sides.
+        # The rect is designed to update all the related values and then the surface uses the updated rect
+        # however it needs to when it is time to blit. It would be irrelevant as to what particular point
+        # was used to update the position of the entire rect. SO, while we will still look closely at Vectors,
+        # this may take us closer to what we want, regarding the stuff I am trying below.
+        # I am trying to update the position of the rect and was looking for a .centerx and a .centery or
+        # or something similar, but since I can update and reference at the same time ( or even more accurately,
+        # reference and update at the same time), I SHOULD be able to do this:
+        # monster['rect'].left += monster['xv']
+        # monster['rect'].top += monster['yv']
+        # **************************************************************************************************************
+
         # TODO: We might want to change this logic. Currently we move before collision detect etc. and treat
         # it like prep for the next iteration. Just doesn't feel right and some of our bounces show it happening
         # too far from the edge. This might be why we never fully hit the edge sometimes. Regardsless of the bounce
         # issue, this just does not feel like the right order of things. But we still need to strategically figure
         # out our major processing steps and their order, so this is working great for an early pass.
+
+        # ***** RE-ENABLE AFTER ***** TEST. This may still be needed if we cannot use .left += and .right +=
         monster['x'] += monster['xv']  # Probably deprecate this action later
         monster['y'] += monster['yv']  # Probably deprecate this action later
+
         # newx = monster['rect'].centerx + monster['xv']  # Lets try something else
         # newy = monster['rect'].centery + monster['yv']  # Lets try something else
+
+        # New test. See ******** above:
+        # monster['rect'].left += monster['xv']
+        # monster['rect'].top += monster['yv']
+        # FAILED. MONSTERS STAY IN INITIAL POS.
+        # THIS WAS ANOTHER ATTEMPT AT -UPDATE-IN-PLACE-. So far the only thing working is a copying of values and
+        # then re-assignment of the rect.center using a tuple. This issue probably has something to do with ref
+        # vs. copy. WE NEED TO LOOK AT VERCTORS ANYHOW. AND OUR WORKING SOLUTION IS FINE. BUT THE DOCS AND DESIGN
+        # SEEM TO IMPLY WE CAN REF AND UPDATE AT THE SAME TIME, BUT MANY VARIATIONS OF THIS HAVE SO FAR FAILED.
+
         newx = monster['x'] + monster['xv']  # This FIXED it, but I really want to use something like centerx/centery
         newy = monster['y'] + monster['yv']  # This FIXED it, but I really want to use something like centerx/centery
+        # TUTORIAL COMES DIRECTLY TO THIS ISSUE. SAME CHALLENGE. THE SOLUTION IS SAID TO BE: VECTORS
+        # WHAT WE HAVE HERE WORKS, BUT AS AI NOTED ABOVE, IS NOT THE CLEAN WAY I WAS LOOKING FOR.
+        # ***** FOR ***** TEST DONT NEED THIS:
         monster['rect'].center = (newx, newy)
 
         # These calculations are based off using the topleft of the rect. TODO: Change to using center of the rect.
