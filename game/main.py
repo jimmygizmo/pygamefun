@@ -103,8 +103,7 @@ for monster in monsters:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
 
-    # Instantiating the monster's rect will be done later after dynamic position is known. Deprecated here.
-    # monster['rect'] = monster['surface'].get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+    monster['rect'] = monster['surface'].get_rect(center=(monster['x'], monster['y']))
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius)
@@ -118,7 +117,7 @@ for prop_t in prop_templates:
                 'color': prop_t['color'],
                 }
 
-        diameter = 2.0 * prop_t['spray_radius']  # This variable makes if easier to read/understand. Remove for perf.
+        diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
         prop['name'] = prop_t['name'] + "-" + str(index)
         x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
         y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
@@ -130,8 +129,9 @@ for prop_t in prop_templates:
             prop['surface'].fill(prop['color'])
         else:
             imgpath = os.path.join(ASSET_PATH, prop['img'])
-            # print(f"PROP: {imgpath}")
             prop['surface'] = pygame.image.load(imgpath).convert_alpha()
+
+        prop['rect'] = prop['surface'].get_rect(center=(prop['x'], prop['y']))
 
         props.append(prop)
 
@@ -157,29 +157,53 @@ while running:
         # too far from the edge. This might be why we never fully hit the edge sometimes. Regardsless of the bounce
         # issue, this just does not feel like the right order of things. But we still need to strategically figure
         # out our major processing steps and their order, so this is working great for an early pass.
-        monster['x'] += monster['xv']
-        monster['y'] += monster['yv']
+        monster['x'] += monster['xv']  # Probably deprecate this action later
+        monster['y'] += monster['yv']  # Probably deprecate this action later
+        # newx = monster['rect'].centerx + monster['xv']  # Lets try something else
+        # newy = monster['rect'].centery + monster['yv']  # Lets try something else
+        newx = monster['x'] + monster['xv']  # This FIXED it, but I really want to use something like centerx/centery
+        newy = monster['y'] + monster['yv']  # This FIXED it, but I really want to use something like centerx/centery
+        monster['rect'].center = (newx, newy)
 
         # These calculations are based off using the topleft of the rect. TODO: Change to using center of the rect.
 
+        # # Bounce off LEFT wall in X Axis
+        # if monster['x'] < 0:
+        #     monster['x'] = 0  # Stop at the LEFT edge instead of passing it.
+        #     monster['xv'] = monster['xv'] * -1
+        # # Bounce off RIGHT wall in X Axis
+        # if monster['x'] > (SCREEN_WIDTH - monster['w']):
+        #     monster['x'] = (SCREEN_WIDTH - monster['w'])  # Stop at the RIGHT edge instead of passing it.
+        #     monster['xv'] = monster['xv'] * -1
+        #
+        # # Bounce off TOP wall in Y Axis
+        # if monster['y'] < 0:
+        #     monster['yv'] = monster['yv'] * -1
+        # # Bounce off BOTTOM wall in Y Axis
+        # if monster['y'] > (SCREEN_HEIGHT - monster['h']):
+        #     monster['y'] = (SCREEN_HEIGHT - monster['h'])  # Stop at the BOTTOM edge instead of passing it.
+        #     monster['yv'] = monster['yv'] * -1
+
         # Bounce off LEFT wall in X Axis
-        if monster['x'] < 0:
-            monster['x'] = 0  # Stop at the LEFT edge instead of passing it.
-            monster['xv'] = monster['xv'] * -1
+        if monster['rect'].left < 0:
+            monster['rect'].left = 0  # Stop at the LEFT edge instead of passing it.
+            monster['xv'] = monster['xv'] * -1  # Reverse X-Axis speed/velocity
         # Bounce off RIGHT wall in X Axis
-        if monster['x'] > (SCREEN_WIDTH - monster['w']):
-            monster['x'] = (SCREEN_WIDTH - monster['w'])  # Stop at the RIGHT edge instead of passing it.
-            monster['xv'] = monster['xv'] * -1
+        if monster['rect'].right > SCREEN_WIDTH:
+            monster['rect'].right = SCREEN_WIDTH  # Stop at the RIGHT edge instead of passing it.
+            monster['xv'] = monster['xv'] * -1  # Reverse X-Axis speed/velocity
 
         # Bounce off TOP wall in Y Axis
-        if monster['y'] < 0:
-            monster['yv'] = monster['yv'] * -1
+        if monster['rect'].top < 0:
+            monster['rect'].top = 0  # Stop at the TOP edge instead of passing it.
+            monster['yv'] = monster['yv'] * -1  # Reverse Y-Axis speed/velocity
         # Bounce off BOTTOM wall in Y Axis
-        if monster['y'] > (SCREEN_HEIGHT - monster['h']):
-            monster['y'] = (SCREEN_HEIGHT - monster['h'])  # Stop at the BOTTOM edge instead of passing it.
-            monster['yv'] = monster['yv'] * -1
+        if monster['rect'].bottom > SCREEN_HEIGHT:
+            monster['rect'].bottom = SCREEN_HEIGHT  # Stop at the BOTTOM edge instead of passing it.
+            monster['yv'] = monster['yv'] * -1  # Reverse Y-Axis speed/velocity
 
-        monster['rect'] = monster['surface'].get_rect(topleft=(monster['x'], monster['y']))  # TODO: Refactor to center
+        # Should not need this now.
+        # monster['rect'] = monster['surface'].get_rect(topleft=(monster['x'], monster['y']))
 
 
     #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
@@ -250,5 +274,7 @@ pygame.quit()
 # surface.get_frect(point=pos)
 
 # GITHUB EXPERIMENT: Changing email and username to match those previously used. Trying to solve issue with
-# contribution tracking. This comment will be pushed to test the fix.
+# contribution tracking. This comment will be pushed to test the fix. FIXED. The contribution was immediately
+# recognized. See the GitHub info page on how contributions tracked. Email/username MUST be correct. See the specs.
+# This issue has been fixed and this comment will soon be removed.
 
