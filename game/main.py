@@ -188,7 +188,7 @@ while running:
     display_surface.blit(bg_surface, (0, 0))
 
     # ##################################################    DRAW    ####################################################
-    
+
     # DRAW PROPS
     for prop in props:
         prop['rect'] = prop['surface'].get_rect(topleft=(prop['x'], prop['y']))  # TODO: Refactor to center
@@ -248,4 +248,7 @@ pygame.quit()
 # CREATE standalone OR CREATE from SURFACE
 # pygame.FRect(pos, size)  # standalone
 # surface.get_frect(point=pos)
+
+# GITHUB EXPERIMENT: Changing email and username to match those previously used. Trying to solve issue with
+# contribution tracking. This comment will be pushed to test the fix.
 
