@@ -1,0 +1,77 @@
+Saving the main comments and some code around the experiments with using Rects not only for positioning but also
+for source of world truth. Abandoning the latter. World source of truth will go back to original design and use
+the object state attributes. In some ways Rects may carry some state, but all main iterations will likely state with
+the world object state date like prop_templates, props and monsters etc.  The confirmed purpose of Rects is for
+positioning Surfaces on screen with some other convenience capabilities for collisions etc. Also you probably need
+to use rects to interact with other parts of PyGame, so they are a key part of interfaces, but again, should not be
+treated as source of truth. Remember they hold INT   or ROUNDED/APPROXIMATED values. So you need to maintain a much
+more accurate source of truth in your own data. FLOAT data. Rects can't do floats, only ints.
+
+
+===================================================================
+
+
+        # **************************************************************************************************************
+        # * IDEA: For position updates, we might be able to do this to ANY of the named corners or sides.
+        # The rect is designed to update all the related values and then the surface uses the updated rect
+        # however it needs to when it is time to blit. It would be irrelevant as to what particular point
+        # was used to update the position of the entire rect. SO, while we will still look closely at Vectors,
+        # this may take us closer to what we want, regarding the stuff I am trying below.
+        # I am trying to update the position of the rect and was looking for a .centerx and a .centery or
+        # or something similar, but since I can update and reference at the same time ( or even more accurately,
+        # reference and update at the same time), I SHOULD be able to do this:
+        # monster['rect'].left += monster['xv']
+        # monster['rect'].top += monster['yv']
+        # **************************************************************************************************************
+
+        # TODO: We might want to change this logic. Currently we move before collision detect etc. and treat
+        # it like prep for the next iteration. Just doesn't feel right and some of our bounces show it happening
+        # too far from the edge. This might be why we never fully hit the edge sometimes. Regardsless of the bounce
+        # issue, this just does not feel like the right order of things. But we still need to strategically figure
+        # out our major processing steps and their order, so this is working great for an early pass.
+        # THEN AGAIN, from one perspective, it makes sense that before we draw, we account for the motion that
+        # does exist. This motion was taking place while the last frame was displaying (statically) .. each frame
+        # is a snapshot of a slice of time, but that time keeps moving, so the motion keeps moving, so one might
+        # logically say that accounting for that movement which HAS OCCURRED, since the last frame was frozen is
+        # a good FIRST THING to do, before drawing THE CURRENT FRAME.
+        # This means that our objects will never be displayed in their x, y start positions defined in the initial
+        # config data. (We could add an initialization step prior to the main loop that DID display them in this
+        # initial state, and that would be great, but we are discussing the structure of the main loop and when
+        # we update values vs. when we paint the current state of values.
+        # Right now, I'm OK with calculation physics and new values prior to painting. It sort of does not matter,
+        # but it DOES. There are factors and edge-cases where it does matter, so this is still in flux, but for now,
+        # the current structure is logical to me. I have coded such tight real-time loops before in BOTH ways,
+        # with state updates both before and alternately after the primary actions using the state. It depends what
+        # you are doing. Some state might need to be updated before and then some after. What is important, is to
+        # continually re-asses your design patterns and how it all works currently and how the structure and
+        # design patterns will affect you down the road as the app evolves.
+        # So I will keep the calcs before the drawing for now.
+
+        # NOTE: We must copy and modify rect position values and re-assign rect.center with a composed tuple,
+        # because our intuitive (and per docs) attempts to reference and assign at the same time some rect
+        # position values, failed. LONG-TERM, looking at vectors, SHORT-TERM, using this intermediate tuple is fine.
+        monster['x'] += monster['xv']
+        monster['y'] += monster['yv']
+        # monster['rect'].left += monster['xv']  # Did not work
+        # monster['rect'].top += monster['yv']  # Did not work
+        # SOLUTION: Use intermediate variables (hence a copy and not a reference) and re-assign rect.center with tuple.
+        newx = monster['x']
+        newy = monster['y']
+        monster['rect'].topleft = (newx, newy)
+        # DEBUG OUTPUT
+        # PROBLEM TO ANALYZE: * * * THE RECT VALUES ARE ALWAYS INT * * *
+        # * * * RELATED CONCLUSION - DON'T USE RECT FOR SOURCE OF TRUTH. 'x' and 'y' are the correct design.
+        # * * * SOURCE OF TRUTH MUST BE FLOATS. RECTS ARE --ONLY-- INTS. PURPOSE OF RECTS IS Surface positioning.
+        # * * * RECTS are not intended to hold WORLD source of truth data/position. (Which needs to be floats etc.)
+        print(f"x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
+        print(f"left, top   {monster['rect'].left}, {monster['rect'].top}")  # ----  DEBUG  ----
+        # SUMMARY: The current solution has the source of truth as the 'x' and 'y' attributes of the object.
+        # My goal is to have the source of truth (for position etc.) to be encapsulated in the 'rect' attribute,
+        # which is a PyGame rect object. We want to only update and reference the rect. The x and y can be used for
+        # initial position or similar, but it is redundant to update x and y after we have a rect instantiated inside
+        # the 'rect' attribute. Where I am currently stuck is being able to reference and update the values inside the
+        # rect in the same real-time/simultaneous manner I can do with the scalar values inside 'x' and 'y'. The docs
+        # and intuition imply I can do that, but tests so far have failed.
+        # Again, I need to look at vectors for some of these use-cases, but I STILL feel I can acheive my goal of
+        # ONLY using the rect.
+
