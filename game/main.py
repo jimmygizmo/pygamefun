@@ -95,7 +95,7 @@ prop_template = {'name': 'blue-flower',
            'color': 'purple',
            'x': 190.0,
            'y': 160.0,
-           'spray_count': 20,
+           'spray_count': 10,
            'spray_radius': 600.0,
            }
 prop_templates.append(prop_template)
@@ -180,30 +180,54 @@ while running:
         #    initialization step for that. It is a design pattern. Handle motion/physics at start of loop before draw.
 
 
-        # Maintain the source of truth as FLOAT values in the primary data structure.
+        # MOVE TRUE POSITION PER VELOCITY - Maintain the source of truth as FLOAT values in the primary data structure.
         monster['x'] += monster['xv']
         monster['y'] += monster['yv']
         # We must copy the float values and compose a new tuple to use to assign to rect.center
         newx = monster['x']
         newy = monster['y']
-        monster['rect'].topleft = (newx, newy)
+        # ASSUMED: When this assignment occurs, this is when all rect values ARE APPROXIMATED AS INT.
+        monster['rect'].center = (newx, newy)
         # The following DEBUG output will show that the source of truth uses accurate FLOAT values, while the
         # rect INT values are approximations, which work perfectly to handle Surface positioning, but not truth values.
-        # print(f"x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
-        # print(f"left, top   {monster['rect'].left}, {monster['rect'].top}")  # ----  DEBUG  ----
+        print(f"TRUTH: x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
+        print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
+        # The above also shows that STANDARD ROUNDING occurs for the conversion of FLOAT to INT when rect is populated.
+
+        # SUBTLETIES BELOW: We bound the displaying surface at the edge, BUT we let the TRUTH VALUE possibly EXCEED
+        # the boundary and stay that way, we simply reverse/bounce possibly a little bit BEYOND the screen edge.
+        # This is never seen. It seems possible this could lead to a 1 frame pause (approx) of an object staying
+        # just slightly stuck against the wall for a slightly sticky bounce as compared to much more typical bounces.
+        # It's not a big effect, but since we want to both preserve true float values AND efficiently "bounce"
+        # with respect to what can be perceived on the screen by most people in most cases, then it is important to
+        # note here some of the tiny compromises we make. Bottom line is that our TRUTH values are not corrupted by
+        # including appeoximated rect values .. BUT in a way we are corrupting the "simulation" in a sense, because we
+        # are sometimes bouncing of a virtual wall which is slightly displaced from the wall that the user sees.
+        # It's interesting how much subtlty has already arizen. We were promised FLOAT support in rects and some of
+        # the challenge here I am discussing is realted to the fact that we don't have support for float values in
+        # rects. They could still appoximate using ints to match screen pixels, BUT they would work better if one
+        # could assign and retreive FLOAT values for ALL named coordinates. The Surface/blit can perform the FLOAT
+        # to INT approximations to match pixels on the screen .. but the rect could work very well handling all of
+        # its values as floats. I'm surprised to find a great tutorial referring to frects .. but my PyGame does
+        # not appear to have FRects, only Rects and no floating point support in rects. I'm still ing trying to
+        # figure out if I am missing something or if this was a feature that was removed.
 
         # Bounce off LEFT wall in X Axis
         if monster['rect'].left <= 0:
+            monster['rect'].left = 0  # Great! We don't touch the TRUTH VALUE, but we do bound the Surace on screen.
             monster['xv'] = monster['xv'] * -1
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
+            monster['rect'].right = SCREEN_WIDTH  # Great! We don't touch the TRUTH VALUE, but we do bound the Surace.
             monster['xv'] = monster['xv'] * -1
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
+            monster['rect'].top = 0  # Great! We don't touch the TRUTH VALUE, but we do bound the Surace on screen.
             monster['yv'] = monster['yv'] * -1
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
+            monster['rect'].bottom = SCREEN_HEIGHT  # Great! We don't touch the TRUTH VALUE, but we do bound the Surace.
             monster['yv'] = monster['yv'] * -1
 
 
