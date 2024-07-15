@@ -5,7 +5,7 @@ import os.path
 import random
 
 
-pygame.init()
+# ###############################################    CONFIGURATION    ##################################################
 
 SCREEN_WIDTH = 1280.0
 SCREEN_HEIGHT = 720.0
@@ -101,7 +101,11 @@ prop_template = {'name': 'blue-flower',
 prop_templates.append(prop_template)
 
 
-# DISPLAY SURFACE
+# ###############################################    INITIALIZATION    #################################################
+
+pygame.init()
+
+# INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
@@ -252,6 +256,8 @@ pygame.quit()
 #
 
 
+# ###################################################    NOTES    ######################################################
+
 # TUTORIAL VIDEO  (Notice some comments have a Video Timing Marker: Vid28:46)
 # This video is over 11 hours long and covers about 5 different games and a lot of PyGame details.
 # https://www.youtube.com/watch?v=8OMghdHP-zs
@@ -279,14 +285,18 @@ pygame.quit()
 # Rectangles (FRects)  (rectangles with a size and position)
 
 # CORNERS  (assign a tuple of coordinates):
-# topleft              midtop              topright
-# midleft                 center             midright
-# bottomleft             midbottom          bottomright
+# topleft              midtop               topright
+# midleft      [centerx center centery]     midright
+# bottomleft           midbottom            bottomright
 
 # SIDES  (assign a single axis value):
 #                        top
-# left                                        right
+# left         [centerx center centery]     right
 #                       bottom
+
+# OVERALL:
+# size, width, height
+# w, h
 
 # CREATE standalone OR CREATE from SURFACE
 # pygame.FRect(pos, size)  # standalone
@@ -297,3 +307,6 @@ pygame.quit()
 # recognized. See the GitHub info page on how contributions tracked. Email/username MUST be correct. See the specs.
 # This issue has been fixed and this comment will soon be removed.
 
+
+##
+#
