@@ -160,6 +160,24 @@ while running:
             running = False
 
 
+    # ##################################################    DRAW    ####################################################
+
+    #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG. This is for solid fill. An image is better:
+    # Paint the BG image every time. Paint the bg_surface (blit it) onto the main display_surface at coords (0, 0)
+    display_surface.blit(bg_surface, (0, 0))
+
+    # DRAW PROPS
+    for prop in props:
+        display_surface.blit(prop['surface'], prop['rect'])
+
+    # DRAW MONSTERS
+    for monster in monsters:
+        display_surface.blit(monster['surface'], monster['rect'])
+
+    # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
+    pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
+
+
     # ################################################    PHYSICS    ###################################################
     # Calculations for new object positions, collisions, velocity changes and update of related object state.
     # CALCULATIONS FOR NEW POSITIONS, BOUNCING
@@ -174,10 +192,6 @@ while running:
         # 5. Maintain a FLOAT source of truth and keep doing this kind of thing: monster['x'] += monster['xv']
         # 6. Probably continue updating position AS FIRST MAIN LOOP STEP as done in 5. Then recalc other physics next.
         # 7. Rect is used at the time of blit, to position the Surface on the screen.
-        # 8. A sensible perspective is that at START OF LOOP, we FIRST take care of MOTION which has JUST BEEN
-        #    occurring during the time the previous frame was statically displayed for its duration. This means
-        #    we never actually see the original default object positions displayed, unless we add a separate
-        #    initialization step for that. It is a design pattern. Handle motion/physics at start of loop before draw.
 
 
         # MOVE TRUE POSITION PER VELOCITY - Maintain the source of truth as FLOAT values in the primary data structure.
@@ -194,7 +208,7 @@ while running:
         # print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
         # The above also shows that STANDARD ROUNDING occurs for the conversion of FLOAT to INT when rect is populated.
 
-        # SUBTLETIES BELOW: We bound the displaying surface at the edge, BUT we let the TRUTH VALUE possibly EXCEED
+        # BOUNCE SUBTLETIES: We bound the displaying surface at the edge, BUT we let the TRUTH VALUE possibly EXCEED
         # the boundary and stay that way, we simply reverse/bounce possibly a little bit BEYOND the screen edge.
         # This is never seen. It seems possible this could lead to a 1 frame pause (approx) of an object staying
         # just slightly stuck against the wall for a slightly sticky bounce as compared to much more typical bounces.
@@ -229,25 +243,6 @@ while running:
         if monster['rect'].bottom >= SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT  # Great! We don't touch the TRUTH VALUE. We do bound the Surface.
             monster['yv'] = monster['yv'] * -1
-
-
-    #display_surface.fill(BGCOLOR)  # Normally we always re-draw the BG.
-
-    # Paint the BG image every time. Paint the bg_surface (blit it) onto the main display_surface at coords (0, 0)
-    display_surface.blit(bg_surface, (0, 0))
-
-    # ##################################################    DRAW    ####################################################
-
-    # DRAW PROPS
-    for prop in props:
-        display_surface.blit(prop['surface'], prop['rect'])
-
-    # DRAW MONSTERS
-    for monster in monsters:
-        display_surface.blit(monster['surface'], monster['rect'])
-
-    # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
-    pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
 
 pygame.quit()
