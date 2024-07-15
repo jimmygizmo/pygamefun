@@ -103,6 +103,19 @@ prop_templates.append(prop_template)
 
 # ###############################################    INITIALIZATION    #################################################
 
+
+print(f"Pygame component versions:")
+print(f"ver - Version number as a string: {pygame.version.ver}")
+print(f"vernum - Version numbers as a tuple of three ints: {pygame.version.vernum}")
+print(f"rev - Repo revision of the build: {pygame.version.rev}")
+print(f"SDL library version as tuple of ints: {pygame.version.SDL}")
+# Note the above print as string, probably by design. To use the tuples I probabl need to refer to them as such and
+# it will just work. This is owing to special internal __double_under__ methods. TEST:
+(v1, v2, v3) = pygame.version.SDL
+print(f"SDL main version number. version.SDL was referenced as a tuple and not as a string: {v1}")
+# TEST RESULT: Confirmed. Theory proven. v1 does return the SDL main version number.
+
+
 pygame.init()
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
