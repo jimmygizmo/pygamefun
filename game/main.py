@@ -214,7 +214,7 @@ while running:
         # 5. Maintain a FLOAT source of truth and keep doing this kind of thing: monster['x'] += monster['xv']
         # 6. Probably continue updating position AS FIRST MAIN LOOP STEP as done in 5. Then recalc other physics next.
         # 7. Rect/FRect is used at the time of blit, to position the Surface on the screen.
-        
+
 
         # MOVE TRUE POSITION PER VELOCITY - Maintain the source of truth as FLOAT values in the primary data structure.
         monster['x'] += monster['xv']
@@ -231,6 +231,31 @@ while running:
         print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
         # The above also shows that STANDARD ROUNDING occurs for the conversion of FLOAT to INT when rect is populated.
         # And when using FRects (get_frect), this debug shows that FRects change the truth value slightly (+- .00001 ?)
+        # Two examples of how when FRect populates values, it slightly changes them:
+        TRUTH: x, y                   932.4600000000189, 355.44000000002836
+        RECT: centerx, centery        932.4600219726562, 355.44000244140625    + 0.000022
+        TRUTH: x, y                   198.38999999999842, 313.8699999999874
+        RECT: centerx, centery        198.38999938964844, 313.8699951171875    - 0.00000061
+        # Differences are pretty small but if they infect truth values in loops somehow then this will cause problems.
+        # There is no problem, however, if one simply follow PyGame-CE Best Practices and stored truth elsewhere as
+        # full float values. To re-state it, don't use FRect/Rect values for truth and don't do any calculations which
+        # use the Rect/FRect values to modify your TRUTH values, not my addition or multiplication etc. They could be
+        # used for collision detection and limiting, which is their real value in some ways .. and this can still
+        # affect truth, most certainly, but less directly. So be wise and avoid the most direct influences on truth
+        # values by any kind of approximated value, as much as you possibly can. In our current case, we DO use
+        # FRect values like left, right, top, bottom for bouncing and this does skew/currupt truth very slightly
+        # becuse it affects the timing of bounce and the timing of velocity change and this affects distances traveled.
+        # The point here is that you need to understand how all this works. If you do have a solid overall understanding
+        # and awareness of the different interactions and effects, then when you encounter unexpected things, like
+        # errors or strange behavior in edge cases (like slightly early bouncing) then you can quickly and fully
+        # understand precisely what is happening and thus you can most efficiently address the issue correctly or
+        # perhaps you can decide that what you are facing is all by design, well-understood and totally acceptible,
+        # so no action is needed and you can move on with this complete understanding and not some problematic
+        # partial understanding. Partial and mis-understandings of how your code is actually working can lead to huge
+        # losses of time and bag bugs surfacing at inopportune times (in production, after a big release/promotion etc.)
+        # These are words for the wise. Understand your code, fully. Debug/print statements will reveal all truth.
+        # Occasionally you might need some enhanced visualization, but the bits and bytes don't lie if you shine
+        # sufficient light on them.
 
         # BOUNCE SUBTLETIES: We bound the displaying surface at the edge, BUT we let the TRUTH VALUE possibly EXCEED
         # the boundary and stay that way, we simply reverse/bounce possibly a little bit BEYOND the screen edge.
