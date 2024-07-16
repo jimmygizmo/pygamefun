@@ -10,7 +10,7 @@ import random
 
 SCREEN_WIDTH = 1280.0
 SCREEN_HEIGHT = 720.0
-TICKRATE = 60
+TICKRATE = 60  # (frame rate)
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
@@ -299,7 +299,9 @@ while running:
             monster['xv'] = monster['xv'] * -1
             # Experimental transition to using vectors: We need to update the vector here too:
             # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
-            monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
@@ -307,7 +309,9 @@ while running:
             monster['xv'] = monster['xv'] * -1
             # Experimental transition to using vectors: We need to update the vector here too:
             # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
-            monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
@@ -315,14 +319,18 @@ while running:
             monster['yv'] = monster['yv'] * -1
             # Experimental transition to using vectors: We need to update the vector here too:
             # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
-            monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT  # Great! We don't touch the TRUTH VALUE. We do bound the Surface.
             monster['yv'] = monster['yv'] * -1
             # Experimental transition to using vectors: We need to update the vector here too:
             # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
-            monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
 
 
 pygame.quit()
