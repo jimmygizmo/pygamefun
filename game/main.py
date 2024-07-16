@@ -13,15 +13,15 @@ GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
-DEBUG = False
+DEBUG = True
 
 
 # MONSTER DATA
 monsters = []
 monster = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
-           'w': 66.0,
-           'h': 64.0,
+           'w': 66,
+           'h': 64,
            'color': 'red1',
            'x': 240.0,
            'y': 300.0,
@@ -31,8 +31,8 @@ monster = {'name': 'red-flower-floaty',
 monsters.append(monster)
 monster = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
-           'w': 66.0,
-           'h': 64.0,
+           'w': 66,
+           'h': 64,
            'color': 'orangered',
            'x': 240.0,
            'y': 300.0,
@@ -42,8 +42,8 @@ monster = {'name': 'red-flower-drifty',
 monsters.append(monster)
 monster = {'name': 'goldie',
            'img':  'gold-retriever-160x142.png',
-           'w': 160.0,
-           'h': 142.0,
+           'w': 160,
+           'h': 142,
            'color': 'gold',
            'x': 500.0,
            'y': 300.0,
@@ -53,8 +53,8 @@ monster = {'name': 'goldie',
 monsters.append(monster)
 monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
-           'w': 280.0,
-           'h': 220.0,
+           'w': 280,
+           'h': 220,
            'color': 'darkgoldenrod1',
            'x': 840.0,
            'y': 300.0,
@@ -64,8 +64,8 @@ monster = {'name': 'fishy',
 monsters.append(monster)
 monster = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
-           'w': 110.0,
-           'h': 120.0,
+           'w': 110,
+           'h': 120,
            'color': 'blanchedalmond',
            'x': 780.0,
            'y': 300.0,
@@ -79,8 +79,8 @@ monsters.append(monster)
 prop_templates = []
 prop_template = {'name': 'red-flower',
            'img':  'red-flower-66x64.png',
-           'w': 66.0,
-           'h': 64.0,
+           'w': 66,
+           'h': 64,
            'color': 'purple',
            'x': 640.0,
            'y': 360.0,
@@ -90,13 +90,13 @@ prop_template = {'name': 'red-flower',
 prop_templates.append(prop_template)
 prop_template = {'name': 'blue-flower',
            'img':  'blue-flower-160x158.png',
-           'w': 160.0,
-           'h': 158.0,
+           'w': 160,
+           'h': 158,
            'color': 'purple',
-           'x': 190.0,
+           'x': 510.0,
            'y': 160.0,
            'spray_count': 10,
-           'spray_radius': 600.0,
+           'spray_radius': 480.0,
            }
 prop_templates.append(prop_template)
 
@@ -125,7 +125,8 @@ pygame.display.set_caption(GAME_TITLE)
 # INITIALIZE MONSTERS
 for monster in monsters:
     if DEBUG:
-        monster['surface'] = pygame.Surface(monster['w'], monster['h'])
+        print(f"{monster['w']}, {monster['h']}")
+        monster['surface'] = pygame.Surface((monster['w'], monster['h']))
         monster['surface'].fill(monster['color'])
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
@@ -227,15 +228,15 @@ while running:
         monster['rect'].center = (newx, newy)
         # The following debug is useful. It can show that FRects do slightly change float values.
         # If you use PyGame, you will have to use Rects which only support INTs. PyGame-CE FRects support FLOATs.
-        print(f"TRUTH: x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
-        print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
+        # print(f"TRUTH: x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
+        # print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
         # The above also shows that STANDARD ROUNDING occurs for the conversion of FLOAT to INT when rect is populated.
         # And when using FRects (get_frect), this debug shows that FRects change the truth value slightly (+- .00001 ?)
         # Two examples of how when FRect populates values, it slightly changes them:
-        TRUTH: x, y                   932.4600000000189, 355.44000000002836
-        RECT: centerx, centery        932.4600219726562, 355.44000244140625    + 0.000022
-        TRUTH: x, y                   198.38999999999842, 313.8699999999874
-        RECT: centerx, centery        198.38999938964844, 313.8699951171875    - 0.00000061
+        # TRUTH: x, y                   932.4600000000189, 355.44000000002836
+        # RECT: centerx, centery        932.4600219726562, 355.44000244140625    + 0.000022
+        # TRUTH: x, y                   198.38999999999842, 313.8699999999874
+        # RECT: centerx, centery        198.38999938964844, 313.8699951171875    - 0.00000061
         # Differences are pretty small but if they infect truth values in loops somehow then this will cause problems.
         # There is no problem, however, if one simply follow PyGame-CE Best Practices and stored truth elsewhere as
         # full float values. To re-state it, don't use FRect/Rect values for truth and don't do any calculations which
