@@ -1,3 +1,72 @@
+
+Top of this file is more recent:
+
+
+
+        # RECENT TAKEAWAYS IN THIS AREA:
+        # 1. FRects slightly change truth values. Don't propagate those back to your truth. Maintain truth as such.
+        # 2. Source of truth is FLOAT and maintained in global, local or some other application memory.
+        # 3. Rects/FRects are only intended for positioning Surfaces on screen.
+        # TODO: Further test #4 assertion, I'm surprised I cannot. I tested it quite a bit. Test it more anyhow.
+        # 4. You CANNOT reference AND update one of the named sides like this: monster['rect'].left += monster['xv']
+        # 5. Maintain a FLOAT source of truth and keep doing this kind of thing: monster['x'] += monster['xv']
+        # 6. Probably continue updating position AS FIRST MAIN LOOP STEP as done in 5. Then recalc other physics next.
+        # 7. Rect/FRect is used at the time of blit, to position the Surface on the screen.
+
+
+    for monster in monsters:
+
+
+        # MOVE TRUE POSITION PER VELOCITY - Maintain the source of truth as FLOAT values in the primary data structure.
+        monster['x'] += monster['xv']
+        monster['y'] += monster['yv']
+        # We must copy the float values and compose a new tuple to use to assign to rect.center
+        newx = monster['x']
+        newy = monster['y']
+        # Rect or FRect both change the truth values. Rect can change them a lot when it does standard rounding when
+        # converting from FLOAT to INT, but even FRect also slightly changes FLOAT values when populating the FRect.
+        monster['rect'].center = (newx, newy)
+        # The following debug is useful. It can show that FRects do slightly change float values.
+        # If you use PyGame, you will have to use Rects which only support INTs. PyGame-CE FRects support FLOATs.
+        # print(f"TRUTH: x, y        {monster['x']}, {monster['y']}")  # ----  DEBUG  ----
+        # print(f"RECT: centerx, centery   {monster['rect'].centerx}, {monster['rect'].centery}")  # ----  DEBUG  ----
+        # The above also shows that STANDARD ROUNDING occurs for the conversion of FLOAT to INT when rect is populated.
+        # And when using FRects (get_frect), this debug shows that FRects change the truth value slightly (+- .00001 ?)
+        # Two examples of how when FRect populates values, it slightly changes them:
+        # TRUTH: x, y                   932.4600000000189, 355.44000000002836
+        # RECT: centerx, centery        932.4600219726562, 355.44000244140625    + 0.000022
+        # TRUTH: x, y                   198.38999999999842, 313.8699999999874
+        # RECT: centerx, centery        198.38999938964844, 313.8699951171875    - 0.00000061
+        # Differences are pretty small but if they infect truth values in loops somehow then this will cause problems.
+        # There is no problem, however, if one simply follow PyGame-CE Best Practices and stored truth elsewhere as
+        # full float values. To re-state it, don't use FRect/Rect values for truth and don't do any calculations which
+        # use the Rect/FRect values to modify your TRUTH values, not my addition or multiplication etc. They could be
+        # used for collision detection and limiting, which is their real value in some ways .. and this can still
+        # affect truth, most certainly, but less directly. So be wise and avoid the most direct influences on truth
+        # values by any kind of approximated value, as much as you possibly can. In our current case, we DO use
+        # FRect values like left, right, top, bottom for bouncing and this does skew/currupt truth very slightly
+        # becuse it affects the timing of bounce and the timing of velocity change and this affects distances traveled.
+        # The point here is that you need to understand how all this works. If you do have a solid overall understanding
+        # and awareness of the different interactions and effects, then when you encounter unexpected things, like
+        # errors or strange behavior in edge cases (like slightly early bouncing) then you can quickly and fully
+        # understand precisely what is happening and thus you can most efficiently address the issue correctly or
+        # perhaps you can decide that what you are facing is all by design, well-understood and totally acceptible,
+        # so no action is needed and you can move on with this complete understanding and not some problematic
+        # partial understanding. Partial and mis-understandings of how your code is actually working can lead to huge
+        # losses of time and bag bugs surfacing at inopportune times (in production, after a big release/promotion etc.)
+        # These are words for the wise. Understand your code, fully. Debug/print statements will reveal all truth.
+        # Occasionally you might need some enhanced visualization, but the bits and bytes don't lie if you shine
+        # sufficient light on them.
+
+        # BOUNCE SUBTLETIES: We bound the displaying surface at the edge, BUT we let the TRUTH VALUE possibly EXCEED
+        # the boundary and stay that way, we simply reverse/bounce possibly a little bit BEYOND the screen edge.
+
+
+
+===============================================================
+
+
+
 Saving the main comments and some code around the experiments with using Rects not only for positioning but also
 for source of world truth. Abandoning the latter. World source of truth will go back to original design and use
 the object state attributes. In some ways Rects may carry some state, but all main iterations will likely state with
@@ -74,4 +143,21 @@ more accurate source of truth in your own data. FLOAT data. Rects can't do float
         # and intuition imply I can do that, but tests so far have failed.
         # Again, I need to look at vectors for some of these use-cases, but I STILL feel I can acheive my goal of
         # ONLY using the rect.
+
+
+
+===================================================================
+
+
+
+
+
+# TEST:
+generic_frect = pygame.FRect(0, 0, 10, 10)  # CONFIRMED! PyGame-CE has FRect. PyGame does not have FRect.
+# (Args: left, top, width, height) - Currently this is not very useful, but works great to confirm FRect support.
+
+
+
+=======================================================================
+
 

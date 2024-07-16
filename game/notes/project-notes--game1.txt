@@ -1,0 +1,70 @@
+
+
+# TUTORIAL VIDEO  (Notice some comments have a Video Timing Marker: Vid28:46)
+# This video is over 11 hours long and covers about 5 different games and a lot of PyGame details.
+# https://www.youtube.com/watch?v=8OMghdHP-zs
+
+# DOCS:
+# https://pyga.me/docs/
+
+# PyGame vs Arcade:
+# https://aircada.com/pygame-vs-arcade/
+
+# Named Colors:
+# https://pyga.me/docs/ref/color_list.html
+
+# GENERAL NOTES:
+
+# "Surface" v.s. a "display surface". They are very similar. "display surface" is the main surface we draw on.
+# The ONE we see. We can attach multiple "Surface" objects to the one official "display surface".
+
+# Technically a speed is an absolute value, but a velocity (in one dimension, as we are currently dealing with it)
+# is just a speed with a positive or negative sign. (A speed with direction indicated.)
+# A velocity is both a speed and a direction, and direction has dimensions, one, two or three, usually.
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Rectangles (FRects)  (rectangles with a size and position)
+
+# CORNERS  (assign a tuple of coordinates):
+# topleft              midtop               topright
+# midleft      [centerx center centery]     midright
+# bottomleft           midbottom            bottomright
+
+# SIDES  (assign a single axis value):
+#                        top
+# left         [centerx center centery]     right
+#                       bottom
+
+# OVERALL:
+# size, width, height
+# w, h
+
+# CREATE standalone OR CREATE from SURFACE
+# pygame.FRect(pos, size)  # standalone
+# surface.get_frect(point=pos)
+
+# GITHUB EXPERIMENT: Changing email and username to match those previously used. Trying to solve issue with
+# contribution tracking. This comment will be pushed to test the fix. FIXED. The contribution was immediately
+# recognized. See the GitHub info page on how contributions tracked. Email/username MUST be correct. See the specs.
+# This issue has been fixed and this comment will soon be removed.
+
+
+
+=========================================================================
+
+VERSION DATA CODE AND COMMENTS:
+
+
+print(f"Pygame component versions:")
+print(f"ver - Version number as a string: {pygame.version.ver}")
+print(f"vernum - Version numbers as a tuple of three ints: {pygame.version.vernum}")
+print(f"rev - Repo revision of the build: {pygame.version.rev}")
+print(f"SDL library version as tuple of ints: {pygame.version.SDL}")
+# Note the above print as string, probably by design. To use the tuples I probabl need to refer to them as such and
+# it will just work. This is owing to special internal __double_under__ methods. TEST:
+(v1, v2, v3) = pygame.version.SDL
+print(f"SDL main version number. version.SDL was referenced as a tuple and not as a string: {v1}")
+# TEST RESULT: Confirmed. Theory proven. v1 does return the SDL main version number.
+
+
