@@ -1,6 +1,7 @@
 #! /usr/bin/env -vS python
 
 import pygame
+from typing import TypedDict
 import os.path
 import random
 
@@ -16,9 +17,25 @@ ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 
 
+# Using a TypedDict to satisfy MyPy recommendations. ('errors' more specifically.)
+Monster = TypedDict('Monster', {
+        'name': str,
+        'img': str,
+        'w': int,
+        'h': int,
+        'color': str,
+        'x': float,
+        'y': float,
+        'xv': float,
+        'yv': float,
+        'surface': pygame.Surface,
+        'rect': pygame.FRect,
+        })
+
+
 # MONSTER DATA
 monsters = []
-monster = {'name': 'red-flower-floaty',
+monster: Monster = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -27,9 +44,11 @@ monster = {'name': 'red-flower-floaty',
            'y': 300.0,
            'xv': -0.03,
            'yv': 0.01,
+           'surface': None,
+           'rect': None,
            }
 monsters.append(monster)
-monster = {'name': 'red-flower-drifty',
+monster: Monster = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -38,10 +57,12 @@ monster = {'name': 'red-flower-drifty',
            'y': 300.0,
            'xv': 0.032,
            'yv': -0.033,
+           'surface': None,
+           'rect': None,
            }
 monsters.append(monster)
-monster = {'name': 'goldie',
-           'img':  'gold-retriever-160x142.png',
+monster: Monster = {'name': 'goldie',
+           'img': 'gold-retriever-160x142.png',
            'w': 160,
            'h': 142,
            'color': 'gold',
@@ -49,9 +70,11 @@ monster = {'name': 'goldie',
            'y': 300.0,
            'xv': 0.042,
            'yv': -0.03,
+           'surface': None,
+           'rect': None,
            }
 monsters.append(monster)
-monster = {'name': 'fishy',
+monster: Monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
            'w': 280,
            'h': 220,
@@ -60,9 +83,11 @@ monster = {'name': 'fishy',
            'y': 300.0,
            'xv': -0.07,
            'yv': -0.15,
+           'surface': None,
+           'rect': None,
            }
 monsters.append(monster)
-monster = {'name': 'grumpy',
+monster: Monster = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
            'w': 110,
            'h': 120,
@@ -71,13 +96,30 @@ monster = {'name': 'grumpy',
            'y': 300.0,
            'xv': 0.11,
            'yv': 0.04,
+           'surface': None,
+           'rect': None,
            }
 monsters.append(monster)
 
 
+# TypedDict for PROP_TEMPLATE
+PropTemplate = TypedDict('PropTemplate', {
+        'name': str,
+        'img': str,
+        'w': int,
+        'h': int,
+        'color': str,
+        'x': float,
+        'y': float,
+        'spray_count': int,
+        'spray_radius': float,
+        'surface': pygame.Surface,
+        'rect': pygame.FRect,
+        })
+
 # PROP DATA
 prop_templates = []
-prop_template = {'name': 'red-flower',
+prop_template: PropTemplate = {'name': 'red-flower',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -86,9 +128,11 @@ prop_template = {'name': 'red-flower',
            'y': 360.0,
            'spray_count': 40,
            'spray_radius': 600.0,
+           'surface': None,
+           'rect': None,
            }
 prop_templates.append(prop_template)
-prop_template = {'name': 'blue-flower',
+prop_template: PropTemplate = {'name': 'blue-flower',
            'img':  'blue-flower-160x158.png',
            'w': 160,
            'h': 158,
@@ -97,8 +141,25 @@ prop_template = {'name': 'blue-flower',
            'y': 160.0,
            'spray_count': 10,
            'spray_radius': 480.0,
+           'surface': None,
+           'rect': None,
            }
 prop_templates.append(prop_template)
+
+# TODO: We will need a TypedDict for the many PROP objects we generate (spray) as well.
+# TypedDict for PROP
+Prop = TypedDict('Prop', {
+        'name': str,
+        'img': str,
+        'w': int,
+        'h': int,
+        'color': str,
+        'x': float,
+        'y': float,
+        'surface': pygame.Surface,
+        'rect': pygame.FRect,
+        })
+
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -126,7 +187,7 @@ props = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
         # We must create a NEW prop dictionary object each time, otherwise they would all be the same reference.
-        prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+        prop: Prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
                 'h': prop_t['h'],
                 'color': prop_t['color'],
