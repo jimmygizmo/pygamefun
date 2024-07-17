@@ -1,0 +1,91 @@
+    for monster in monsters:
+
+
+        # MOVE TRUE POSITION PER VELOCITY - Maintain the source of truth as FLOAT values in the primary data structure.
+        # monster['x'] += monster['xv']
+        # monster['y'] += monster['yv']
+        # newx = monster['x']
+        # newy = monster['y']
+        # monster['rect'].center = (newx, newy)
+
+        # NEW WAY USING VECTORS - While moving experimentally towards using the FRect for a less-accurate truth:
+
+        # We still need to maintain the truth values .. but, with FRect accuracy to 4 or 5 decimal places (float does
+        # remain much more accurat than that .. but 4 or 5 in FRect may be sufficient) .. then with that AND also
+        # the convenience of vectors, the plan is to EXPLORE the use of the rect to maintain truth. This will
+        # relegate x, y, xv, yv attributes to being initial state only and then after that the objects rect will be
+        # the source of truth. THIS WILL BE AN EXPERIMENT AT FIRST. We can always go back to maintaining truth in
+        # the fully-float-capable object data structures. Do we need accuracies on the scale of one-ten-thousandth of
+        # a pixel and greater? In some applications, absolutely! But in games? Maybe most of the time we do not need
+        # that accuracy and the many types of convenience of FRect/Rect in PyGame-CE will lead to the decision to
+        # use the FRect as source of truth (in most cases.) I can see things going that way, at least initially. I may
+        # leave concisely-commented stubs in place where one can easily go back to maintaining a much more accurate
+        # source of truth (on position and velocity, mostly, we are talking about here.)
+        monster['x'] += monster['xv']
+        monster['y'] += monster['yv']
+        # Then we can very simply update position and don't necessarily need the above step to maintain the orig. truth.
+        # print(monster['v'])  # ----  DEBUG  ----
+        monster['rect'].center += monster['v']
+
+        # EXPERIMENT - USE DIRECTION VECTOR AND SPEED.
+        # NOTE: Our direction vectors have not been minimized and our use and calculation of speed was a quick take
+        # based on basic mathematics (pythagorean theorem: a**2 + b**2 = c**2  (a^2 + b^2 = c^2 in other notation)
+        # So the above becomes:
+        monster['rect'].center += (monster['d'] * monster['s'])
+        # This makes sense as the direction should be a set of velocities on x and y which amount to a speed of
+        # travel forward of 1 unit. This is the case where the velocity components have been minimized. And then
+        # one 'scales' the direction vector by the scalar float value for speed.
+        # Based on this, I think my calculation for speed is correct.
+        # Now, for following commits, I suspect Vector2 offers a method for the pythagorean calculation I did.
+        # We will use the built-in method equivalents for this next and then do some cleanup now since this full
+        # adoption of vectors is falling in to place. As mentioned, I will leave most of the full float truth
+        # stuff maintained and in the data structures for now.
+
+
+        # Bounce off LEFT wall in X Axis
+        if monster['rect'].left <= 0:
+            monster['rect'].left = 0  # Great! We don't touch the TRUTH VALUE. We do bound the Surface on screen.
+            monster['xv'] = monster['xv'] * -1
+            # Experimental transition to using vectors: We need to update the vector here too:
+            # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
+
+        # Bounce off RIGHT wall in X Axis
+        if monster['rect'].right >= SCREEN_WIDTH:
+            monster['rect'].right = SCREEN_WIDTH  # Great! We don't touch the TRUTH VALUE. We do bound the Surface.
+            monster['xv'] = monster['xv'] * -1
+            # Experimental transition to using vectors: We need to update the vector here too:
+            # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
+
+        # Bounce off TOP wall in Y Axis
+        if monster['rect'].top <= 0:
+            monster['rect'].top = 0  # Great! We don't touch the TRUTH VALUE. We do bound the Surace on screen.
+            monster['yv'] = monster['yv'] * -1
+            # Experimental transition to using vectors: We need to update the vector here too:
+            # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
+        # Bounce off BOTTOM wall in Y Axis
+        if monster['rect'].bottom >= SCREEN_HEIGHT:
+            monster['rect'].bottom = SCREEN_HEIGHT  # Great! We don't touch the TRUTH VALUE. We do bound the Surface.
+            monster['yv'] = monster['yv'] * -1
+            # Experimental transition to using vectors: We need to update the vector here too:
+            # IMPORTANT: Can/should we update using methods rather than instantiate a new/replacement object?
+            # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+            # Now lets try simply updating the Vector2 instance by calling its update() method:
+            monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
+
