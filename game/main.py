@@ -12,37 +12,39 @@ import collections
 
 SCREEN_WIDTH = 1280.0
 SCREEN_HEIGHT = 720.0
-TICKRATE = 30  # (frame rate)
+TICKRATE = 60  # (frame rate)
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
-# List of tuples of the phase name and the phase duration in phase units (currently 1 second)
-ENVIRO_PHASES = [('peace', 9), ('rogue', 1), ('chaos', 2), ('rogue', 1), ('frozen', 1)]  # p, r, c, f
+# List of tuples of the phase name and the phase duration in phase units (currently 1 second) TODO: Fix. FRAMES!!!!!
+ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left side of a list.
+    [('peace', 2000), ('rogue', 400), ('chaos', 500), ('rogue', 200), ('frozen', 300)]
+)  # p, r, c, f
 
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
 # TypeDict for MONSTER
 Monster = TypedDict('Monster', {
-        'name': str,
-        'img': str,
-        'w': int,
-        'h': int,
-        'color': str,
-        'x': float,
-        'y': float,
+        'name': str,  # Monster short name
+        'img': str,  # Filename of PNG (with transparency)
+        'w': int,  # PNG pixel width
+        'h': int,  # PNG pixel height
+        'color': str,  # Debug mode color of rectangle
+        'x': float,  # Initial position X value (SOON WILL NOT BE MAINTAINED. RECT WILL BECOME POSITION TRUTH)
+        'y': float,  # Initial position Y value (SOON WILL NOT BE MAINTAINED. RECT WILL BECOME POSITION TRUTH)
         'v': pygame.math.Vector2,  # Velocity
         'd': pygame.math.Vector2,  # Direction
-        's': float,  # Speed
-        'p': float,  # Enviro: Peace
-        'r': float,  # Enviro: Rogue
-        'c': float,  # Enviro: Chaos
-        'f': float,  # Enviro: Frozen
-        'xv': float,
-        'yv': float,
-        'surface': pygame.Surface,
-        'rect': pygame.FRect,
+        's': float,  # Initial/default speed
+        'p': float,  # Enviro: Peace (speed)
+        'r': float,  # Enviro: Rogue (speed)
+        'c': float,  # Enviro: Chaos (speed)
+        'f': float,  # Enviro: Frozen (speed)
+        'xv': float,  # Velocity X value (SOON MAY NOT BE MAINTAINED. 'd' and 's' MAY REPLACE)
+        'yv': float,  # Velocity Y value (SOON MAY NOT BE MAINTAINED. 'd' and 's' MAY REPLACE)
+        'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
+        'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
 # MONSTER DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
@@ -60,7 +62,7 @@ monster: Monster = {'name': 'red-flower-floaty',
            'p': 1.0,
            'r': 1.0,
            'c': 3.5,
-           'f': 0.2,
+           'f': 0.002,
            'xv': -0.624,
            'yv': 0.782,
            'surface': None,
@@ -79,8 +81,8 @@ monster: Monster = {'name': 'red-flower-drifty',
            's': 1.0,
            'p': 1.0,
            'r': 1.0,
-           'c': 2.2,
-           'f': 0.08,
+           'c': 4.2,
+           'f': 0.003,
            'xv': 0.137,
            'yv': -0.991,
            'surface': None,
@@ -98,9 +100,9 @@ monster: Monster = {'name': 'goldie',
            'd': None,
            's': 1.41,
            'p': 1.6,
-           'r': 3.8,
-           'c': 4.9,
-           'f': 0.0,
+           'r': 8.8,
+           'c': 12.9,
+           'f': 0.008,
            'xv': 1.0,
            'yv': 1.0,
            'surface': None,
@@ -119,8 +121,8 @@ monster: Monster = {'name': 'fishy',
            's': 1.0,
            'p': 0.9,
            'r': 1.0,
-           'c': 2.0,
-           'f': 0.1,
+           'c': 5.0,
+           'f': 0.001,
            'xv': -0.114,
            'yv': -0.994,
            'surface': None,
@@ -138,8 +140,8 @@ monster: Monster = {'name': 'grumpy',
            'd': None,
            's': 1.0,
            'p': 0.8,
-           'r': 1.2,
-           'c': 4.7,
+           'r': 0.05,
+           'c': 7.7,
            'f': 0.0,
            'xv': 0.261,
            'yv': 0.966,
@@ -277,6 +279,9 @@ else:
     bg_surface = pygame.image.load(bgpath)
 
 running = True
+ephase = None
+ephase_name = None
+ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
 while running:
@@ -285,6 +290,38 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
+    if ephase is None:
+        ephase = ENVIRO_PHASES[0]
+        print(f"LOADING ENVIRO PHASE: {ephase}")
+        ephase_name = ephase[0]
+        ephase_count = ephase[1]
+        print(f"EPHASE name: {ephase_name}    EPHASE name: {ephase_count}")
+        cut_ephase = ENVIRO_PHASES.popleft()
+        # TODO: Is it correct to say "move the top of the stack to the bottom" .. figure it out and make it correct.
+        ENVIRO_PHASES.append(cut_ephase)  # Move the top of stack to the bottom. Phases endlessly repeat.
+        print(f"ENVIRO_PHASES: {ENVIRO_PHASES}")
+    else:
+        # APPLY THE EFFECTS HERE - MONSTERS CHANGE THEIR SPEEDS
+        for monster in monsters:
+            if ephase_name == 'peace':
+                monster['s'] = monster['p']
+            elif ephase_name == 'rogue':
+                monster['s'] = monster['r']
+            elif ephase_name == 'chaos':
+                monster['s'] = monster['c']
+            elif ephase_name == 'frozen':
+                monster['s'] = monster['f']
+            else:
+                monster['s'] = 10.0  # Extremely fast, for debugging. A bad ephase name, causes extreme monster speed.
+
+        ephase_count -= 1  # Decrement the counter. TODO: SECONDS?? FRAMES??
+        if ephase_count % 100 == 0:
+            print(ephase_count)
+        # NOW CHECK IF ephase_count is 0 - IF 0: Make ephase = None, so we trigger loading of the next phase
+        if ephase_count < 1:
+            ephase = None
 
 
     # ##################################################    DRAW    ####################################################
