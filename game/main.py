@@ -49,9 +49,9 @@ monster: Monster = {'name': 'red-flower-floaty',
            'y': 300.0,
            'v': None,
            'd': None,
-           's': None,
-           'xv': -0.73,
-           'yv': 0.49,
+           's': 1.0,
+           'xv': -0.624,
+           'yv': 0.782,
            'surface': None,
            'rect': None,
            }
@@ -65,9 +65,9 @@ monster: Monster = {'name': 'red-flower-drifty',
            'y': 300.0,
            'v': None,
            'd': None,
-           's': None,
-           'xv': 0.132,
-           'yv': -0.033,
+           's': 1.0,
+           'xv': 0.137,
+           'yv': -0.991,
            'surface': None,
            'rect': None,
            }
@@ -81,9 +81,9 @@ monster: Monster = {'name': 'goldie',
            'y': 300.0,
            'v': None,
            'd': None,
-           's': None,
-           'xv': 3.2,
-           'yv': 3.9,
+           's': 1.41,
+           'xv': 1.0,
+           'yv': 1.0,
            'surface': None,
            'rect': None,
            }
@@ -97,9 +97,9 @@ monster: Monster = {'name': 'fishy',
            'y': 300.0,
            'v': None,
            'd': None,
-           's': None,
-           'xv': -2.07,
-           'yv': -3.15,
+           's': 1.0,
+           'xv': -0.114,
+           'yv': -0.994,
            'surface': None,
            'rect': None,
            }
@@ -113,9 +113,9 @@ monster: Monster = {'name': 'grumpy',
            'y': 300.0,
            'v': None,
            'd': None,
-           's': None,
-           'xv': 2.11,
-           'yv': 1.04,
+           's': 1.0,
+           'xv': 0.261,
+           'yv': 0.966,
            'surface': None,
            'rect': None,
            }
@@ -206,6 +206,7 @@ for monster in monsters:
         monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed. New feature. Evolving rapidly.
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
+    print(f"Monster speed: {monster['s']}")
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
@@ -308,6 +309,20 @@ while running:
         # Then we can very simply update position and don't necessarily need the above step to maintain the orig. truth.
         # print(monster['v'])  # ----  DEBUG  ----
         monster['rect'].center += monster['v']
+
+        # EXPERIMENT - USE DIRECTION VECTOR AND SPEED.
+        # NOTE: Our direction vectors have not been minimized and our use and calculation of speed was a quick take
+        # based on basic mathematics (pythagorean theorem: a**2 + b**2 = c**2  (a^2 + b^2 = c^2 in other notation)
+        # So the above becomes:
+        monster['rect'].center += (monster['d'] * monster['s'])
+        # This makes sense as the direction should be a set of velocities on x and y which amount to a speed of
+        # travel forward of 1 unit. This is the case where the velocity components have been minimized. And then
+        # one 'scales' the direction vector by the scalar float value for speed.
+        # Based on this, I think my calculation for speed is correct.
+        # Now, for following commits, I suspect Vector2 offers a method for the pythagorean calculation I did.
+        # We will use the built-in method equivalents for this next and then do some cleanup now since this full
+        # adoption of vectors is falling in to place. As mentioned, I will leave most of the full float truth
+        # stuff maintained and in the data structures for now.
 
 
         # Bounce off LEFT wall in X Axis
