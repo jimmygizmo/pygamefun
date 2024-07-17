@@ -1,4 +1,5 @@
 #! /usr/bin/env -vS python
+import math
 
 import pygame
 from typing import TypedDict
@@ -28,7 +29,9 @@ Monster = TypedDict('Monster', {
         'color': str,
         'x': float,
         'y': float,
-        'v': pygame.math.Vector2,
+        'v': pygame.math.Vector2,  # Velocity
+        'd': pygame.math.Vector2,  # Direction
+        's': float,  # Speed
         'xv': float,
         'yv': float,
         'surface': pygame.Surface,
@@ -45,6 +48,8 @@ monster: Monster = {'name': 'red-flower-floaty',
            'x': 240.0,
            'y': 300.0,
            'v': None,
+           'd': None,
+           's': None,
            'xv': -0.73,
            'yv': 0.49,
            'surface': None,
@@ -59,6 +64,8 @@ monster: Monster = {'name': 'red-flower-drifty',
            'x': 240.0,
            'y': 300.0,
            'v': None,
+           'd': None,
+           's': None,
            'xv': 0.132,
            'yv': -0.033,
            'surface': None,
@@ -73,6 +80,8 @@ monster: Monster = {'name': 'goldie',
            'x': 500.0,
            'y': 300.0,
            'v': None,
+           'd': None,
+           's': None,
            'xv': 3.2,
            'yv': 3.9,
            'surface': None,
@@ -87,6 +96,8 @@ monster: Monster = {'name': 'fishy',
            'x': 840.0,
            'y': 300.0,
            'v': None,
+           'd': None,
+           's': None,
            'xv': -2.07,
            'yv': -3.15,
            'surface': None,
@@ -101,6 +112,8 @@ monster: Monster = {'name': 'grumpy',
            'x': 780.0,
            'y': 300.0,
            'v': None,
+           'd': None,
+           's': None,
            'xv': 2.11,
            'yv': 1.04,
            'surface': None,
@@ -182,11 +195,15 @@ for monster in monsters:
         monster['surface'].fill(monster['color'])
         # Instantiate the velocity vector with the TRUTH xv and yv values. This initial stub may soon change.
         monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+        monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction. New feature. Evolving rapidly.
+        monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed. New feature. Evolving rapidly.
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
         # Instantiate the velocity vector with the TRUTH xv and yv values. This initial stub may soon change.
         monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
+        monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction. New feature. Evolving rapidly.
+        monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed. New feature. Evolving rapidly.
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
 
@@ -302,6 +319,8 @@ while running:
             # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
             # Now lets try simply updating the Vector2 instance by calling its update() method:
             monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
@@ -312,6 +331,8 @@ while running:
             # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
             # Now lets try simply updating the Vector2 instance by calling its update() method:
             monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
@@ -322,6 +343,8 @@ while running:
             # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
             # Now lets try simply updating the Vector2 instance by calling its update() method:
             monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT  # Great! We don't touch the TRUTH VALUE. We do bound the Surface.
@@ -331,6 +354,8 @@ while running:
             # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])
             # Now lets try simply updating the Vector2 instance by calling its update() method:
             monster['v'].update(monster['xv'], monster['yv'])
+            monster['d'].update(monster['xv'], monster['yv'])  # Update direction vector too. Experimental.
+            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Update Speed. New feature/Experimtl.
 
 
 pygame.quit()
