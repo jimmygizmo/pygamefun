@@ -5,18 +5,21 @@ import pygame
 from typing import TypedDict
 import os.path
 import random
+import collections
 
 
 # ###############################################    CONFIGURATION    ##################################################
 
 SCREEN_WIDTH = 1280.0
 SCREEN_HEIGHT = 720.0
-TICKRATE = 60  # (frame rate)
+TICKRATE = 30  # (frame rate)
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
+# List of tuples of the phase name and the phase duration in phase units (currently 1 second)
+ENVIRO_PHASES = [('peace', 9), ('rogue', 1), ('chaos', 2), ('rogue', 1), ('frozen', 1)]  # p, r, c, f
 
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
@@ -32,6 +35,10 @@ Monster = TypedDict('Monster', {
         'v': pygame.math.Vector2,  # Velocity
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Speed
+        'p': float,  # Enviro: Peace
+        'r': float,  # Enviro: Rogue
+        'c': float,  # Enviro: Chaos
+        'f': float,  # Enviro: Frozen
         'xv': float,
         'yv': float,
         'surface': pygame.Surface,
@@ -50,6 +57,10 @@ monster: Monster = {'name': 'red-flower-floaty',
            'v': None,
            'd': None,
            's': 1.0,
+           'p': 1.0,
+           'r': 1.0,
+           'c': 3.5,
+           'f': 0.2,
            'xv': -0.624,
            'yv': 0.782,
            'surface': None,
@@ -66,6 +77,10 @@ monster: Monster = {'name': 'red-flower-drifty',
            'v': None,
            'd': None,
            's': 1.0,
+           'p': 1.0,
+           'r': 1.0,
+           'c': 2.2,
+           'f': 0.08,
            'xv': 0.137,
            'yv': -0.991,
            'surface': None,
@@ -82,6 +97,10 @@ monster: Monster = {'name': 'goldie',
            'v': None,
            'd': None,
            's': 1.41,
+           'p': 1.6,
+           'r': 3.8,
+           'c': 4.9,
+           'f': 0.0,
            'xv': 1.0,
            'yv': 1.0,
            'surface': None,
@@ -98,6 +117,10 @@ monster: Monster = {'name': 'fishy',
            'v': None,
            'd': None,
            's': 1.0,
+           'p': 0.9,
+           'r': 1.0,
+           'c': 2.0,
+           'f': 0.1,
            'xv': -0.114,
            'yv': -0.994,
            'surface': None,
@@ -114,6 +137,10 @@ monster: Monster = {'name': 'grumpy',
            'v': None,
            'd': None,
            's': 1.0,
+           'p': 0.8,
+           'r': 1.2,
+           'c': 4.7,
+           'f': 0.0,
            'xv': 0.261,
            'yv': 0.966,
            'surface': None,
@@ -206,7 +233,7 @@ for monster in monsters:
         monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed. New feature. Evolving rapidly.
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
-    print(f"Monster speed: {monster['s']}")
+    # print(f"Monster speed: {monster['s']}")  # ----  DEBUG  ----
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
