@@ -12,7 +12,7 @@ import collections
 
 SCREEN_WIDTH = 1280.0
 SCREEN_HEIGHT = 720.0
-TICKRATE = 60  # (frame rate)
+TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
@@ -51,7 +51,8 @@ Monster = TypedDict('Monster', {
 
 # MONSTER DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
 monsters = []
-monster: Monster = {'name': 'red-flower-floaty',
+
+monster1: Monster = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -70,8 +71,8 @@ monster: Monster = {'name': 'red-flower-floaty',
            'surface': None,
            'rect': None,
            }
-monsters.append(monster)
-monster: Monster = {'name': 'red-flower-drifty',
+monsters.append(monster1)
+monster2: Monster = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -90,8 +91,8 @@ monster: Monster = {'name': 'red-flower-drifty',
            'surface': None,
            'rect': None,
            }
-monsters.append(monster)
-monster: Monster = {'name': 'goldie',
+monsters.append(monster2)
+monster3: Monster = {'name': 'goldie',
            'img': 'gold-retriever-160x142.png',
            'w': 160,
            'h': 142,
@@ -110,8 +111,8 @@ monster: Monster = {'name': 'goldie',
            'surface': None,
            'rect': None,
            }
-monsters.append(monster)
-monster: Monster = {'name': 'fishy',
+monsters.append(monster3)
+monster4: Monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
            'w': 280,
            'h': 220,
@@ -130,8 +131,8 @@ monster: Monster = {'name': 'fishy',
            'surface': None,
            'rect': None,
            }
-monsters.append(monster)
-monster: Monster = {'name': 'grumpy',
+monsters.append(monster4)
+monster5: Monster = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
            'w': 110,
            'h': 120,
@@ -150,7 +151,7 @@ monster: Monster = {'name': 'grumpy',
            'surface': None,
            'rect': None,
            }
-monsters.append(monster)
+monsters.append(monster5)
 
 
 # TypedDict for PROP_TEMPLATE
@@ -170,7 +171,7 @@ PropTemplate = TypedDict('PropTemplate', {
 
 # PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
 prop_templates = []
-prop_template: PropTemplate = {'name': 'red-flower',
+prop_template1: PropTemplate = {'name': 'red-flower',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -182,8 +183,8 @@ prop_template: PropTemplate = {'name': 'red-flower',
            'surface': None,
            'rect': None,
            }
-prop_templates.append(prop_template)
-prop_template: PropTemplate = {'name': 'blue-flower',
+prop_templates.append(prop_template1)
+prop_template2: PropTemplate = {'name': 'blue-flower',
            'img':  'blue-flower-160x158.png',
            'w': 160,
            'h': 158,
@@ -195,7 +196,7 @@ prop_template: PropTemplate = {'name': 'blue-flower',
            'surface': None,
            'rect': None,
            }
-prop_templates.append(prop_template)
+prop_templates.append(prop_template2)
 
 # TypedDict for PROP. Props are generated dynamically, when we "spray" props from their template.
 Prop = TypedDict('Prop', {
@@ -243,10 +244,15 @@ props = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
         # We must create a NEW prop dictionary object each time, otherwise they would all be the same reference.
-        prop: Prop = {'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+        prop: Prop = {'name': '',  # placeholder (mpypy)
+                'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
                 'h': prop_t['h'],
                 'color': prop_t['color'],
+                'x': 0.0,  # placeholder (mpypy)
+                'y': 0.0,  # placeholder (mpypy)
+                'surface': None,  # placeholder (mpypy)
+                 'rect': None,  # placeholder (mpypy)
                 }
 
         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
@@ -284,9 +290,13 @@ ephase_name = None
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
+#   * * * * * * * * * * * * * * * * * * * *
+#   * * * * * *    MAIN LOOP    * * * * * *
+#   * * * * * * * * * * * * * * * * * * * *
 while running:
     delta_time = clock.tick(TICKRATE)  # Seconds elapsed for a single frame (example - 60 Frm/sec gives 0.017 sec/Frm)
-    # print(f"delta_time: {delta_time}")  # ----  DEBUG  ----
+    # print(f"delta_time - duration of one frame - (milliseconds): {delta_time}")  # ----  DEBUG  ----
+    # print(f"FPS - frames per second: {clock.get_fps()}")  # ----  DEBUG  ----
     # #### ####   EVENT LOOP    #### ####
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
