@@ -20,8 +20,9 @@ ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 # List of tuples of the phase name and the phase duration in phase units (currently 1 second) TODO: Fix. FRAMES!!!!!
 ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left side of a list.
-    [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 80)]
+    [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
 )  # p, r, c, f
+# ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
 
@@ -123,7 +124,7 @@ monster: Monster = {'name': 'fishy',
            'p': 0.9,
            'r': 1.0,
            'c': 7.0,
-           'f': 4.5,
+           'f': 28.5,
            'xv': -0.994,
            'yv': -0.114,
            'surface': None,
@@ -284,7 +285,8 @@ ephase_count = 0  # 0, not None since we will likly first/always do an arithmeti
 clock = pygame.time.Clock()
 
 while running:
-    clock.tick(TICKRATE)
+    delta_time = clock.tick(TICKRATE)  # Seconds elapsed for a single frame (example - 60 Frm/sec gives 0.017 sec/Frm)
+    # print(f"delta_time: {delta_time}")  # ----  DEBUG  ----
     # #### ####   EVENT LOOP    #### ####
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
