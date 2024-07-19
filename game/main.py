@@ -59,8 +59,8 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'color': 'red1',
            'x': 240.0,
            'y': 300.0,
-           'v': None,
-           'd': None,
+           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
            's': 1.0,
            'p': 1.0,
            'r': 1.0,
@@ -68,8 +68,8 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'f': 0.02,
            'xv': -0.624,
            'yv': 0.782,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster1)
 monster2: Monster = {'name': 'red-flower-drifty',
@@ -79,8 +79,8 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'color': 'orangered',
            'x': 240.0,
            'y': 300.0,
-           'v': None,
-           'd': None,
+           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
            's': 1.0,
            'p': 1.0,
            'r': 1.0,
@@ -88,8 +88,8 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'f': 0.03,
            'xv': 0.137,
            'yv': -0.991,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster2)
 monster3: Monster = {'name': 'goldie',
@@ -99,8 +99,8 @@ monster3: Monster = {'name': 'goldie',
            'color': 'gold',
            'x': 500.0,
            'y': 300.0,
-           'v': None,
-           'd': None,
+           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
            's': 1.41,
            'p': 1.6,
            'r': 8.8,
@@ -108,8 +108,8 @@ monster3: Monster = {'name': 'goldie',
            'f': 0.1,
            'xv': 1.0,
            'yv': 1.0,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster3)
 monster4: Monster = {'name': 'fishy',
@@ -119,8 +119,8 @@ monster4: Monster = {'name': 'fishy',
            'color': 'darkgoldenrod1',
            'x': 840.0,
            'y': 300.0,
-           'v': None,
-           'd': None,
+           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
            's': 1.0,
            'p': 0.9,
            'r': 1.0,
@@ -128,8 +128,8 @@ monster4: Monster = {'name': 'fishy',
            'f': 28.5,
            'xv': -0.994,
            'yv': -0.114,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster4)
 monster5: Monster = {'name': 'grumpy',
@@ -139,8 +139,8 @@ monster5: Monster = {'name': 'grumpy',
            'color': 'blanchedalmond',
            'x': 780.0,
            'y': 300.0,
-           'v': None,
-           'd': None,
+           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
            's': 1.0,
            'p': 0.8,
            'r': 0.05,
@@ -148,8 +148,8 @@ monster5: Monster = {'name': 'grumpy',
            'f': 0.4,
            'xv': 0.261,
            'yv': 0.966,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster5)
 
@@ -180,8 +180,8 @@ prop_template1: PropTemplate = {'name': 'red-flower',
            'y': 360.0,
            'spray_count': 40,
            'spray_radius': 600.0,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 prop_templates.append(prop_template1)
 prop_template2: PropTemplate = {'name': 'blue-flower',
@@ -193,8 +193,8 @@ prop_template2: PropTemplate = {'name': 'blue-flower',
            'y': 160.0,
            'spray_count': 10,
            'spray_radius': 480.0,
-           'surface': None,
-           'rect': None,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 prop_templates.append(prop_template2)
 
@@ -251,8 +251,8 @@ for prop_t in prop_templates:
                 'color': prop_t['color'],
                 'x': 0.0,  # placeholder (mpypy)
                 'y': 0.0,  # placeholder (mpypy)
-                'surface': None,  # placeholder (mpypy)
-                 'rect': None,  # placeholder (mpypy)
+                'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+                'rect': pygame.FRect(),  # placeholder instance (mypy)
                 }
 
         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
@@ -358,7 +358,15 @@ while running:
     for monster in monsters:
         # monster['x'] += monster['xv']  # NOTE: No-longer used for position
         # monster['y'] += monster['yv']  # NOTE: No-longer used for position
-        monster['rect'].center += (monster['d'] * monster['s'])
+        # ***************************
+        # WORKING ON THIS MYPY ERROR:
+        # delta_vector = pygame.Vector2(monster['d'] * monster['s'])  # SEEN AS A tuple[float, float] - SAME
+        delta_vector = monster['d'] * monster['s']  # SEEN AS A tuple[float, float] - SAME
+        # MYPY ERROR HERE - TRICKY ONE:
+        # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
+        #     variable has type "tuple[float, float]")  [assignment]
+        monster['rect'].center += delta_vector
+        # ***************************
 
         # Bounce off LEFT wall in X Axis
         if monster['rect'].left <= 0:
