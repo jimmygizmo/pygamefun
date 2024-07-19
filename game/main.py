@@ -61,11 +61,11 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2(),  # placeholder instance (mypy)
-           's': 1.0,
-           'p': 1.0,
-           'r': 1.0,
-           'c': 3.5,
-           'f': 0.02,
+           's': 100.0,
+           'p': 100.0,
+           'r': 100.0,
+           'c': 350.0,
+           'f': 2.0,
            'xv': -0.624,
            'yv': 0.782,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
@@ -81,11 +81,11 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2(),  # placeholder instance (mypy)
-           's': 1.0,
-           'p': 1.0,
-           'r': 1.0,
-           'c': 4.2,
-           'f': 0.03,
+           's': 100.0,
+           'p': 100.0,
+           'r': 100.0,
+           'c': 420.0,
+           'f': 3.0,
            'xv': 0.137,
            'yv': -0.991,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
@@ -101,11 +101,11 @@ monster3: Monster = {'name': 'goldie',
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2(),  # placeholder instance (mypy)
-           's': 1.41,
-           'p': 1.6,
-           'r': 8.8,
-           'c': 12.9,
-           'f': 0.1,
+           's': 141.0,
+           'p': 160.0,
+           'r': 880.0,
+           'c': 1290.0,
+           'f': 10.0,
            'xv': 1.0,
            'yv': 1.0,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
@@ -121,11 +121,11 @@ monster4: Monster = {'name': 'fishy',
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2(),  # placeholder instance (mypy)
-           's': 1.0,
-           'p': 0.9,
-           'r': 1.0,
-           'c': 7.0,
-           'f': 28.5,
+           's': 80.0,
+           'p': 90.0,
+           'r': 100.0,
+           'c': 700.0,
+           'f': 2850.0,
            'xv': -0.994,
            'yv': -0.114,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
@@ -141,11 +141,11 @@ monster5: Monster = {'name': 'grumpy',
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2(),  # placeholder instance (mypy)
-           's': 1.0,
-           'p': 0.8,
-           'r': 0.05,
-           'c': 21.7,
-           'f': 0.4,
+           's': 90.0,
+           'p': 80.0,
+           'r': 50.0,
+           'c': 2170.0,
+           'f': 40.0,
            'xv': 0.261,
            'yv': 0.966,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
@@ -227,13 +227,13 @@ for monster in monsters:
         monster['surface'].fill(monster['color'])
         # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Velocity - No-longer used
         monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction
-        monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
+        # monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
         # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Velocity - No-longer used
         monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction
-        monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
+        # monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
     # print(f"Monster speed: {monster['s']}")  # ----  DEBUG  ----
@@ -294,8 +294,8 @@ clock = pygame.time.Clock()
 #   * * * * * *    MAIN LOOP    * * * * * *
 #   * * * * * * * * * * * * * * * * * * * *
 while running:
-    delta_time = clock.tick(TICKRATE)  # Seconds elapsed for a single frame (example - 60 Frm/sec gives 0.017 sec/Frm)
-    # print(f"delta_time - duration of one frame - (milliseconds): {delta_time}")  # ----  DEBUG  ----
+    delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
+    # print(f"delta_time - duration of one frame - (seconds): {delta_time}")  # ----  DEBUG  ----
     # print(f"FPS - frames per second: {clock.get_fps()}")  # ----  DEBUG  ----
     # #### ####   EVENT LOOP    #### ####
     for event in pygame.event.get():
@@ -361,7 +361,11 @@ while running:
         # ***************************
         # WORKING ON THIS MYPY ERROR:
         # delta_vector = pygame.Vector2(monster['d'] * monster['s'])  # SEEN AS A tuple[float, float] - SAME
-        delta_vector = monster['d'] * monster['s']  # SEEN AS A tuple[float, float] - SAME
+
+        # * * * NEW - ADAPTING TO VARYING FRAME RATES FOR CONSTANT MOVEMENT, USING DELTA_TIME * * *
+        # delta_vector = monster['d'] * monster['s']  # SEEN AS A tuple[float, float] - SAME
+        delta_vector = monster['d'] * monster['s'] * delta_time
+
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
         #     variable has type "tuple[float, float]")  [assignment]
