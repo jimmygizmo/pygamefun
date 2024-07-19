@@ -34,8 +34,8 @@ Monster = TypedDict('Monster', {
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
         'color': str,  # Debug mode color of rectangle
-        'x': float,  # Initial position X value (SOON WILL NOT BE MAINTAINED. RECT WILL BECOME POSITION TRUTH)
-        'y': float,  # Initial position Y value (SOON WILL NOT BE MAINTAINED. RECT WILL BECOME POSITION TRUTH)
+        'x': float,  # Initial position X value
+        'y': float,  # Initial position Y value
         'v': pygame.math.Vector2,  # Velocity
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
@@ -43,8 +43,6 @@ Monster = TypedDict('Monster', {
         'r': float,  # Enviro: Rogue (speed)
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
-        'xv': float,  # Velocity X value (SOON MAY NOT BE MAINTAINED. 'd' and 's' MAY REPLACE)
-        'yv': float,  # Velocity Y value (SOON MAY NOT BE MAINTAINED. 'd' and 's' MAY REPLACE)
         'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
         'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
@@ -60,14 +58,12 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'x': 240.0,
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
-           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
            's': 100.0,
            'p': 100.0,
            'r': 100.0,
            'c': 350.0,
            'f': 2.0,
-           'xv': -0.624,
-           'yv': 0.782,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
@@ -80,14 +76,12 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'x': 240.0,
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
-           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
            's': 100.0,
            'p': 100.0,
            'r': 100.0,
            'c': 420.0,
            'f': 3.0,
-           'xv': 0.137,
-           'yv': -0.991,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
@@ -100,14 +94,12 @@ monster3: Monster = {'name': 'goldie',
            'x': 500.0,
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
-           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
            's': 141.0,
            'p': 160.0,
            'r': 880.0,
            'c': 1290.0,
            'f': 10.0,
-           'xv': 1.0,
-           'yv': 1.0,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
@@ -120,14 +112,12 @@ monster4: Monster = {'name': 'fishy',
            'x': 840.0,
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
-           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
            's': 80.0,
            'p': 90.0,
            'r': 100.0,
            'c': 700.0,
            'f': 2850.0,
-           'xv': -0.994,
-           'yv': -0.114,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
@@ -140,14 +130,12 @@ monster5: Monster = {'name': 'grumpy',
            'x': 780.0,
            'y': 300.0,
            'v': pygame.math.Vector2(),  # placeholder instance (mypy)
-           'd': pygame.math.Vector2(),  # placeholder instance (mypy)
+           'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
            's': 90.0,
            'p': 80.0,
            'r': 50.0,
            'c': 2170.0,
            'f': 40.0,
-           'xv': 0.261,
-           'yv': 0.966,
            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
@@ -225,18 +213,11 @@ for monster in monsters:
     if DEBUG:
         monster['surface'] = pygame.Surface((monster['w'], monster['h']))
         monster['surface'].fill(monster['color'])
-        # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Velocity - No-longer used
-        monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction
-        # monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
-        # monster['v'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Velocity - No-longer used
-        monster['d'] = pygame.math.Vector2(monster['xv'], monster['yv'])  # Direction
-        # monster['s'] = math.sqrt((monster['xv']**2 + monster['yv']**2))  # Speed CALCULATION
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
-    # print(f"Monster speed: {monster['s']}")  # ----  DEBUG  ----
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
@@ -307,7 +288,7 @@ while running:
         ephase = ENVIRO_PHASES[0]
         ephase_name = ephase[0]
         ephase_count = ephase[1]
-        print(f"EPHASE name: {ephase_name}    EPHASE count: {ephase_count}")
+        # print(f"EPHASE name: {ephase_name}    EPHASE count: {ephase_count}")  # ----  DEBUG  ----
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
         # print(f"ENVIRO_PHASES: {ENVIRO_PHASES}")  # ----  DEBUG  ----
@@ -323,12 +304,9 @@ while running:
             elif ephase_name == 'frozen':
                 monster['s'] = monster['f']
             else:
-                monster['s'] = 10.0  # Extremely fast, for debugging. A bad ephase name, causes extreme monster speed.
+                monster['s'] = 10000.0  # Extremely fast, for debugging. A bad ephase name, causes extreme monster speed.
 
         ephase_count -= 1  # Decrement the counter. TODO: SECONDS?? FRAMES??
-        # if ephase_count % 100 == 0:  # ----  DEBUG  ----
-        #     print(ephase_count)
-        # NOW CHECK IF ephase_count is 0 - IF 0: Make ephase = None, so we trigger loading of the next phase
         if ephase_count < 1:
             ephase = None
 
@@ -352,20 +330,12 @@ while running:
 
 
     # ################################################    PHYSICS    ###################################################
-    # Calculations for new object positions, collisions, velocity changes and update of related object state.
-    # CALCULATIONS FOR NEW POSITIONS, BOUNCING
 
     for monster in monsters:
-        # monster['x'] += monster['xv']  # NOTE: No-longer used for position
-        # monster['y'] += monster['yv']  # NOTE: No-longer used for position
         # ***************************
         # WORKING ON THIS MYPY ERROR:
         # delta_vector = pygame.Vector2(monster['d'] * monster['s'])  # SEEN AS A tuple[float, float] - SAME
-
-        # * * * NEW - ADAPTING TO VARYING FRAME RATES FOR CONSTANT MOVEMENT, USING DELTA_TIME * * *
-        # delta_vector = monster['d'] * monster['s']  # SEEN AS A tuple[float, float] - SAME
         delta_vector = monster['d'] * monster['s'] * delta_time
-
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
         #     variable has type "tuple[float, float]")  [assignment]
@@ -376,39 +346,23 @@ while running:
         if monster['rect'].left <= 0:
             monster['rect'].left = 0
             monster['d'].x *= -1
-            # monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
-            # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
             monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
             monster['rect'].right = SCREEN_WIDTH
             monster['d'].x *= -1
-            # monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
-            # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
             monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
             monster['rect'].top = 0
             monster['d'].y *= -1
-            # monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
-            # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
 
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT
             monster['d'].y *= -1
-            # monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
-            # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
 
 
 pygame.quit()
