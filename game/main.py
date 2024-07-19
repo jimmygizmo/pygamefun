@@ -375,36 +375,40 @@ while running:
         # Bounce off LEFT wall in X Axis
         if monster['rect'].left <= 0:
             monster['rect'].left = 0
-            monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
+            monster['d'].x *= -1
+            # monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
             # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
+            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
+            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
             monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
             monster['rect'].right = SCREEN_WIDTH
-            monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
+            monster['d'].x *= -1
+            # monster['xv'] = monster['xv'] * -1  # X component of Velocity (TRUTH xv)
             # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
+            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
+            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
             monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
             monster['rect'].top = 0
-            monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
+            monster['d'].y *= -1
+            # monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
             # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
+            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
+            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
 
         # Bounce off BOTTOM wall in Y Axis
         if monster['rect'].bottom >= SCREEN_HEIGHT:
             monster['rect'].bottom = SCREEN_HEIGHT
-            monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
+            monster['d'].y *= -1
+            # monster['yv'] = monster['yv'] * -1  # Y component of Velocity (TRUTH yv)
             # monster['v'].update(monster['xv'], monster['yv'])  # Velocity  # No-longer used.
-            monster['d'].update(monster['xv'], monster['yv'])  # Direction
-            monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
+            # monster['d'].update(monster['xv'], monster['yv'])  # Direction
+            # monster['s'] = math.sqrt((monster['xv'] ** 2 + monster['yv'] ** 2))  # Speed CALCULATION
 
 
 pygame.quit()
