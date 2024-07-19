@@ -23,7 +23,7 @@ ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left si
     [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
 )  # p, r, c, f
 # ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
-ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
+ACID_MODE = True  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
@@ -36,7 +36,6 @@ Monster = TypedDict('Monster', {
         'color': str,  # Debug mode color of rectangle
         'x': float,  # Initial position X value
         'y': float,  # Initial position Y value
-        'v': pygame.math.Vector2,  # Velocity
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
         'p': float,  # Enviro: Peace (speed)
@@ -57,7 +56,6 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'color': 'red1',
            'x': 240.0,
            'y': 300.0,
-           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
            's': 100.0,
            'p': 100.0,
@@ -75,7 +73,6 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'color': 'orangered',
            'x': 240.0,
            'y': 300.0,
-           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
            's': 100.0,
            'p': 100.0,
@@ -93,7 +90,6 @@ monster3: Monster = {'name': 'goldie',
            'color': 'gold',
            'x': 500.0,
            'y': 300.0,
-           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
            's': 141.0,
            'p': 160.0,
@@ -111,7 +107,6 @@ monster4: Monster = {'name': 'fishy',
            'color': 'darkgoldenrod1',
            'x': 840.0,
            'y': 300.0,
-           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
            's': 80.0,
            'p': 90.0,
@@ -129,7 +124,6 @@ monster5: Monster = {'name': 'grumpy',
            'color': 'blanchedalmond',
            'x': 780.0,
            'y': 300.0,
-           'v': pygame.math.Vector2(),  # placeholder instance (mypy)
            'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
            's': 90.0,
            'p': 80.0,
@@ -278,10 +272,22 @@ while running:
     delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
     # print(f"delta_time - duration of one frame - (seconds): {delta_time}")  # ----  DEBUG  ----
     # print(f"FPS - frames per second: {clock.get_fps()}")  # ----  DEBUG  ----
+
+
+    # ##################################################    INPUT    ###################################################
+    # pygame.key    pygame.mouse
+
+
     # #### ####   EVENT LOOP    #### ####
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+            if event.key == pygame.K_ESCAPE:
+                print("WOW - YOU WIN A PRIZE BECAUSE YOU PRESSED THE ESCAPE KEY ! ! ! ! !")
+
+
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
