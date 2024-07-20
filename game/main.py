@@ -21,7 +21,7 @@ ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 # List of tuples of the phase name and the phase duration in phase units (currently 1 second) TODO: Fix. FRAMES!!!!!
 ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left side of a list.
-    [('ppeace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
+    [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
 )  # p, r, c, f
 # ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
@@ -219,7 +219,6 @@ for monster in monsters:
 props = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        # We must create a NEW prop dictionary object each time, otherwise they would all be the same reference.
         prop: Prop = {'name': '',  # placeholder (mpypy)
                 'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
@@ -272,7 +271,6 @@ clock = pygame.time.Clock()
 while running:
     delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
     # print(f"delta_time - duration of one frame - (seconds): {delta_time}")  # ----  DEBUG  ----
-    # print(f"FPS - frames per second: {clock.get_fps()}")  # ----  DEBUG  ----
 
 
     # ##################################################    INPUT    ###################################################
@@ -289,27 +287,15 @@ while running:
                 print("WOW - YOU WIN A PRIZE BECAUSE YOU PRESSED THE ESCAPE KEY ! ! ! ! !")
 
 
-
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
         ephase = ENVIRO_PHASES[0]
         ephase_name = ephase[0]
         ephase_count = ephase[1]
-        # print(f"EPHASE name: {ephase_name}    EPHASE count: {ephase_count}")  # ----  DEBUG  ----
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
-        # print(f"ENVIRO_PHASES: {ENVIRO_PHASES}")  # ----  DEBUG  ----
     else:
         # APPLY THE EFFECTS HERE - MONSTERS CHANGE THEIR SPEEDS
-        # TODO: For a faster and maybe cleaner implementation, consider using the ephase name as the key of a OrderedDict?
-        #    Therw would be a few ways to code it. Makes for a neat general case study of CASE value lookup with a
-        #    fallthrough default/error case AND the need to process the lookups in a specified order .. or at least
-        #    to maintain and change the order of the key/value pairs to be used for some other feature/step.
-        #    Rotating the stack (of ordered K/V pairs) is like a separate feature, but the EXISTENCE check is nicely
-        #    and EFFICIENTLY accomplished with the dictionary (hash) capabilities. If this was in a performance-
-        #    critical loop or data quantity context then it would be worth trying out the 3 or 4 methods AT LEAST I
-        #    can see using the if-elif on our LIST of TUPLES, or OrderedDict or some other way. This is a neat little
-        #    area to explore as the patterns occur very often.
         for monster in monsters:
             if ephase_name == 'peace':
                 monster['s'] = monster['p']
@@ -320,8 +306,19 @@ while running:
             elif ephase_name == 'frozen':
                 monster['s'] = monster['f']
             else:
-                print(f"FATAL: Invalid ephase_name \"{ephase_name}\". Check values in ENVIRO_PHASES config. Exiting.")
-                sys.exit(1)
+                # print(f"FATAL: Invalid ephase_name \"{ephase_name}\". Check values in ENVIRO_PHASES config. Exiting.")
+                # sys.exit(1)
+                # Alternate handling of a fatal condition, by raising an Exception:
+                raise Exception(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
+                        "Check values in ENVIRO_PHASES config.")
+                # NOTE: Whether an exception MUST be fatal and how you specifically handle any kind of a sub-optimal
+                # condition is totally up to you as the developer. Part of this is an issue of the "user experience"
+                # and how you "communicate" with the user, as much as how you leverage the internal, Exception-
+                # handling features of your language, frameworks and platforms.
+                # The example you see here is not necessarily how I plan to handle this issue here in the final version.
+                # This is just an example. Both the "raise Exception" method AND the "print and sys.exit(1)" methods
+                # work great and they can work together in generalize exception-handling you may design into your
+                # application. Exception-handling in Python is a whole discipline unto itself and worth much study.
 
         ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
