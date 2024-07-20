@@ -6,6 +6,7 @@ from typing import TypedDict
 import os.path
 import random
 import collections
+import sys
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -20,10 +21,10 @@ ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 # List of tuples of the phase name and the phase duration in phase units (currently 1 second) TODO: Fix. FRAMES!!!!!
 ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left side of a list.
-    [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
+    [('ppeace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
 )  # p, r, c, f
 # ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
-ACID_MODE = True  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
+ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
@@ -300,6 +301,15 @@ while running:
         # print(f"ENVIRO_PHASES: {ENVIRO_PHASES}")  # ----  DEBUG  ----
     else:
         # APPLY THE EFFECTS HERE - MONSTERS CHANGE THEIR SPEEDS
+        # TODO: For a faster and maybe cleaner implementation, consider using the ephase name as the key of a OrderedDict?
+        #    Therw would be a few ways to code it. Makes for a neat general case study of CASE value lookup with a
+        #    fallthrough default/error case AND the need to process the lookups in a specified order .. or at least
+        #    to maintain and change the order of the key/value pairs to be used for some other feature/step.
+        #    Rotating the stack (of ordered K/V pairs) is like a separate feature, but the EXISTENCE check is nicely
+        #    and EFFICIENTLY accomplished with the dictionary (hash) capabilities. If this was in a performance-
+        #    critical loop or data quantity context then it would be worth trying out the 3 or 4 methods AT LEAST I
+        #    can see using the if-elif on our LIST of TUPLES, or OrderedDict or some other way. This is a neat little
+        #    area to explore as the patterns occur very often.
         for monster in monsters:
             if ephase_name == 'peace':
                 monster['s'] = monster['p']
@@ -310,9 +320,10 @@ while running:
             elif ephase_name == 'frozen':
                 monster['s'] = monster['f']
             else:
-                monster['s'] = 10000.0  # Extremely fast, for debugging. A bad ephase name, causes extreme monster speed.
+                print(f"FATAL: Invalid ephase_name \"{ephase_name}\". Check values in ENVIRO_PHASES config. Exiting.")
+                sys.exit(1)
 
-        ephase_count -= 1  # Decrement the counter. TODO: SECONDS?? FRAMES??
+        ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
             ephase = None
 
