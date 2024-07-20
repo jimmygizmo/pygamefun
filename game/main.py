@@ -6,7 +6,7 @@ from typing import TypedDict
 import os.path
 import random
 import collections
-import sys
+# import sys  # Temproarily not used, but I'm sure it will be. Was used for sys.exit(1) but now we raise Exception.
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -285,7 +285,19 @@ while running:
             print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
             if event.key == pygame.K_ESCAPE:
                 print("WOW - YOU WIN A PRIZE BECAUSE YOU PRESSED THE ESCAPE KEY ! ! ! ! !")
+        if event.type == pygame.KEYUP:
+            print(f"A key was let up. KEYUP.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+            if event.key == pygame.K_RETURN:
+                print("WOW - YOU WIN A PRIZE BECAUSE YOU LET UP THE RETURN/ENTER KEY ! ! ! ! !")
+        if event.type == pygame.MOUSEMOTION:
+            print(f"Mouse is moving.    Position: {event.pos}")
+            (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
 
+    # TODO: Idea for the next little input feature. Make the universe "freeze" by re-starting this main loop right here
+    #     when the mouse button is pressed. That will work well with the mouse positioning of the fish. Click-to-freeze.
+
+    # TODO: Next we will disable/remove the above example code for event loop input. Will use pygame.key, pygame.mouse
+    
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
@@ -306,19 +318,17 @@ while running:
             elif ephase_name == 'frozen':
                 monster['s'] = monster['f']
             else:
-                # print(f"FATAL: Invalid ephase_name \"{ephase_name}\". Check values in ENVIRO_PHASES config. Exiting.")
-                # sys.exit(1)
-                # Alternate handling of a fatal condition, by raising an Exception:
-                raise Exception(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
+                raise ValueError(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
                         "Check values in ENVIRO_PHASES config.")
-                # NOTE: Whether an exception MUST be fatal and how you specifically handle any kind of a sub-optimal
-                # condition is totally up to you as the developer. Part of this is an issue of the "user experience"
-                # and how you "communicate" with the user, as much as how you leverage the internal, Exception-
-                # handling features of your language, frameworks and platforms.
-                # The example you see here is not necessarily how I plan to handle this issue here in the final version.
-                # This is just an example. Both the "raise Exception" method AND the "print and sys.exit(1)" methods
-                # work great and they can work together in generalize exception-handling you may design into your
-                # application. Exception-handling in Python is a whole discipline unto itself and worth much study.
+            # TODO: This could -almost- be raised as a KeyError. Later, if we implement OrderedDict, it literally would
+            #     be a KeyError exception in the kind of processing I am envisioning.
+            #     (Currently we use a custom list-of-tuples strategy, but OrderedDict would make sense. The processing
+            #     code would be quite different of course and using a built-in KeyError, via a dict get() method
+            #     would be central to that different processing.
+            #
+            # NOTE: Another good option for the type of exception here could be ValueError. It means the type is correct
+            #     but the value is invalid. I have used these a lot in the past and they make sense, especially if you
+            #     need to distinguish from some other cases you may be lumping together under the generic Exception().
 
         ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
@@ -388,7 +398,18 @@ pygame.quit()
 
 # ###################################################    NOTES    ######################################################
 
+# GREAT page on Python Exceptions:
+# https://docs.python.org/3/library/exceptions.html
 
+# For those developing Python on Windows. Now with WSL/Ubuntu live all the time on my Windows 10/11 dev machines,
+# I am now just as happy as when using a Mac. Almost no difference. By the way, I heavily use IntelliJ IDEs like PyCharm.
+# So, on your Windows, you will want to install WSL:
+# https://learn.microsoft.com/en-us/windows/wsl/install
+
+# I'll add much more info on setting up the ultimate Windows Python/Full-Stack/Open-Source Developers Workstation.
+# I'll provide the same for Mac. Docker will be involved for some use-cases. There will be MUCH more info than just
+# the WSL link above. I work hard on fine-tuning the ultimate development environments, so you will want to check this
+# topic area out independently of this PyGame-CE project.
 
 
 ##
