@@ -289,7 +289,7 @@ while running:
         #     (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
 
         # Just stick the fish at the mouse pos, for now.      Now using pygame.mouse.get_pos()      (and not events)
-        (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()
+        # (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()  # Crude but works great.
 
         print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
 
@@ -302,7 +302,16 @@ while running:
         if keys[pygame.K_ESCAPE]:
             print(f"ESCAPE key pressed. Exiting game. Buh bye!")
             running = False
-
+        if keys[pygame.K_LEFT] and monsters[3]['d'].x > 0:
+            monsters[3]['d'].x = -1
+            monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
+        if keys[pygame.K_RIGHT] and monsters[3]['d'].x < 0:
+            monsters[3]['d'].x = 1
+            monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
+        if keys[pygame.K_UP]:
+            monsters[3]['d'].y = -1
+        if keys[pygame.K_DOWN]:
+            monsters[3]['d'].y = 1
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
