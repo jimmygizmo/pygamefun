@@ -1,0 +1,22 @@
+
+    # #### ####   EVENT LOOP    #### ####
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+            if event.key == pygame.K_ESCAPE:
+                print("WOW - YOU WIN A PRIZE BECAUSE YOU PRESSED THE ESCAPE KEY ! ! ! ! !")
+        if event.type == pygame.KEYUP:
+            print(f"A key was let up. KEYUP.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+            if event.key == pygame.K_RETURN:
+                print("WOW - YOU WIN A PRIZE BECAUSE YOU LET UP THE RETURN/ENTER KEY ! ! ! ! !")
+        if event.type == pygame.MOUSEMOTION:
+            print(f"Mouse is moving.    Position: {event.pos}")
+            (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
+
+    # TODO: Idea for the next little input feature. Make the universe "freeze" by re-starting this main loop right here
+    #     when the mouse button is pressed. That will work well with the mouse positioning of the fish. Click-to-freeze.
+
+    # TODO: Next we will disable/remove the above example code for event loop input. Will use pygame.key, pygame.mouse
+

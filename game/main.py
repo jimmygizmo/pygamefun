@@ -262,6 +262,7 @@ else:
 running = True
 ephase = None
 ephase_name = None
+keys = []  # Why declared here? For some rare edge-cases it MIGHT be needed for and, before loop is a common place.
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
@@ -281,23 +282,27 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
-            print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
-            if event.key == pygame.K_ESCAPE:
-                print("WOW - YOU WIN A PRIZE BECAUSE YOU PRESSED THE ESCAPE KEY ! ! ! ! !")
-        if event.type == pygame.KEYUP:
-            print(f"A key was let up. KEYUP.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
-            if event.key == pygame.K_RETURN:
-                print("WOW - YOU WIN A PRIZE BECAUSE YOU LET UP THE RETURN/ENTER KEY ! ! ! ! !")
-        if event.type == pygame.MOUSEMOTION:
-            print(f"Mouse is moving.    Position: {event.pos}")
-            (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
+        # if event.type == pygame.KEYDOWN:
+        #     print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+        # if event.type == pygame.MOUSEMOTION:
+        #     print(f"Mouse is moving.    Position: {event.pos}")
+        #     (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
 
-    # TODO: Idea for the next little input feature. Make the universe "freeze" by re-starting this main loop right here
-    #     when the mouse button is pressed. That will work well with the mouse positioning of the fish. Click-to-freeze.
+        # Just stick the fish at the mouse pos, for now.      Now using pygame.mouse.get_pos()      (and not events)
+        (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()
 
-    # TODO: Next we will disable/remove the above example code for event loop input. Will use pygame.key, pygame.mouse
-    
+        print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
+
+        print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
+
+        # It's important to use the following list properly.
+        keys = pygame.key.get_pressed()
+        # print(f"Returns a HUGE list of all keys, bool values: pygame.key.get_pressed: {keys}")
+        # This is how you are supposed to use this list, via the K_ constants (which hold the int index position of the key in this list)
+        if keys[pygame.K_ESCAPE]:
+            print(f"ESCAPE key pressed. Exiting game. Buh bye!")
+            running = False
+
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
