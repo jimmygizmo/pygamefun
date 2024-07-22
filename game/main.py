@@ -32,6 +32,7 @@ ACID_MODE = False  # Suppress background re-painting. This makes objects leave p
 Monster = TypedDict('Monster', {
         'name': str,  # Monster short name
         'img': str,  # Filename of PNG (with transparency)
+        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
         'color': str,  # Debug mode color of rectangle
@@ -44,6 +45,7 @@ Monster = TypedDict('Monster', {
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
         'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
+        'surface_r': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more  (RIGHT direction)
         'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
@@ -52,6 +54,7 @@ monsters = []
 
 monster1: Monster = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
+           'flip': False,
            'w': 66,
            'h': 64,
            'color': 'red1',
@@ -63,12 +66,14 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'r': 100.0,
            'c': 350.0,
            'f': 2.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster1)
 monster2: Monster = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
+           'flip': True,
            'w': 66,
            'h': 64,
            'color': 'orangered',
@@ -80,12 +85,14 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'r': 100.0,
            'c': 420.0,
            'f': 3.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster2)
 monster3: Monster = {'name': 'goldie',
            'img': 'gold-retriever-160x142.png',
+           'flip': True,
            'w': 160,
            'h': 142,
            'color': 'gold',
@@ -97,12 +104,14 @@ monster3: Monster = {'name': 'goldie',
            'r': 880.0,
            'c': 1290.0,
            'f': 10.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster3)
 monster4: Monster = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
+           'flip': False,
            'w': 280,
            'h': 220,
            'color': 'darkgoldenrod1',
@@ -114,12 +123,14 @@ monster4: Monster = {'name': 'fishy',
            'r': 100.0,
            'c': 700.0,
            'f': 2850.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster4)
 monster5: Monster = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
+           'flip': True,
            'w': 110,
            'h': 120,
            'color': 'blanchedalmond',
@@ -131,7 +142,8 @@ monster5: Monster = {'name': 'grumpy',
            'r': 50.0,
            'c': 2170.0,
            'f': 40.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 monsters.append(monster5)
@@ -211,6 +223,10 @@ for monster in monsters:
     else:
         imgpath = os.path.join(ASSET_PATH, monster['img'])
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
+        if monster['flip']:
+            monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
+        # Generate the RIGHT-facing surface
+        monster['surface_r'] = pygame.transform.flip(monster['surface'], True, False)
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
 
@@ -368,6 +384,23 @@ while running:
         # a tight real-time loop in a performance-critical app. There is a reason we are experimenting and fully
         # exploring different strategies and considering all aspects, including future performance concerns.
 
+        # THE NEXT DAY. I stepped back from the flipping problem above and I think it is something that needs to
+        # occur during the draw phase. We could say this: First we determine motion and physics and the new state of it,
+        # partially based on input, and then we have all the data we need to draw. So, the flipped status of the sprite,
+        # which is the direction it is pointing (currently only considering the horizontal) is a matter of drawing
+        # correctly. So bottom line is we handle it in the drawing phase. Let's move all that there and see if we can
+        # also come up with a better way of detecting direction change or even better .. simply prepare the two needed
+        # sprites and then based on the current direction, simply paint the correct surface. This is almost certainly
+        # much more efficient than repeatedly performing the flipping operation.
+        # TODO: 1. Move flipping to draw phase. 2. Pre-prepare the flipped surface so you have both. 3 Improve logic
+        #    and/or simply paint the correct surface rather than flipping a single one.  4. To allow initial sprites
+        #    to face either left or right, but to require the standard that the initial loaded sprite face LEFT,
+        #    provide a flag to trigger flipping of the sprite upon initial image load. When used, the new flipped
+        #    (flipped again) image for the RIGHT direction will then be correct. This saves the need to use an image
+        #    editing program to do this, although one is likely being used anyhow in order to get good custom sprites.
+        #    Nonethless this is a good feature and this overall design pattern is looking excellent, prior to
+        #    implementation.
+
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
     if ephase is None:
@@ -417,7 +450,11 @@ while running:
 
     # DRAW MONSTERS
     for monster in monsters:
-        display_surface.blit(monster['surface'], monster['rect'])
+        if monster['d'].x <= 0:
+            display_surface.blit(monster['surface'], monster['rect'])  # LEFT-facing
+        else:
+            display_surface.blit(monster['surface_r'], monster['rect'])  # RIGHT-facing
+
 
     # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
@@ -440,13 +477,17 @@ while running:
         if monster['rect'].left <= 0:
             monster['rect'].left = 0
             monster['d'].x *= -1
-            monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
+            # Now the drawing phase automatically handles the direction to fact, LEFT vs. RIGHT.
+            # This is no-longer needed:
+            # monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
             monster['rect'].right = SCREEN_WIDTH
             monster['d'].x *= -1
-            monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
+            # Now the drawing phase automatically handles the direction to fact, LEFT vs. RIGHT.
+            # This is no-longer needed:
+            # monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
@@ -480,6 +521,10 @@ pygame.quit()
 # I'll provide the same for Mac. Docker will be involved for some use-cases. There will be MUCH more info than just
 # the WSL link above. I work hard on fine-tuning the ultimate development environments, so you will want to check this
 # topic area out independently of this PyGame-CE project.
+
+
+# Interesting input handling - found via stackexchange:
+# https://github.com/rik-cross/pygamepal/blob/main/src/pygamepal/input.py
 
 
 ##
