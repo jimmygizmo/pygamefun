@@ -306,100 +306,21 @@ while running:
 
         # Just stick the fish at the mouse pos, for now.      Now using pygame.mouse.get_pos()      (and not events)
         # (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()  # Crude but works great.
-
         # print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
-
         # print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
 
         # It's important to use the following list properly.
         keys = pygame.key.get_pressed()
         last_direction_x = monsters[3]['d'].x
 
-
-        # print(f"Returns a HUGE list of all keys, bool values: pygame.key.get_pressed: {keys}")
-        # This is how you are supposed to use this list, via the K_ constants (which hold the int index position of the key in this list)
-        # if keys[pygame.K_ESCAPE]:
-        #     print(f"ESCAPE key pressed. Exiting game. Buh bye!")
-        #     running = False
-        # if keys[pygame.K_LEFT] and monsters[3]['d'].x > 0:
-        #     monsters[3]['d'].x = -1
-        #     monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
-        # if keys[pygame.K_RIGHT] and monsters[3]['d'].x < 0:
-        #     monsters[3]['d'].x = 1
-        #     monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
-        # if keys[pygame.K_UP]:
-        #     monsters[3]['d'].y = -1
-        # if keys[pygame.K_DOWN]:
-        #     monsters[3]['d'].y = 1
-
-        # Another interesting alternate control method:
+        # Primary (somewhat "cute") input control method. Prior to this I used an if-else cascade which is also good.
         monsters[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
         # To understand this, note that int(True) = 1 and int(False) = 0 and keys[] are bools. 1-0 = 1, 0-1 = -1. Bingo!
         # Now for the vertical direction
         monsters[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
-        # To illustrate the diagonal speed-differential we will fix next:
-        # print(f"Velocity magnitude = Linear speed forward: {(monsters[3]['d'] * monsters[3]['s']).magnitude()}")
-        # NOTE: Just referencing Vector2.magnitude will not work. It is a method. Do: mag = Vector2.magnitude()
-
-        # We must NORMALIZE the direction vector
-        # TODO: The IF logic may not be correct for our code. Confirm with video tutorial at 1:49:41 approx.
-        #     The if-else here stems from the idea that you cannot call normalize() when (x, y) = (0, 0).
-        #     TODO: Confirm that initial premise, then look closer at the if-else logic. The way I chose to initialize
-        #     direction may be different from the video and therefore might require different logic here for edge case.
-        # UPDATE: Maybe better to say "cannot normalize a vector of length 0".
-        # IN PYGAME: Only a Vector2(0, 0) can be FALSE. ALL OTHER Vector 2 values other than (0, 0) are TRUE.
+        # We must NORMALIZE the direction vector and cannot do this when it has a length of 0, hence the check:
         monsters[3]['d'] = monsters[3]['d'].normalize() if monsters[3]['d'] else monsters[3]['d']
-        # That all pretty much confirms and clarifys how this works. We just need to confirm our initialization.
-        # It is looking like the if-else will stay as is.
-
-        # print(f"FIXED: Linear speed forward: {(monsters[3]['d'] * monsters[3]['s']).magnitude()}")
-        # You can see it is fixed. The 40% speed boost when going diagonally no longer occurs. Cool.
-
-        # Now we can FLIP the SPRITE - IF THE SIGN OF THE X DIRECTION HAS CHANGED FROM BEFORE THE INPUT.
-        # TODO: This solution seems imperfect. I'm almost sure there is are some bouncing/other edge-cases this
-        #     does not handle in the current design, but this is a start:
-        multiplied_directions = monsters[3]['d'].x * last_direction_x
-        print(f"multiplied: {multiplied_directions}    dir: {monsters[3]['d'].x}    last_dir: {last_direction_x}")  # ----  DEBUG  ----
-        # if multiplied_directions < 0:  # Then they have different signs and X direction has changed, so FLIP.
-        #     monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
-        # UPDATE: Hardly works.
-        #     It flips --occasionally--. So this is a very buggy implementation and needs work.
-        # POSSIBLE PROBLEM, -0.0 is not detected. So we will modify the if. Example:
-        # multiplied: -0.0    dir: 0.0    last_dir: -1.0
-        # Trying to fix this by just flipping the logic of the if because then we don't even consider 0.0 OR -0.0.
-        # Like this (as opposed to above, commented out):
-        if not (multiplied_directions > 0):  # Then they have different signs and X direction has changed, so FLIP.
-            monsters[3]['surface'] = pygame.transform.flip(monsters[3]['surface'], True, False)
-        # Lol, this is a funny series of bugs centering around the needed logic here. NOW, it flips a lot BUT
-        # only gets the direction right about 1 out of 3 or 4 times. It flips frantically and rarely ends up in the
-        # correct directions, SO clearly we are on the WRONG path with how we are multiplying to detect changed in
-        # direction. Now it is time to step back a little from that quick first attempt and think more about a good
-        # solution.
-        # Perhaps, our original if-else input processing was in-fact better.
-        # One reason we are in this situation with flipping is because we are using the "cute/efficient" input
-        # processing   int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT]).
-        # Maybe we should not use that and go back to the more traditional if-else.
-        # The performance impacts need to be considerd. These are most certainly performance-critical areas inside
-        # a tight real-time loop in a performance-critical app. There is a reason we are experimenting and fully
-        # exploring different strategies and considering all aspects, including future performance concerns.
-
-        # THE NEXT DAY. I stepped back from the flipping problem above and I think it is something that needs to
-        # occur during the draw phase. We could say this: First we determine motion and physics and the new state of it,
-        # partially based on input, and then we have all the data we need to draw. So, the flipped status of the sprite,
-        # which is the direction it is pointing (currently only considering the horizontal) is a matter of drawing
-        # correctly. So bottom line is we handle it in the drawing phase. Let's move all that there and see if we can
-        # also come up with a better way of detecting direction change or even better .. simply prepare the two needed
-        # sprites and then based on the current direction, simply paint the correct surface. This is almost certainly
-        # much more efficient than repeatedly performing the flipping operation.
-        # TODO: 1. Move flipping to draw phase. 2. Pre-prepare the flipped surface so you have both. 3 Improve logic
-        #    and/or simply paint the correct surface rather than flipping a single one.  4. To allow initial sprites
-        #    to face either left or right, but to require the standard that the initial loaded sprite face LEFT,
-        #    provide a flag to trigger flipping of the sprite upon initial image load. When used, the new flipped
-        #    (flipped again) image for the RIGHT direction will then be correct. This saves the need to use an image
-        #    editing program to do this, although one is likely being used anyhow in order to get good custom sprites.
-        #    Nonethless this is a good feature and this overall design pattern is looking excellent, prior to
-        #    implementation.
 
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
@@ -423,15 +344,6 @@ while running:
             else:
                 raise ValueError(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
                         "Check values in ENVIRO_PHASES config.")
-            # TODO: This could -almost- be raised as a KeyError. Later, if we implement OrderedDict, it literally would
-            #     be a KeyError exception in the kind of processing I am envisioning.
-            #     (Currently we use a custom list-of-tuples strategy, but OrderedDict would make sense. The processing
-            #     code would be quite different of course and using a built-in KeyError, via a dict get() method
-            #     would be central to that different processing.
-            #
-            # NOTE: Another good option for the type of exception here could be ValueError. It means the type is correct
-            #     but the value is invalid. I have used these a lot in the past and they make sense, especially if you
-            #     need to distinguish from some other cases you may be lumping together under the generic Exception().
 
         ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
@@ -477,17 +389,11 @@ while running:
         if monster['rect'].left <= 0:
             monster['rect'].left = 0
             monster['d'].x *= -1
-            # Now the drawing phase automatically handles the direction to fact, LEFT vs. RIGHT.
-            # This is no-longer needed:
-            # monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off RIGHT wall in X Axis
         if monster['rect'].right >= SCREEN_WIDTH:
             monster['rect'].right = SCREEN_WIDTH
             monster['d'].x *= -1
-            # Now the drawing phase automatically handles the direction to fact, LEFT vs. RIGHT.
-            # This is no-longer needed:
-            # monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
 
         # Bounce off TOP wall in Y Axis
         if monster['rect'].top <= 0:
