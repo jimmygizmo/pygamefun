@@ -207,6 +207,40 @@ Prop = TypedDict('Prop', {
         })
 
 
+# #############################################    CLASS DEFINITIONS    ################################################
+
+# Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, player_spec: Monster):
+        super().__init__()
+        self.player_spec: Monster = player_spec
+        self.image: pygame.Surface = pygame.Surface((0, 0))
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
+        self.rect: pygame.FRect = pygame.FRect()
+
+        if DEBUG:
+            self.image = pygame.Surface((self.player_spec['w'], self.player_spec['h']))
+            self.image.fill(self.player_spec['color'])
+        else:
+            self.imgpath: str = os.path.join(ASSET_PATH, self.player_spec['img'])  # Var added for clarity. Don't need.
+            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            if self.player_spec['flip']:
+                self.image = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface
+        self.image_r = pygame.transform.flip(self.image, True, False)
+
+        self.rect = self.image.get_frect(center=(self.player_spec['x'], self.player_spec['y']))
+
+
+
+
+
+
+
+
+
+
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
@@ -214,6 +248,10 @@ pygame.init()
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
+
+# Test class usage
+test_instance_of_player_class = Player(monsters[3])
+
 
 # INITIALIZE MONSTERS
 for monster in monsters:
@@ -225,8 +263,8 @@ for monster in monsters:
         monster['surface'] = pygame.image.load(imgpath).convert_alpha()
         if monster['flip']:
             monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
-        # Generate the RIGHT-facing surface
-        monster['surface_r'] = pygame.transform.flip(monster['surface'], True, False)
+    # Generate the RIGHT-facing surface
+    monster['surface_r'] = pygame.transform.flip(monster['surface'], True, False)
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
 
@@ -312,14 +350,13 @@ while running:
         # print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
         # print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
 
-        # keys = pygame.key.get_pressed()
-        keys = pygame.key.get_just_pressed()  # Still not perfect, when trying to limit repeated key presses.
+        keys = pygame.key.get_pressed()  # For now, until we re-architect movement control, get_pressed() works best.
+        # keys = pygame.key.get_just_pressed()  # Still not perfect, when trying to limit repeated key presses.?
         # TODO: We will use timers to make the single-press capture work. We'll do this later.
         #     Currently get_just_pressed() is giving us TWO key presses each time, maybe three. Not what we want.
         # UPDATE - PROBLEM: Introduced a problem where we often miss double key-presses where I go diagonal, LEFT+UP for
         #     example. This makes sense. It is not a perfect mechanism. Getting 2 missiles fired and messing up our
         #     use of simultaneous key controls for diagonal etc. SO, Handling key presses NEEDS WORK!
-        last_direction_x = monsters[3]['d'].x
 
         # Primary (somewhat "cute") input control method. Prior to this I used an if-else cascade which is also good.
         monsters[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
