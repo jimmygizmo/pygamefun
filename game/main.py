@@ -26,6 +26,20 @@ ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left si
 # ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
+LEGACY_MODE = True  # To be used during transition to using Classes/Sprites. Can be removed after transition.
+# When false, disables major code blocks as the equivalent OO code is introduced. Allows quick debugging/comparison/fallback.
+# Stuff like this would likely never make it into production but is extremely powerful during the more serious coding work.
+# Maybe you are porting a Python 2 app to Python 3 or re-writing a spagetti-code procedural mess into a new OOP app
+# while keeping it running with the original code nearby (such as for complex caclulation apps for finance or banking).
+# Think of a tool/feature like this as being similar to the scaffolding or backup generator that is part of a major
+# remodel. Things you put in place "during construction" to enable the work while also keeping the building functional
+# during the transition with the ability to occasionally switch between new and old systems/features smoothly.
+# Imagine replacing legacy telephone wires for a whole region. One would certainly keep them in place while building
+# some, most or all of the new infrastructure. One would also temporarily need special adapter/cutover stations where
+# portions of communications could be cut over to the new infrastrucure and also cut back, for testing and in the event
+# of unexpected circumstances. If you plan ahead for needs/features such as these and take the little bit of extra time
+# to build them in from the start of the project, you WILL save huge amounts of time and whill have much more control
+# over the accuracy and success of your project. Don't let the non-technical, middle-manager types tell you differently.
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
 # TypeDict for MONSTER
@@ -219,7 +233,9 @@ class Player(pygame.sprite.Sprite):
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
 
-        if DEBUG:
+        if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.
+            # Good apps/systems have good debug and logging features like this built in, but watch performance impact.
+            # Performance hits are the only real downside. Complexity is outweighed by code testability and real-time manageability benefits.
             self.image = pygame.Surface((self.player_spec['w'], self.player_spec['h']))
             self.image.fill(self.player_spec['color'])
         else:
@@ -339,41 +355,20 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        # if event.type == pygame.KEYDOWN:
-        #     print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
-        # if event.type == pygame.MOUSEMOTION:
-        #     print(f"Mouse is moving.    Position: {event.pos}")
-        #     (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
 
-        # Just stick the fish at the mouse pos, for now.      Now using pygame.mouse.get_pos()      (and not events)
-        # (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()  # Crude but works great.
-        # print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
-        # print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
+    # BUG FIX NOTE: When I added this LEGACY_MODE if-switch, I also moved this OUT of the event loop.
+    # This was a non-obvious indentation bug. All my code comments actually made it hard to see, hence why I
+    # frequently clean up my code comments and move them in to notes files for possible use in documentation later.
+    # This never should have been inside the event loop. It was not a horrible bug and only caused some weird
+    # edge-case behavior with bouncing while holding down keys etc. Anyhow, fixing it did change behavior when
+    # input-controlled player hits a wall. No big deal. Code is more correct now and all this will be changing soon.
+    if LEGACY_MODE:
+        keys = pygame.key.get_pressed()
 
-        keys = pygame.key.get_pressed()  # For now, until we re-architect movement control, get_pressed() works best.
-        # keys = pygame.key.get_just_pressed()  # Still not perfect, when trying to limit repeated key presses.?
-        # TODO: We will use timers to make the single-press capture work. We'll do this later.
-        #     Currently get_just_pressed() is giving us TWO key presses each time, maybe three. Not what we want.
-        # UPDATE - PROBLEM: Introduced a problem where we often miss double key-presses where I go diagonal, LEFT+UP for
-        #     example. This makes sense. It is not a perfect mechanism. Getting 2 missiles fired and messing up our
-        #     use of simultaneous key controls for diagonal etc. SO, Handling key presses NEEDS WORK!
-
-        # Primary (somewhat "cute") input control method. Prior to this I used an if-else cascade which is also good.
         monsters[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-        # To understand this, note that int(True) = 1 and int(False) = 0 and keys[] are bools. 1-0 = 1, 0-1 = -1. Bingo!
-        # Now for the vertical direction
         monsters[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
-        # We must NORMALIZE the direction vector and cannot do this when it has a length of 0, hence the truth check.
-        # Only one Vector2 can be Falsy and that is (0, 0) with all else being Truthy.
         monsters[3]['d'] = monsters[3]['d'].normalize() if monsters[3]['d'] else monsters[3]['d']
-        # I do like one-line if-else structures like this. Very nice for situations like this, especially when the true
-        # case predominates and occurs much more frequently than the false case. Then the context matches how you
-        # encounter it and read it very nicely. And hey, it's nice and compact as well as elegant.
-        # In some special cases it can read/look weird and I would say that it does not work as well when the action
-        # in the first part is more of a rare occurance. For rare occurances, I think it might be better to use multi-
-        # lines. It all depends. If you had a a LOT of these, then regardless of the frequency, it might work very very
-        # nicely to have to many checks done on one line in one place. It's a clear & tidy pattern for many situations.
 
         if keys[pygame.K_SPACE]:
             # print('fire laser')

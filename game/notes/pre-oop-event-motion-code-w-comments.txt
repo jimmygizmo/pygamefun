@@ -1,0 +1,45 @@
+
+    # #### ####   EVENT LOOP    #### ####
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        # if event.type == pygame.KEYDOWN:
+        #     print(f"A key was depressed. Unknown if released or how long pressed.    KEY #: {event.key}    KEY unicode character: {event.unicode}")
+        # if event.type == pygame.MOUSEMOTION:
+        #     print(f"Mouse is moving.    Position: {event.pos}")
+        #     (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = event.pos  # Just stick the fish at the mouse pos, for now.
+
+        # Just stick the fish at the mouse pos, for now.      Now using pygame.mouse.get_pos()      (and not events)
+        # (monsters[3]['rect'].centerx, monsters[3]['rect'].centery) = pygame.mouse.get_pos()  # Crude but works great.
+        # print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
+        # print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
+
+        keys = pygame.key.get_pressed()  # For now, until we re-architect movement control, get_pressed() works best.
+        # keys = pygame.key.get_just_pressed()  # Still not perfect, when trying to limit repeated key presses.?
+        # TODO: We will use timers to make the single-press capture work. We'll do this later.
+        #     Currently get_just_pressed() is giving us TWO key presses each time, maybe three. Not what we want.
+        # UPDATE - PROBLEM: Introduced a problem where we often miss double key-presses where I go diagonal, LEFT+UP for
+        #     example. This makes sense. It is not a perfect mechanism. Getting 2 missiles fired and messing up our
+        #     use of simultaneous key controls for diagonal etc. SO, Handling key presses NEEDS WORK!
+
+        # Primary (somewhat "cute") input control method. Prior to this I used an if-else cascade which is also good.
+        monsters[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        # To understand this, note that int(True) = 1 and int(False) = 0 and keys[] are bools. 1-0 = 1, 0-1 = -1. Bingo!
+        # Now for the vertical direction
+        monsters[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+
+        # We must NORMALIZE the direction vector and cannot do this when it has a length of 0, hence the truth check.
+        # Only one Vector2 can be Falsy and that is (0, 0) with all else being Truthy.
+        monsters[3]['d'] = monsters[3]['d'].normalize() if monsters[3]['d'] else monsters[3]['d']
+        # I do like one-line if-else structures like this. Very nice for situations like this, especially when the true
+        # case predominates and occurs much more frequently than the false case. Then the context matches how you
+        # encounter it and read it very nicely. And hey, it's nice and compact as well as elegant.
+        # In some special cases it can read/look weird and I would say that it does not work as well when the action
+        # in the first part is more of a rare occurance. For rare occurances, I think it might be better to use multi-
+        # lines. It all depends. If you had a a LOT of these, then regardless of the frequency, it might work very very
+        # nicely to have to many checks done on one line in one place. It's a clear & tidy pattern for many situations.
+
+        if keys[pygame.K_SPACE]:
+            # print('fire laser')
+            pass
+
