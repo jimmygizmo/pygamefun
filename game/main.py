@@ -225,7 +225,7 @@ Prop = TypedDict('Prop', {
 
 # Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
 
-class Player(pygame.sprite.Sprite):
+class MonsterClass(pygame.sprite.Sprite):
     def __init__(self, player_spec: Monster):
         super().__init__()
         self.player_spec: Monster = player_spec
@@ -266,10 +266,10 @@ display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
 # Test class usage
-test_instance_of_player_class = Player(monsters[3])
+test_instance_of_player_class = MonsterClass(monsters[3])
 
 
-# INITIALIZE MONSTERS
+# INITIALIZE MONSTERS - LEGACY (not OOP)
 for monster in monsters:
     if DEBUG:
         monster['surface'] = pygame.Surface((monster['w'], monster['h']))
@@ -283,6 +283,18 @@ for monster in monsters:
     monster['surface_r'] = pygame.transform.flip(monster['surface'], True, False)
 
     monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
+
+
+
+
+# INSTANTIATE MONSTERS - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
+mons = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
+for i, monster_spec in enumerate(monsters):
+    monster_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, monster_spec['img'])
+    mon = MonsterClass(monster_spec)
+    mons.append(mon)
+
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
