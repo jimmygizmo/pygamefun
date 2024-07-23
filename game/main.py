@@ -278,7 +278,10 @@ else:
 running = True
 ephase = None
 ephase_name = None
-keys = []  # Why declared here? For some rare edge-cases it MIGHT be needed for and, before loop is a common place.
+
+keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # All this required to satisfy strict typing of MyPy.
+# Originally the above was simply keys = [], which we dont even necessarily need here, but this var MIGHT be good to be available at this scope or at the start of the loop before being freshly re-populated. (Last-keys analysis of change etc.)
+
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
@@ -309,8 +312,13 @@ while running:
         # print(f"Mouse buttons pressed: {pygame.mouse.get_pressed()}")  # Returns (bool, bool, bool) for the 3 buttons.
         # print(f"Mouse relative speed: {pygame.mouse.get_rel()}")
 
-        # It's important to use the following list properly.
-        keys = pygame.key.get_pressed()
+        # keys = pygame.key.get_pressed()
+        keys = pygame.key.get_just_pressed()  # Still not perfect, when trying to limit repeated key presses.
+        # TODO: We will use timers to make the single-press capture work. We'll do this later.
+        #     Currently get_just_pressed() is giving us TWO key presses each time, maybe three. Not what we want.
+        # UPDATE - PROBLEM: Introduced a problem where we often miss double key-presses where I go diagonal, LEFT+UP for
+        #     example. This makes sense. It is not a perfect mechanism. Getting 2 missiles fired and messing up our
+        #     use of simultaneous key controls for diagonal etc. SO, Handling key presses NEEDS WORK!
         last_direction_x = monsters[3]['d'].x
 
         # Primary (somewhat "cute") input control method. Prior to this I used an if-else cascade which is also good.
@@ -319,8 +327,20 @@ while running:
         # Now for the vertical direction
         monsters[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
-        # We must NORMALIZE the direction vector and cannot do this when it has a length of 0, hence the check:
+        # We must NORMALIZE the direction vector and cannot do this when it has a length of 0, hence the truth check.
+        # Only one Vector2 can be Falsy and that is (0, 0) with all else being Truthy.
         monsters[3]['d'] = monsters[3]['d'].normalize() if monsters[3]['d'] else monsters[3]['d']
+        # I do like one-line if-else structures like this. Very nice for situations like this, especially when the true
+        # case predominates and occurs much more frequently than the false case. Then the context matches how you
+        # encounter it and read it very nicely. And hey, it's nice and compact as well as elegant.
+        # In some special cases it can read/look weird and I would say that it does not work as well when the action
+        # in the first part is more of a rare occurance. For rare occurances, I think it might be better to use multi-
+        # lines. It all depends. If you had a a LOT of these, then regardless of the frequency, it might work very very
+        # nicely to have to many checks done on one line in one place. It's a clear & tidy pattern for many situations.
+
+        if keys[pygame.K_SPACE]:
+            # print('fire laser')
+            pass
 
 
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
