@@ -6,7 +6,6 @@ from typing import TypedDict
 import os.path
 import random
 import collections
-# import sys  # Temproarily not used, but I'm sure it will be. Was used for sys.exit(1) but now we raise Exception.
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -42,9 +41,12 @@ LEGACY_MODE = True  # To be used during transition to using Classes/Sprites. Can
 # over the accuracy and success of your project. Don't let the non-technical, middle-manager types tell you differently.
 
 # Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
-# TypeDict for MONSTER
-Monster = TypedDict('Monster', {
-        'name': str,  # Monster short name
+# TypeDict for ENTITY    (The term entity_spec and EntitySpec are still being used for legacy code. In transition.)
+# Legacy code maintains truth within EntitySpec objects. The new OOP code will maintain all truth in the Entity instances.
+# When that transition is complete, then EntitySpec objects will truly be just specs for creating new instancs and will
+# no longer maintain runtime state. This was always the plan to transition from early procedural code into OOP/classes/sprites.
+EntitySpec = TypedDict('EntitySpec', {
+        'name': str,  # Entity short name
         'img': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
@@ -63,10 +65,10 @@ Monster = TypedDict('Monster', {
         'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
-# MONSTER DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
-monsters = []
+# ENTITY DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
+entity_specs = []
 
-monster1: Monster = {'name': 'red-flower-floaty',
+entity1: EntitySpec = {'name': 'red-flower-floaty',
            'img':  'red-flower-66x64.png',
            'flip': False,
            'w': 66,
@@ -84,8 +86,8 @@ monster1: Monster = {'name': 'red-flower-floaty',
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-monsters.append(monster1)
-monster2: Monster = {'name': 'red-flower-drifty',
+entity_specs.append(entity1)
+entity2: EntitySpec = {'name': 'red-flower-drifty',
            'img':  'red-flower-66x64.png',
            'flip': True,
            'w': 66,
@@ -103,8 +105,8 @@ monster2: Monster = {'name': 'red-flower-drifty',
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-monsters.append(monster2)
-monster3: Monster = {'name': 'goldie',
+entity_specs.append(entity2)
+entity3: EntitySpec = {'name': 'goldie',
            'img': 'gold-retriever-160x142.png',
            'flip': True,
            'w': 160,
@@ -122,8 +124,8 @@ monster3: Monster = {'name': 'goldie',
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-monsters.append(monster3)
-monster4: Monster = {'name': 'fishy',
+entity_specs.append(entity3)
+entity4: EntitySpec = {'name': 'fishy',
            'img':  'goldfish-280x220.png',
            'flip': False,
            'w': 280,
@@ -141,8 +143,8 @@ monster4: Monster = {'name': 'fishy',
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-monsters.append(monster4)
-monster5: Monster = {'name': 'grumpy',
+entity_specs.append(entity4)
+entity5: EntitySpec = {'name': 'grumpy',
            'img':  'grumpy-cat-110x120.png',
            'flip': True,
            'w': 110,
@@ -160,7 +162,7 @@ monster5: Monster = {'name': 'grumpy',
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-monsters.append(monster5)
+entity_specs.append(entity5)
 
 
 # TypedDict for PROP_TEMPLATE
@@ -225,10 +227,10 @@ Prop = TypedDict('Prop', {
 
 # Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
 
-class MonsterClass(pygame.sprite.Sprite):
-    def __init__(self, player_spec: Monster):
-        super().__init__()
-        self.player_spec: Monster = player_spec
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, groups, entity_spec: EntitySpec):
+        super().__init__(groups)
+        self.entity_spec: EntitySpec = entity_spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
@@ -236,17 +238,17 @@ class MonsterClass(pygame.sprite.Sprite):
         if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.
             # Good apps/systems have good debug and logging features like this built in, but watch performance impact.
             # Performance hits are the only real downside. Complexity is outweighed by code testability and real-time manageability benefits.
-            self.image = pygame.Surface((self.player_spec['w'], self.player_spec['h']))
-            self.image.fill(self.player_spec['color'])
+            self.image = pygame.Surface((self.entity_spec['w'], self.entity_spec['h']))
+            self.image.fill(self.entity_spec['color'])
         else:
-            self.imgpath: str = os.path.join(ASSET_PATH, self.player_spec['img'])  # Var added for clarity. Don't need.
+            self.imgpath: str = os.path.join(ASSET_PATH, self.entity_spec['img'])  # Var added for clarity. Don't need.
             self.image = pygame.image.load(self.imgpath).convert_alpha()
-            if self.player_spec['flip']:
+            if self.entity_spec['flip']:
                 self.image = pygame.transform.flip(self.image, True, False)
         # Generate the RIGHT-facing surface
         self.image_r = pygame.transform.flip(self.image, True, False)
 
-        self.rect = self.image.get_frect(center=(self.player_spec['x'], self.player_spec['y']))
+        self.rect = self.image.get_frect(center=(self.entity_spec['x'], self.entity_spec['y']))
 
 
 
@@ -265,36 +267,38 @@ pygame.init()
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
-# Test class usage
-test_instance_of_player_class = MonsterClass(monsters[3])
+
+all_sprites = pygame.sprite.Group()
 
 
-# INITIALIZE MONSTERS - LEGACY (not OOP)
-for monster in monsters:
+# INITIALIZE ENTITIES - LEGACY (not OOP)
+for entity_spec in entity_specs:
     if DEBUG:
-        monster['surface'] = pygame.Surface((monster['w'], monster['h']))
-        monster['surface'].fill(monster['color'])
+        entity_spec['surface'] = pygame.Surface((entity_spec['w'], entity_spec['h']))
+        entity_spec['surface'].fill(entity_spec['color'])
     else:
-        imgpath = os.path.join(ASSET_PATH, monster['img'])
-        monster['surface'] = pygame.image.load(imgpath).convert_alpha()
-        if monster['flip']:
-            monster['surface'] = pygame.transform.flip(monster['surface'], True, False)
+        imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
+        entity_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
+        if entity_spec['flip']:
+            entity_spec['surface'] = pygame.transform.flip(entity_spec['surface'], True, False)
     # Generate the RIGHT-facing surface
-    monster['surface_r'] = pygame.transform.flip(monster['surface'], True, False)
+    entity_spec['surface_r'] = pygame.transform.flip(entity_spec['surface'], True, False)
 
-    monster['rect'] = monster['surface'].get_frect(center=(monster['x'], monster['y']))
-
-
+    entity_spec['rect'] = entity_spec['surface'].get_frect(center=(entity_spec['x'], entity_spec['y']))
 
 
-# INSTANTIATE MONSTERS - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
+
+
+# INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 mons = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
-for i, monster_spec in enumerate(monsters):
-    monster_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, monster_spec['img'])
-    mon = MonsterClass(monster_spec)
-    mons.append(mon)
+for i, entity_spec in enumerate(entity_specs):
+    entity_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
+    mon = Entity(all_sprites, entity_spec)  # tuple() here is a HACK, to TRY to fix an arg type error. Need to test. *******
+    # mons.append(mon)  # May not need this list. Will be using multi Sprite Groups to organize/control Sprite instances.
+    all_sprites.add(mon)  # TODO ********** FIX *********** Does not like this argument.
 
+# PyGame Sprite Groups: Draw, update and organize sprites
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
@@ -377,17 +381,17 @@ while running:
     if LEGACY_MODE:
         keys = pygame.key.get_pressed()
 
-        monsters[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-        monsters[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        entity_specs[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        entity_specs[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
-        monsters[3]['d'] = monsters[3]['d'].normalize() if monsters[3]['d'] else monsters[3]['d']
+        entity_specs[3]['d'] = entity_specs[3]['d'].normalize() if entity_specs[3]['d'] else entity_specs[3]['d']
 
         if keys[pygame.K_SPACE]:
             # print('fire laser')
             pass
 
 
-    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify monster behavior per their enviro-reaction profiles.
+    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify entity_spec behavior per their enviro-reaction profiles.
     if ephase is None:
         ephase = ENVIRO_PHASES[0]
         ephase_name = ephase[0]
@@ -395,16 +399,16 @@ while running:
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
     else:
-        # APPLY THE EFFECTS HERE - MONSTERS CHANGE THEIR SPEEDS
-        for monster in monsters:
+        # APPLY THE EFFECTS HERE - ENTITIES CHANGE THEIR SPEEDS
+        for entity_spec in entity_specs:
             if ephase_name == 'peace':
-                monster['s'] = monster['p']
+                entity_spec['s'] = entity_spec['p']
             elif ephase_name == 'rogue':
-                monster['s'] = monster['r']
+                entity_spec['s'] = entity_spec['r']
             elif ephase_name == 'chaos':
-                monster['s'] = monster['c']
+                entity_spec['s'] = entity_spec['c']
             elif ephase_name == 'frozen':
-                monster['s'] = monster['f']
+                entity_spec['s'] = entity_spec['f']
             else:
                 raise ValueError(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
                         "Check values in ENVIRO_PHASES config.")
@@ -424,12 +428,15 @@ while running:
     for prop in props:
         display_surface.blit(prop['surface'], prop['rect'])
 
-    # DRAW MONSTERS
-    for monster in monsters:
-        if monster['d'].x <= 0:
-            display_surface.blit(monster['surface'], monster['rect'])  # LEFT-facing
+    # DRAW ENTITIES
+    for entity_spec in entity_specs:
+        if entity_spec['d'].x <= 0:
+            display_surface.blit(entity_spec['surface'], entity_spec['rect'])  # LEFT-facing
         else:
-            display_surface.blit(monster['surface_r'], monster['rect'])  # RIGHT-facing
+            display_surface.blit(entity_spec['surface_r'], entity_spec['rect'])  # RIGHT-facing
+
+    # NEW for OOP:
+    all_sprites.draw(display_surface)
 
 
     # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
@@ -438,36 +445,36 @@ while running:
 
     # ################################################    PHYSICS    ###################################################
 
-    for monster in monsters:
+    for entity_spec in entity_specs:
         # ***************************
         # WORKING ON THIS MYPY ERROR:
-        # delta_vector = pygame.Vector2(monster['d'] * monster['s'])  # SEEN AS A tuple[float, float] - SAME
-        delta_vector = monster['d'] * monster['s'] * delta_time
+        # delta_vector = pygame.Vector2(entity_spec['d'] * entity_spec['s'])  # SEEN AS A tuple[float, float] - SAME
+        delta_vector = entity_spec['d'] * entity_spec['s'] * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
         #     variable has type "tuple[float, float]")  [assignment]
-        monster['rect'].center += delta_vector
+        entity_spec['rect'].center += delta_vector
         # ***************************
 
         # Bounce off LEFT wall in X Axis
-        if monster['rect'].left <= 0:
-            monster['rect'].left = 0
-            monster['d'].x *= -1
+        if entity_spec['rect'].left <= 0:
+            entity_spec['rect'].left = 0
+            entity_spec['d'].x *= -1
 
         # Bounce off RIGHT wall in X Axis
-        if monster['rect'].right >= SCREEN_WIDTH:
-            monster['rect'].right = SCREEN_WIDTH
-            monster['d'].x *= -1
+        if entity_spec['rect'].right >= SCREEN_WIDTH:
+            entity_spec['rect'].right = SCREEN_WIDTH
+            entity_spec['d'].x *= -1
 
         # Bounce off TOP wall in Y Axis
-        if monster['rect'].top <= 0:
-            monster['rect'].top = 0
-            monster['d'].y *= -1
+        if entity_spec['rect'].top <= 0:
+            entity_spec['rect'].top = 0
+            entity_spec['d'].y *= -1
 
         # Bounce off BOTTOM wall in Y Axis
-        if monster['rect'].bottom >= SCREEN_HEIGHT:
-            monster['rect'].bottom = SCREEN_HEIGHT
-            monster['d'].y *= -1
+        if entity_spec['rect'].bottom >= SCREEN_HEIGHT:
+            entity_spec['rect'].bottom = SCREEN_HEIGHT
+            entity_spec['d'].y *= -1
 
 
 pygame.quit()
