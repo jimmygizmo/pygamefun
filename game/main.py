@@ -47,6 +47,7 @@ LEGACY_MODE = True  # To be used during transition to using Classes/Sprites. Can
 # no longer maintain runtime state. This was always the plan to transition from early procedural code into OOP/classes/sprites.
 EntitySpec = TypedDict('EntitySpec', {
         'name': str,  # Entity short name
+        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. Not used yet.
         'img': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
@@ -69,6 +70,7 @@ EntitySpec = TypedDict('EntitySpec', {
 entity_specs = []
 
 entity1: EntitySpec = {'name': 'red-flower-floaty',
+           'instance_id': -1,
            'img':  'red-flower-66x64.png',
            'flip': False,
            'w': 66,
@@ -88,6 +90,7 @@ entity1: EntitySpec = {'name': 'red-flower-floaty',
            }
 entity_specs.append(entity1)
 entity2: EntitySpec = {'name': 'red-flower-drifty',
+           'instance_id': -1,
            'img':  'red-flower-66x64.png',
            'flip': True,
            'w': 66,
@@ -107,6 +110,7 @@ entity2: EntitySpec = {'name': 'red-flower-drifty',
            }
 entity_specs.append(entity2)
 entity3: EntitySpec = {'name': 'goldie',
+           'instance_id': -1,
            'img': 'gold-retriever-160x142.png',
            'flip': True,
            'w': 160,
@@ -126,6 +130,7 @@ entity3: EntitySpec = {'name': 'goldie',
            }
 entity_specs.append(entity3)
 entity4: EntitySpec = {'name': 'fishy',
+           'instance_id': -1,
            'img':  'goldfish-280x220.png',
            'flip': False,
            'w': 280,
@@ -145,6 +150,7 @@ entity4: EntitySpec = {'name': 'fishy',
            }
 entity_specs.append(entity4)
 entity5: EntitySpec = {'name': 'grumpy',
+           'instance_id': -1,
            'img':  'grumpy-cat-110x120.png',
            'flip': True,
            'w': 110,
@@ -228,9 +234,9 @@ Prop = TypedDict('Prop', {
 # Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
 
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, groups, entity_spec: EntitySpec):
+    def __init__(self, groups, spec: EntitySpec):
         super().__init__(groups)
-        self.entity_spec: EntitySpec = entity_spec
+        self.spec: EntitySpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
@@ -238,17 +244,17 @@ class Entity(pygame.sprite.Sprite):
         if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.
             # Good apps/systems have good debug and logging features like this built in, but watch performance impact.
             # Performance hits are the only real downside. Complexity is outweighed by code testability and real-time manageability benefits.
-            self.image = pygame.Surface((self.entity_spec['w'], self.entity_spec['h']))
-            self.image.fill(self.entity_spec['color'])
+            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image.fill(self.spec['color'])
         else:
-            self.imgpath: str = os.path.join(ASSET_PATH, self.entity_spec['img'])  # Var added for clarity. Don't need.
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
             self.image = pygame.image.load(self.imgpath).convert_alpha()
-            if self.entity_spec['flip']:
+            if self.spec['flip']:
                 self.image = pygame.transform.flip(self.image, True, False)
         # Generate the RIGHT-facing surface
         self.image_r = pygame.transform.flip(self.image, True, False)
 
-        self.rect = self.image.get_frect(center=(self.entity_spec['x'], self.entity_spec['y']))
+        self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
 
 
@@ -268,7 +274,7 @@ display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
 
-all_sprites = pygame.sprite.Group()
+all_sprites: pygame.sprite.Group = pygame.sprite.Group()
 
 
 # INITIALIZE ENTITIES - LEGACY (not OOP)
@@ -290,13 +296,13 @@ for entity_spec in entity_specs:
 
 
 # INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
-mons = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
+mons: list[Entity] = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
 for i, entity_spec in enumerate(entity_specs):
     entity_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-    mon = Entity(all_sprites, entity_spec)  # tuple() here is a HACK, to TRY to fix an arg type error. Need to test. *******
+    mon: Entity = Entity(all_sprites, entity_spec)  # tuple() here is a HACK, to TRY to fix an arg type error. Need to test. *******
     # mons.append(mon)  # May not need this list. Will be using multi Sprite Groups to organize/control Sprite instances.
-    all_sprites.add(mon)  # TODO ********** FIX *********** Does not like this argument.
+    # all_sprites.add(mon)  # TODO ********** FIX *********** Does not like this argument. Don't need this.
 
 # PyGame Sprite Groups: Draw, update and organize sprites
 
