@@ -47,7 +47,7 @@ LEGACY_MODE = True  # To be used during transition to using Classes/Sprites. Can
 # no longer maintain runtime state. This was always the plan to transition from early procedural code into OOP/classes/sprites.
 EntitySpec = TypedDict('EntitySpec', {
         'name': str,  # Entity short name
-        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. Not used yet.
+        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
@@ -308,10 +308,10 @@ for i, entity_spec in enumerate(entity_specs):
 
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
-props = []
+prop_specs = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        prop: Prop = {'name': '',  # placeholder (mpypy)
+        prop_spec: Prop = {'name': '',  # placeholder (mpypy)
                 'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
                 'h': prop_t['h'],
@@ -323,22 +323,22 @@ for prop_t in prop_templates:
                 }
 
         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
-        prop['name'] = prop_t['name'] + "-" + str(index)
+        prop_spec['name'] = prop_t['name'] + "-" + str(index)
         x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
         y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
-        prop['x'] = prop_t['x'] + x_offset
-        prop['y'] = prop_t['y'] + y_offset
+        prop_spec['x'] = prop_t['x'] + x_offset
+        prop_spec['y'] = prop_t['y'] + y_offset
 
         if DEBUG:
-            prop['surface'] = pygame.Surface((prop['w'], prop['h']))
-            prop['surface'].fill(prop['color'])
+            prop_spec['surface'] = pygame.Surface((prop_spec['w'], prop_spec['h']))
+            prop_spec['surface'].fill(prop_spec['color'])
         else:
-            imgpath = os.path.join(ASSET_PATH, prop['img'])
-            prop['surface'] = pygame.image.load(imgpath).convert_alpha()
+            imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
+            prop_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
 
-        prop['rect'] = prop['surface'].get_frect(center=(prop['x'], prop['y']))
+        prop_spec['rect'] = prop_spec['surface'].get_frect(center=(prop_spec['x'], prop_spec['y']))
 
-        props.append(prop)
+        prop_specs.append(prop_spec)
 
 
 # ###############################################    MAIN EXECUTION    #################################################
@@ -426,20 +426,24 @@ while running:
 
     # ##################################################    DRAW    ####################################################
 
-    # REDRAW THE BG
-    if ACID_MODE is False:
-        display_surface.blit(bg_surface, (0, 0))
+    # NEW for OOP:
+    all_sprites.update()
 
-    # DRAW PROPS
-    for prop in props:
-        display_surface.blit(prop['surface'], prop['rect'])
+    if LEGACY_MODE:
+        # REDRAW THE BG
+        if ACID_MODE is False:
+            display_surface.blit(bg_surface, (0, 0))
 
-    # DRAW ENTITIES
-    for entity_spec in entity_specs:
-        if entity_spec['d'].x <= 0:
-            display_surface.blit(entity_spec['surface'], entity_spec['rect'])  # LEFT-facing
-        else:
-            display_surface.blit(entity_spec['surface_r'], entity_spec['rect'])  # RIGHT-facing
+        # DRAW PROPS
+        for prop_spec in prop_specs:
+            display_surface.blit(prop_spec['surface'], prop_spec['rect'])
+
+        # DRAW ENTITIES
+        for entity_spec in entity_specs:
+            if entity_spec['d'].x <= 0:
+                display_surface.blit(entity_spec['surface'], entity_spec['rect'])  # LEFT-facing
+            else:
+                display_surface.blit(entity_spec['surface_r'], entity_spec['rect'])  # RIGHT-facing
 
     # NEW for OOP:
     all_sprites.draw(display_surface)
