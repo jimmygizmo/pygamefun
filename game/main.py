@@ -247,6 +247,7 @@ PropSpec = TypedDict('PropSpec',{
 
 class Entity(pygame.sprite.Sprite):
     def __init__(self, groups, spec: EntitySpec):
+        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups)
         self.spec: EntitySpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
@@ -277,11 +278,14 @@ class Entity(pygame.sprite.Sprite):
 
 class Prop(pygame.sprite.Sprite):
     def __init__(self, groups, spec: PropSpec):
+        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups)
         self.spec: PropSpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
-        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
+        # self.image_r: pygame.Surface = pygame.Surface((0, 0))  *** REMOVED from cloned Entity code. *** - This is a prop.
         self.rect: pygame.FRect = pygame.FRect()
+
+        # TODO: Since this is a prop, we probably do not need to generate the right-facing surface, but the flip feature is good.
 
         if DEBUG:
             self.image = pygame.Surface((self.spec['w'], self.spec['h']))
@@ -291,8 +295,7 @@ class Prop(pygame.sprite.Sprite):
             self.image = pygame.image.load(self.imgpath).convert_alpha()
             if self.spec['flip']:
                 self.image = pygame.transform.flip(self.image, True, False)
-        # Generate the RIGHT-facing surface
-        self.image_r = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface - *** REMOVED from cloned Entity code. *** - This is a prop.
 
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
@@ -310,11 +313,14 @@ pygame.init()
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
-
+# The prefix "all_" works well to identify these as sprite groups by convention in this app. Especially during our transition.
+# At least for now, I want to use 'monsters' or 'props' etc as objects/lists to hold either the spec objects or the instances.
+# eventually I think such lists will go away (or maybe not .. but probably since we can leverage sprite classes in custom ways
+# .. for the totality of iteration needs, we will remain to be seen..)
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
-monsters: pygame.sprite.Group = pygame.sprite.Group()
-props: pygame.sprite.Group = pygame.sprite.Group()
-players: pygame.sprite.Group = pygame.sprite.Group()
+all_monsters: pygame.sprite.Group = pygame.sprite.Group()
+all_props: pygame.sprite.Group = pygame.sprite.Group()
+all_players: pygame.sprite.Group = pygame.sprite.Group()
 
 
 # INITIALIZE ENTITIES - LEGACY (not OOP)
@@ -375,13 +381,21 @@ for prop_t in prop_templates:
 
 # INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
+# INSTANITATE PROPS
+props: list[Prop] = []
+for i, prop_spec in enumerate(prop_specs):
+    prop_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
+    prop: Prop = Prop([all_sprites, all_props], prop_spec)
+    props.append(prop)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
+
 # INSTANITATE MONSTERS
-mons: list[Entity] = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
+monsters: list[Entity] = []
 for i, entity_spec in enumerate(entity_specs):
     entity_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-    mon: Entity = Entity([all_sprites, monsters], entity_spec)
-
+    monster: Entity = Entity([all_sprites, all_monsters], entity_spec)
+    monsters.append(monster)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 
 
