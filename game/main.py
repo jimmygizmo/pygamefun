@@ -69,7 +69,8 @@ EntitySpec = TypedDict('EntitySpec', {
 # ENTITY DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
 entity_specs = []
 
-entity1: EntitySpec = {'name': 'red-flower-floaty',
+entity1: EntitySpec = {
+           'name': 'red-flower-floaty',
            'instance_id': -1,
            'img':  'red-flower-66x64.png',
            'flip': False,
@@ -89,7 +90,8 @@ entity1: EntitySpec = {'name': 'red-flower-floaty',
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 entity_specs.append(entity1)
-entity2: EntitySpec = {'name': 'red-flower-drifty',
+entity2: EntitySpec = {
+           'name': 'red-flower-drifty',
            'instance_id': -1,
            'img':  'red-flower-66x64.png',
            'flip': True,
@@ -109,7 +111,8 @@ entity2: EntitySpec = {'name': 'red-flower-drifty',
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 entity_specs.append(entity2)
-entity3: EntitySpec = {'name': 'goldie',
+entity3: EntitySpec = {
+           'name': 'goldie',
            'instance_id': -1,
            'img': 'gold-retriever-160x142.png',
            'flip': True,
@@ -129,7 +132,8 @@ entity3: EntitySpec = {'name': 'goldie',
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 entity_specs.append(entity3)
-entity4: EntitySpec = {'name': 'fishy',
+entity4: EntitySpec = {
+           'name': 'fishy',
            'instance_id': -1,
            'img':  'goldfish-280x220.png',
            'flip': False,
@@ -149,7 +153,8 @@ entity4: EntitySpec = {'name': 'fishy',
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 entity_specs.append(entity4)
-entity5: EntitySpec = {'name': 'grumpy',
+entity5: EntitySpec = {
+           'name': 'grumpy',
            'instance_id': -1,
            'img':  'grumpy-cat-110x120.png',
            'flip': True,
@@ -188,7 +193,8 @@ PropTemplate = TypedDict('PropTemplate', {
 
 # PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
 prop_templates = []
-prop_template1: PropTemplate = {'name': 'red-flower',
+prop_template1: PropTemplate = {
+           'name': 'red-flower',
            'img':  'red-flower-66x64.png',
            'w': 66,
            'h': 64,
@@ -201,7 +207,8 @@ prop_template1: PropTemplate = {'name': 'red-flower',
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 prop_templates.append(prop_template1)
-prop_template2: PropTemplate = {'name': 'blue-flower',
+prop_template2: PropTemplate = {
+           'name': 'blue-flower',
            'img':  'blue-flower-160x158.png',
            'w': 160,
            'h': 158,
@@ -216,8 +223,9 @@ prop_template2: PropTemplate = {'name': 'blue-flower',
 prop_templates.append(prop_template2)
 
 # TypedDict for PROP. Props are generated dynamically, when we "spray" props from their template.
-Prop = TypedDict('Prop', {
+PropSpec = TypedDict('PropSpec',{
         'name': str,
+        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,
         'w': int,
         'h': int,
@@ -257,7 +265,7 @@ class Entity(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
 
-
+# class Prop
 
 
 
@@ -275,6 +283,9 @@ pygame.display.set_caption(GAME_TITLE)
 
 
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
+monsters: pygame.sprite.Group = pygame.sprite.Group()
+props: pygame.sprite.Group = pygame.sprite.Group()
+players: pygame.sprite.Group = pygame.sprite.Group()
 
 
 # INITIALIZE ENTITIES - LEGACY (not OOP)
@@ -292,26 +303,13 @@ for entity_spec in entity_specs:
 
     entity_spec['rect'] = entity_spec['surface'].get_frect(center=(entity_spec['x'], entity_spec['y']))
 
-
-
-
-# INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
-mons: list[Entity] = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
-for i, entity_spec in enumerate(entity_specs):
-    entity_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-    mon: Entity = Entity(all_sprites, entity_spec)  # tuple() here is a HACK, to TRY to fix an arg type error. Need to test. *******
-    # mons.append(mon)  # May not need this list. Will be using multi Sprite Groups to organize/control Sprite instances.
-    # all_sprites.add(mon)  # TODO ********** FIX *********** Does not like this argument. Don't need this.
-
-# PyGame Sprite Groups: Draw, update and organize sprites
-
-
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
 prop_specs = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        prop_spec: Prop = {'name': '',  # placeholder (mpypy)
+        prop_spec: PropSpec = {
+                'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to entity_spec which are hardcoded.)
+                'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'w': prop_t['w'],
                 'h': prop_t['h'],
@@ -339,6 +337,22 @@ for prop_t in prop_templates:
         prop_spec['rect'] = prop_spec['surface'].get_frect(center=(prop_spec['x'], prop_spec['y']))
 
         prop_specs.append(prop_spec)
+
+        # print(prop_spec)  # ----  DEBUG  ----
+
+
+# ################################################    INSTANTIATION    #################################################
+
+# INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
+
+# INSTANITATE MONSTERS
+mons: list[Entity] = []  # TODO: Add type hints and use of OrderedDict to satisfy MyPy.
+for i, entity_spec in enumerate(entity_specs):
+    entity_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
+    mon: Entity = Entity([all_sprites, monsters], entity_spec)
+
+
 
 
 # ###############################################    MAIN EXECUTION    #################################################
