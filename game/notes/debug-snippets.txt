@@ -1,0 +1,36 @@
+
+
+
+        if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.
+            # Good apps/systems have good debug and logging features like this built in, but watch performance impact.
+            # Performance hits are the only real downside. Complexity is outweighed by code testability and real-time manageability benefits.
+            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image.fill(self.spec['color'])
+        else:
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
+            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            if self.spec['flip']:
+                self.image = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface
+        self.image_r = pygame.transform.flip(self.image, True, False)
+
+
+
+
+        # INITIALIZE ENTITIES - LEGACY (not OOP)
+for entity_spec in entity_specs:
+    if DEBUG:
+        entity_spec['surface'] = pygame.Surface((entity_spec['w'], entity_spec['h']))
+        entity_spec['surface'].fill(entity_spec['color'])
+    else:
+        imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
+        entity_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
+        if entity_spec['flip']:
+            entity_spec['surface'] = pygame.transform.flip(entity_spec['surface'], True, False)
+    # Generate the RIGHT-facing surface
+    entity_spec['surface_r'] = pygame.transform.flip(entity_spec['surface'], True, False)
+
+    entity_spec['rect'] = entity_spec['surface'].get_frect(center=(entity_spec['x'], entity_spec['y']))
+
+
+

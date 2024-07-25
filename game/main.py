@@ -180,6 +180,7 @@ entity_specs.append(entity5)
 PropTemplate = TypedDict('PropTemplate', {
         'name': str,
         'img': str,
+        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
         'color': str,
@@ -196,6 +197,7 @@ prop_templates = []
 prop_template1: PropTemplate = {
            'name': 'red-flower',
            'img':  'red-flower-66x64.png',
+           'flip': False,
            'w': 66,
            'h': 64,
            'color': 'crimson',
@@ -210,6 +212,7 @@ prop_templates.append(prop_template1)
 prop_template2: PropTemplate = {
            'name': 'blue-flower',
            'img':  'blue-flower-160x158.png',
+           'flip': False,
            'w': 160,
            'h': 158,
            'color': 'darkturquoise',
@@ -227,6 +230,7 @@ PropSpec = TypedDict('PropSpec',{
         'name': str,
         'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,
+        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
         'color': str,
@@ -249,9 +253,7 @@ class Entity(pygame.sprite.Sprite):
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
 
-        if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.
-            # Good apps/systems have good debug and logging features like this built in, but watch performance impact.
-            # Performance hits are the only real downside. Complexity is outweighed by code testability and real-time manageability benefits.
+        if DEBUG:
             self.image = pygame.Surface((self.spec['w'], self.spec['h']))
             self.image.fill(self.spec['color'])
         else:
@@ -265,7 +267,34 @@ class Entity(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
 
-# class Prop
+# The plan is to have an Entity base class and then sub-class for Monster, Prop, Player. BUT since I have not finalized
+# how to separate out the attributes and or have any that stay unused in the base class for some time .. to get started,
+# I will simply copy the Entity class and then let the divergence of those and formation of Entity base class just
+# happen naturally. We are about to start adding methods.
+
+
+
+
+class Prop(pygame.sprite.Sprite):
+    def __init__(self, groups, spec: PropSpec):
+        super().__init__(groups)
+        self.spec: PropSpec = spec
+        self.image: pygame.Surface = pygame.Surface((0, 0))
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
+        self.rect: pygame.FRect = pygame.FRect()
+
+        if DEBUG:
+            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image.fill(self.spec['color'])
+        else:
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
+            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            if self.spec['flip']:
+                self.image = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface
+        self.image_r = pygame.transform.flip(self.image, True, False)
+
+        self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
 
 
@@ -311,6 +340,7 @@ for prop_t in prop_templates:
                 'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to entity_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+                'flip': False,
                 'w': prop_t['w'],
                 'h': prop_t['h'],
                 'color': prop_t['color'],
