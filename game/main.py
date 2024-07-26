@@ -6,6 +6,7 @@ from typing import TypedDict
 import os.path
 import random
 import collections
+from typing import Union
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -26,27 +27,32 @@ ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left si
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
 LEGACY_MODE = True  # To be used during transition to using Classes/Sprites. Can be removed after transition.
-# When false, disables major code blocks as the equivalent OO code is introduced. Allows quick debugging/comparison/fallback.
-# Stuff like this would likely never make it into production but is extremely powerful during the more serious coding work.
-# Maybe you are porting a Python 2 app to Python 3 or re-writing a spagetti-code procedural mess into a new OOP app
-# while keeping it running with the original code nearby (such as for complex caclulation apps for finance or banking).
-# Think of a tool/feature like this as being similar to the scaffolding or backup generator that is part of a major
-# remodel. Things you put in place "during construction" to enable the work while also keeping the building functional
-# during the transition with the ability to occasionally switch between new and old systems/features smoothly.
-# Imagine replacing legacy telephone wires for a whole region. One would certainly keep them in place while building
-# some, most or all of the new infrastructure. One would also temporarily need special adapter/cutover stations where
-# portions of communications could be cut over to the new infrastrucure and also cut back, for testing and in the event
-# of unexpected circumstances. If you plan ahead for needs/features such as these and take the little bit of extra time
-# to build them in from the start of the project, you WILL save huge amounts of time and whill have much more control
-# over the accuracy and success of your project. Don't let the non-technical, middle-manager types tell you differently.
 
-# Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
-# TypeDict for ENTITY    (The term entity_spec and EntitySpec are still being used for legacy code. In transition.)
-# Legacy code maintains truth within EntitySpec objects. The new OOP code will maintain all truth in the Entity instances.
-# When that transition is complete, then EntitySpec objects will truly be just specs for creating new instancs and will
-# no longer maintain runtime state. This was always the plan to transition from early procedural code into OOP/classes/sprites.
-EntitySpec = TypedDict('EntitySpec', {
-        'name': str,  # Entity short name
+
+PlayerSpec = TypedDict('PlayerSpec', {
+        'name': str,  # Player short name
+        'instance_id' : int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'img': str,  # Filename of PNG (with transparency)
+        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'w': int,  # PNG pixel width
+        'h': int,  # PNG pixel height
+        'color': str,  # Debug mode color of rectangle
+        'x': float,  # Initial position X value
+        'y': float,  # Initial position Y value
+        'd': pygame.math.Vector2,  # Direction
+        's': float,  # Initial/default speed
+        'p': float,  # Enviro: Peace (speed)
+        'r': float,  # Enviro: Rogue (speed)
+        'c': float,  # Enviro: Chaos (speed)
+        'f': float,  # Enviro: Frozen (speed)
+        'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
+        'surface_r': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more  (RIGHT direction)
+        'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
+        })
+
+
+NpcSpec = TypedDict('NpcSpec', {
+        'name': str,  # NPC short name
         'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
@@ -66,10 +72,10 @@ EntitySpec = TypedDict('EntitySpec', {
         'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
-# ENTITY DATA - Initial state for a handful of entities that move, experience physics and interact. W/initial motion.
-entity_specs = []
+# NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
+npc_specs = []
 
-entity1: EntitySpec = {
+npc1: NpcSpec = {
            'name': 'red-flower-floaty',
            'instance_id': -1,
            'img':  'red-flower-66x64.png',
@@ -89,8 +95,8 @@ entity1: EntitySpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-entity_specs.append(entity1)
-entity2: EntitySpec = {
+npc_specs.append(npc1)
+npc2: NpcSpec = {
            'name': 'red-flower-drifty',
            'instance_id': -1,
            'img':  'red-flower-66x64.png',
@@ -110,8 +116,8 @@ entity2: EntitySpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-entity_specs.append(entity2)
-entity3: EntitySpec = {
+npc_specs.append(npc2)
+npc3: NpcSpec = {
            'name': 'goldie',
            'instance_id': -1,
            'img': 'gold-retriever-160x142.png',
@@ -131,8 +137,8 @@ entity3: EntitySpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-entity_specs.append(entity3)
-entity4: EntitySpec = {
+npc_specs.append(npc3)
+npc4: NpcSpec = {
            'name': 'fishy',
            'instance_id': -1,
            'img':  'goldfish-280x220.png',
@@ -152,8 +158,8 @@ entity4: EntitySpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-entity_specs.append(entity4)
-entity5: EntitySpec = {
+npc_specs.append(npc4)
+npc5: NpcSpec = {
            'name': 'grumpy',
            'instance_id': -1,
            'img':  'grumpy-cat-110x120.png',
@@ -173,7 +179,7 @@ entity5: EntitySpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-entity_specs.append(entity5)
+npc_specs.append(npc5)
 
 
 # TypedDict for PROP_TEMPLATE
@@ -240,16 +246,37 @@ PropSpec = TypedDict('PropSpec',{
         'rect': pygame.FRect,
         })
 
+# TODO: Add a tumble weed prop and a wind force for those. Each responds at differnet speeds possibly based on size.
+#     This shows why Prop class also inherits from Entity. Props are like monsters that might often sit still but the
+#     don't need all the monster features. They need physics features. Props are sort of just one step up from Entity.
+#     Entity is currently not intended to be instantiated and only sub-classed. It's about code organization and how
+#     that code gets used and to what degree it gets customized etc. etc. Right now I don't see Entity ever being
+#     instantiated as it is just a repository of common code for anything that moves and reacts to physics and
+#     environmental influences on the screen.
+# NOTE: Another term for "sub-class" is to "extend" a class. There exists other equivalent terminology. I will update
+# notes in this project with more info on terminology like this used in the context of different programming languages.
+# There is always some flexibility nowadays as so many developers do many different langauges and learn terminology
+# from so many different educational sources. I will distill things down to the "best" terminology as I have been a
+# part of the evolution of the industry and used so many languages for so many decades. (Coding for most of 44 years
+# as I started quite young with BASIC, Pascal and Foretran and have used nearly all languages projessionally with
+# a lot of Python, Javascript, Perl, C Sharp, C, C++, Java, Visual Basic, and many frameworks, protocols and more.)
+# This puts me in a good position to distill down what I can say is a "Best Practice" usage of terminology and in
+# what contexts for what audiences.
+
 
 # #############################################    CLASS DEFINITIONS    ################################################
 
 # Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
 
-class Entity(pygame.sprite.Sprite):
-    def __init__(self, groups, spec: EntitySpec):
+# TODO: Entity is a base concept, below Monster. We need to rename EntitySpec to MonsterSpec etc. PropSpec is OK.
+#     We'll be adding other Specs too I think like maybe a PlayerSpec. THIS IS NOW BEING DONE IN --THIS-- COMMIT
+
+class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
+    def __init__(self, groups, spec: NpcSpec | PropSpec):
         # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups)
-        self.spec: EntitySpec = spec
+        # self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # PlayerSpec coming soon.
+        self.spec: NpcSpec | PropSpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
@@ -269,6 +296,7 @@ class Entity(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
     def update(self):
+        pass
         self.keys = pygame.key.get_pressed()  # TODO: Maybe self.keys? It won't shadow with the outer scope keys goes away later.
 
         # As an interim technique, I'll maintain truth inside the spec object we put in the instance.
@@ -291,10 +319,10 @@ class Entity(pygame.sprite.Sprite):
 
 
 
-class Prop(pygame.sprite.Sprite):
-    def __init__(self, groups, spec: PropSpec):
+class Npc(Entity):
+    def __init__(self, groups, spec: NpcSpec):
         # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
-        super().__init__(groups)
+        super().__init__(groups, spec)
         self.spec: PropSpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
         # self.image_r: pygame.Surface = pygame.Surface((0, 0))  *** REMOVED from cloned Entity code. *** - This is a prop.
@@ -315,7 +343,37 @@ class Prop(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
     def update(self):
-        print(f"entity/prop {self.spec['name']} is being updated")
+        print(f"NPC/prop {self.spec['name']} is being updated")
+
+
+
+
+
+class Prop(Entity):
+    def __init__(self, groups, spec: PropSpec):
+        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
+        super().__init__(groups, spec)
+        self.spec: PropSpec = spec
+        self.image: pygame.Surface = pygame.Surface((0, 0))
+        # self.image_r: pygame.Surface = pygame.Surface((0, 0))  *** REMOVED from cloned Entity code. *** - This is a prop.
+        self.rect: pygame.FRect = pygame.FRect()
+
+        # TODO: Since this is a prop, we probably do not need to generate the right-facing surface, but the flip feature is good.
+
+        if DEBUG:
+            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image.fill(self.spec['color'])
+        else:
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
+            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            if self.spec['flip']:
+                self.image = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface - *** REMOVED from cloned Entity code. *** - This is a prop.
+
+        self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
+
+    def update(self):
+        print(f"NPC/prop {self.spec['name']} is being updated")
 
 
 
@@ -340,27 +398,27 @@ all_props: pygame.sprite.Group = pygame.sprite.Group()
 all_players: pygame.sprite.Group = pygame.sprite.Group()
 
 
-# INITIALIZE ENTITIES - LEGACY (not OOP)
-for entity_spec in entity_specs:
+# INITIALIZE NPCs - LEGACY (not OOP)
+for npc_spec in npc_specs:
     if DEBUG:
-        entity_spec['surface'] = pygame.Surface((entity_spec['w'], entity_spec['h']))
-        entity_spec['surface'].fill(entity_spec['color'])
+        npc_spec['surface'] = pygame.Surface((npc_spec['w'], npc_spec['h']))
+        npc_spec['surface'].fill(npc_spec['color'])
     else:
-        imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-        entity_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
-        if entity_spec['flip']:
-            entity_spec['surface'] = pygame.transform.flip(entity_spec['surface'], True, False)
+        imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
+        npc_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
+        if npc_spec['flip']:
+            npc_spec['surface'] = pygame.transform.flip(npc_spec['surface'], True, False)
     # Generate the RIGHT-facing surface
-    entity_spec['surface_r'] = pygame.transform.flip(entity_spec['surface'], True, False)
+    npc_spec['surface_r'] = pygame.transform.flip(npc_spec['surface'], True, False)
 
-    entity_spec['rect'] = entity_spec['surface'].get_frect(center=(entity_spec['x'], entity_spec['y']))
+    npc_spec['rect'] = npc_spec['surface'].get_frect(center=(npc_spec['x'], npc_spec['y']))
 
 # INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
 prop_specs = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
         prop_spec: PropSpec = {
-                'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to entity_spec which are hardcoded.)
+                'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'flip': False,
@@ -396,12 +454,12 @@ for prop_t in prop_templates:
 
 # ################################################    INSTANTIATION    #################################################
 
-# INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
+# INSTANTIATE NPCs - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
 # We dynamically generate (spray) prop_specs from prop_templates, but we are moving towards phasing out prop_spec
 # objects and using only sprite groups and sprite class instances. So, can look at moving some of the prop_spec
 # generation code (for spraying etc) down here to 'instantiate props'. The goal would be to do it all here and
-# eliminate the need for prop_spec objects. (Similarly we are moving towards eliminating the need for entity_spec
+# eliminate the need for prop_spec objects. (Similarly we are moving towards eliminating the need for npc_spec
 # objects too.
 
 # INSTANITATE PROPS
@@ -414,10 +472,10 @@ for i, prop_spec in enumerate(prop_specs):
 
 # INSTANITATE MONSTERS
 monsters: list[Entity] = []
-for i, entity_spec in enumerate(entity_specs):
-    entity_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-    monster: Entity = Entity([all_sprites, all_monsters], entity_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
+for i, npc_spec in enumerate(npc_specs):
+    npc_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
+    monster: Entity = Entity([all_sprites, all_monsters], npc_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
     monsters.append(monster)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 
@@ -466,17 +524,17 @@ while running:
     if LEGACY_MODE:
         keys = pygame.key.get_pressed()
 
-        entity_specs[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-        entity_specs[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        npc_specs[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        npc_specs[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
-        entity_specs[3]['d'] = entity_specs[3]['d'].normalize() if entity_specs[3]['d'] else entity_specs[3]['d']
+        npc_specs[3]['d'] = npc_specs[3]['d'].normalize() if npc_specs[3]['d'] else npc_specs[3]['d']
 
         if keys[pygame.K_SPACE]:
             # print('fire laser')
             pass
 
 
-    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify entity_spec behavior per their enviro-reaction profiles.
+    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify npc_spec behavior per their enviro-reaction profiles.
     if ephase is None:
         ephase = ENVIRO_PHASES[0]
         ephase_name = ephase[0]
@@ -484,16 +542,16 @@ while running:
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
     else:
-        # APPLY THE EFFECTS HERE - ENTITIES CHANGE THEIR SPEEDS
-        for entity_spec in entity_specs:
+        # APPLY THE EFFECTS HERE - NPCs CHANGE THEIR SPEEDS
+        for npc_spec in npc_specs:
             if ephase_name == 'peace':
-                entity_spec['s'] = entity_spec['p']
+                npc_spec['s'] = npc_spec['p']
             elif ephase_name == 'rogue':
-                entity_spec['s'] = entity_spec['r']
+                npc_spec['s'] = npc_spec['r']
             elif ephase_name == 'chaos':
-                entity_spec['s'] = entity_spec['c']
+                npc_spec['s'] = npc_spec['c']
             elif ephase_name == 'frozen':
-                entity_spec['s'] = entity_spec['f']
+                npc_spec['s'] = npc_spec['f']
             else:
                 raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                         "Check values in ENVIRO_PHASES config.")
@@ -517,12 +575,12 @@ while running:
         for prop_spec in prop_specs:
             display_surface.blit(prop_spec['surface'], prop_spec['rect'])
 
-        # DRAW ENTITIES
-        for entity_spec in entity_specs:
-            if entity_spec['d'].x <= 0:
-                display_surface.blit(entity_spec['surface'], entity_spec['rect'])  # LEFT-facing
+        # DRAW NPCs
+        for npc_spec in npc_specs:
+            if npc_spec['d'].x <= 0:
+                display_surface.blit(npc_spec['surface'], npc_spec['rect'])  # LEFT-facing
             else:
-                display_surface.blit(entity_spec['surface_r'], entity_spec['rect'])  # RIGHT-facing
+                display_surface.blit(npc_spec['surface_r'], npc_spec['rect'])  # RIGHT-facing
 
     # NEW for OOP:
     all_sprites.draw(display_surface)
@@ -534,36 +592,36 @@ while running:
 
     # ################################################    PHYSICS    ###################################################
 
-    for entity_spec in entity_specs:
+    for npc_spec in npc_specs:
         # ***************************
         # WORKING ON THIS MYPY ERROR:
-        # delta_vector = pygame.Vector2(entity_spec['d'] * entity_spec['s'])  # SEEN AS A tuple[float, float] - SAME
-        delta_vector = entity_spec['d'] * entity_spec['s'] * delta_time
+        # delta_vector = pygame.Vector2(npc_spec['d'] * npc_spec['s'])  # SEEN AS A tuple[float, float] - SAME
+        delta_vector = npc_spec['d'] * npc_spec['s'] * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
         #     variable has type "tuple[float, float]")  [assignment]
-        entity_spec['rect'].center += delta_vector
+        npc_spec['rect'].center += delta_vector
         # ***************************
 
         # Bounce off LEFT wall in X Axis
-        if entity_spec['rect'].left <= 0:
-            entity_spec['rect'].left = 0
-            entity_spec['d'].x *= -1
+        if npc_spec['rect'].left <= 0:
+            npc_spec['rect'].left = 0
+            npc_spec['d'].x *= -1
 
         # Bounce off RIGHT wall in X Axis
-        if entity_spec['rect'].right >= SCREEN_WIDTH:
-            entity_spec['rect'].right = SCREEN_WIDTH
-            entity_spec['d'].x *= -1
+        if npc_spec['rect'].right >= SCREEN_WIDTH:
+            npc_spec['rect'].right = SCREEN_WIDTH
+            npc_spec['d'].x *= -1
 
         # Bounce off TOP wall in Y Axis
-        if entity_spec['rect'].top <= 0:
-            entity_spec['rect'].top = 0
-            entity_spec['d'].y *= -1
+        if npc_spec['rect'].top <= 0:
+            npc_spec['rect'].top = 0
+            npc_spec['d'].y *= -1
 
         # Bounce off BOTTOM wall in Y Axis
-        if entity_spec['rect'].bottom >= SCREEN_HEIGHT:
-            entity_spec['rect'].bottom = SCREEN_HEIGHT
-            entity_spec['d'].y *= -1
+        if npc_spec['rect'].bottom >= SCREEN_HEIGHT:
+            npc_spec['rect'].bottom = SCREEN_HEIGHT
+            npc_spec['d'].y *= -1
 
 
 pygame.quit()
@@ -591,6 +649,18 @@ pygame.quit()
 
 # Interesting input handling - found via stackexchange:
 # https://github.com/rik-cross/pygamepal/blob/main/src/pygamepal/input.py
+
+# IMPORTANT!
+# Union type in type hinting solves the problem of allowing None pre-initialization vales and also of allowing
+# multiple/different similar types as passed arguments. I will solve both these problems using this.
+# There is a compact syntax now we can use which is extremely intuitive. I love it! Go Python! Go MyPy! Go strong typing!
+# https://medium.com/@apps.merkurev/union-type-expression-in-python-50a1b7d012cd
+
+# NOW WE CAN:
+# def f(lst: list[int | str], param: int | None) -> float | str:
+#     return ''
+#
+# f([1, 'abc'], None)
 
 
 ##

@@ -1,0 +1,25 @@
+
+
+
+# When false, disables major code blocks as the equivalent OO code is introduced. Allows quick debugging/comparison/fallback.
+# Stuff like this would likely never make it into production but is extremely powerful during the more serious coding work.
+# Maybe you are porting a Python 2 app to Python 3 or re-writing a spagetti-code procedural mess into a new OOP app
+# while keeping it running with the original code nearby (such as for complex caclulation apps for finance or banking).
+# Think of a tool/feature like this as being similar to the scaffolding or backup generator that is part of a major
+# remodel. Things you put in place "during construction" to enable the work while also keeping the building functional
+# during the transition with the ability to occasionally switch between new and old systems/features smoothly.
+# Imagine replacing legacy telephone wires for a whole region. One would certainly keep them in place while building
+# some, most or all of the new infrastructure. One would also temporarily need special adapter/cutover stations where
+# portions of communications could be cut over to the new infrastrucure and also cut back, for testing and in the event
+# of unexpected circumstances. If you plan ahead for needs/features such as these and take the little bit of extra time
+# to build them in from the start of the project, you WILL save huge amounts of time and whill have much more control
+# over the accuracy and success of your project. Don't let the non-technical, middle-manager types tell you differently.
+
+
+
+# Using a TypedDict to satisfy MyPy recommendations for type-hinting/strong-typing.
+# TypeDict for ENTITY    (The term npc_spec and NpcSpec are still being used for legacy code. In transition.)
+# Legacy code maintains truth within NpcSpec objects. The new OOP code will maintain all truth in the Entity instances.
+# When that transition is complete, then NpcSpec objects will truly be just specs for creating new instancs and will
+# no longer maintain runtime state. This was always the plan to transition from early procedural code into OOP/classes/sprites.
+
