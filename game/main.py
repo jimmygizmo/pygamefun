@@ -253,6 +253,7 @@ class Entity(pygame.sprite.Sprite):
         self.image: pygame.Surface = pygame.Surface((0, 0))
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # POSSIBLY, this might be a separate instance of Player. Not clear yet.
         self.rect: pygame.FRect = pygame.FRect()
+        self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
 
         if DEBUG:
             self.image = pygame.Surface((self.spec['w'], self.spec['h']))
@@ -266,6 +267,20 @@ class Entity(pygame.sprite.Sprite):
         self.image_r = pygame.transform.flip(self.image, True, False)
 
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
+
+    def update(self):
+        self.keys = pygame.key.get_pressed()  # TODO: Maybe self.keys? It won't shadow with the outer scope keys goes away later.
+
+        # As an interim technique, I'll maintain truth inside the spec object we put in the instance.
+        self.spec['d'].x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
+        self.spec['d'].y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
+
+        self.spec['d'] = self.spec['d'].normalize() if self.spec['d'] else self.spec['d']
+
+        if keys[pygame.K_SPACE]:
+            # print('fire laser')
+            pass
+
 
 
 # The plan is to have an Entity base class and then sub-class for Monster, Prop, Player. BUT since I have not finalized
@@ -299,6 +314,8 @@ class Prop(pygame.sprite.Sprite):
 
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
+    def update(self):
+        print(f"entity/prop {self.spec['name']} is being updated")
 
 
 
@@ -381,12 +398,18 @@ for prop_t in prop_templates:
 
 # INSTANTIATE ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
+# We dynamically generate (spray) prop_specs from prop_templates, but we are moving towards phasing out prop_spec
+# objects and using only sprite groups and sprite class instances. So, can look at moving some of the prop_spec
+# generation code (for spraying etc) down here to 'instantiate props'. The goal would be to do it all here and
+# eliminate the need for prop_spec objects. (Similarly we are moving towards eliminating the need for entity_spec
+# objects too.
+
 # INSTANITATE PROPS
 props: list[Prop] = []
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
-    prop: Prop = Prop([all_sprites, all_props], prop_spec)
+    prop: Prop = Prop([all_sprites, all_props], prop_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
     props.append(prop)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 # INSTANITATE MONSTERS
@@ -394,7 +417,7 @@ monsters: list[Entity] = []
 for i, entity_spec in enumerate(entity_specs):
     entity_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, entity_spec['img'])
-    monster: Entity = Entity([all_sprites, all_monsters], entity_spec)
+    monster: Entity = Entity([all_sprites, all_monsters], entity_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
     monsters.append(monster)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 
@@ -428,10 +451,8 @@ while running:
 
 
     # ##################################################    INPUT    ###################################################
-    # pygame.key    pygame.mouse
 
-
-    # #### ####   EVENT LOOP    #### ####
+    # Check all new events since the last main loop iteration
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -474,7 +495,7 @@ while running:
             elif ephase_name == 'frozen':
                 entity_spec['s'] = entity_spec['f']
             else:
-                raise ValueError(f"FATAL: Invalid ephase_name \"{ephase_name}\". "
+                raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                         "Check values in ENVIRO_PHASES config.")
 
         ephase_count -= 1  # Decrement the counter for the current phase.

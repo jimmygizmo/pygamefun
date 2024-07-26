@@ -1,0 +1,34 @@
+
+# TODO: Class-hierarchy formation is in progress. Entity class is intended as the base class and was cloned from
+#   Monster legacy obj. Prop class is cloned from Entity class and is the first sub-class of Entity taking shape.
+#   Monster class will be cloned from Entity and Entity made into the base class. Player class will be introduced soon
+#   and also inherit from Entity. There are other OOP transitions in progress while this class-hierarchy is
+#   evolving. This one of many good ways to develop. Nothing wrong with prototyping something simple with procedural
+#   code and then letting things evolve organically with BOTH styles of working code in place side-by-side, aided by
+#   switch controls to toggle old/new features as you work on things they are directly connected to. That switching
+#   capability really helps in many ways, not least of which is having working/demonstrable alternate code to compare
+#   against and analyze the live data of as you work on the new code. Sometimes you are porting language versions or
+#   major library or data format usage and sometimes you are transitioning procedural or other code patterns into
+#   OOP or some other major refactoring, possibly even porting to another language. Real-time switches you deploy
+#   to production can be justified. Or most certainly at least, in your development, test and stage contexts.
+#   Then you'll also need clean ways to separate that code if you want to do seomthing like that just pre-production.
+#   These concepts are most relevant to Lead Developers, Architects and Team Leads as such efforts, decisions and
+#   standards need to come from a strong lead coder with a vision and understanding of how manage such efforts,
+#   from the context of the true realities of coding and operation of code and all of those implications. Not from
+#   the perspective of common management mindsets. This has nothing to do with Agile and it has nothing to do with
+#   Waterfall. These ideas have to do with quality and efficiency of code and the development, operation, maintenance,
+#   customization, extension, teaching and handing-off of that code. Micro-manageged or "Agile" (ha ha) teams don't
+#   usually get to enjoy this level of coding craftwork, but the value is very significant. The reason you don't
+#   see more such "coders tools" in commercial code is that it is very hard to communicate the subtleties of coding
+#   and software development and operation to the typical management type. Many things about coding do sometimes come
+#   down to corporate culture. Code comments like these will be moved to notes and perhaps out to other content in
+#   other areas, such as on how to manage large or advanced software development or systems operations teams.
+#   I started talking about the evolution of a class hierarchy and maintaining side-by-side high quality legacy and new
+#   code and then transitioned to discussing the inevitable politics of coding in that manner. Often management will
+#   hate that sort of thing, because they don't understand coding. They should never be assessing the methods of good
+#   coders in the first place and should let coders manage their coding with the accountability being held at the
+#   performance and quality of the code, etc .. but in reality one will always have to deal with varying levels of
+#   micro-management and other interference into your engineering work, which may make it difficult to have some of
+#   the DEVELOPMENT-TIME features I use in this project. Luckily there are many strategies you can use to mitigate
+#   some of these political aspects of software development and working with software in business in other contexts.
+
