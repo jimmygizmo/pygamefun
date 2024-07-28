@@ -50,6 +50,31 @@ PlayerSpec = TypedDict('PlayerSpec', {
         'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
+# PLAYER DATA - Initial state for a single player (usually) or possibly multiple players.
+player_specs = []
+
+player1: PlayerSpec = {
+           'name': 'fishy',
+           'instance_id': -1,
+           'img':  'goldfish-280x220.png',
+           'flip': False,
+           'w': 280,
+           'h': 220,
+           'color': 'darkgoldenrod1',
+           'x': 840.0,
+           'y': 300.0,
+           'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
+           's': 80.0,
+           'p': 90.0,
+           'r': 100.0,
+           'c': 700.0,
+           'f': 2850.0,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
+           }
+player_specs.append(player1)
+
 
 NpcSpec = TypedDict('NpcSpec', {
         'name': str,  # NPC short name
@@ -139,27 +164,6 @@ npc3: NpcSpec = {
            }
 npc_specs.append(npc3)
 npc4: NpcSpec = {
-           'name': 'fishy',
-           'instance_id': -1,
-           'img':  'goldfish-280x220.png',
-           'flip': False,
-           'w': 280,
-           'h': 220,
-           'color': 'darkgoldenrod1',
-           'x': 840.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-           's': 80.0,
-           'p': 90.0,
-           'r': 100.0,
-           'c': 700.0,
-           'f': 2850.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
-           }
-npc_specs.append(npc4)
-npc5: NpcSpec = {
            'name': 'grumpy',
            'instance_id': -1,
            'img':  'grumpy-cat-110x120.png',
@@ -179,7 +183,7 @@ npc5: NpcSpec = {
            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
            'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
-npc_specs.append(npc5)
+npc_specs.append(npc4)
 
 
 # TypedDict for PROP_TEMPLATE
@@ -246,30 +250,9 @@ PropSpec = TypedDict('PropSpec',{
         'rect': pygame.FRect,
         })
 
-# TODO: Add a tumble weed prop and a wind force for those. Each responds at differnet speeds possibly based on size.
-#     This shows why Prop class also inherits from Entity. Props are like monsters that might often sit still but the
-#     don't need all the monster features. They need physics features. Props are sort of just one step up from Entity.
-#     Entity is currently not intended to be instantiated and only sub-classed. It's about code organization and how
-#     that code gets used and to what degree it gets customized etc. etc. Right now I don't see Entity ever being
-#     instantiated as it is just a repository of common code for anything that moves and reacts to physics and
-#     environmental influences on the screen.
-# NOTE: Another term for "sub-class" is to "extend" a class. There exists other equivalent terminology. I will update
-# notes in this project with more info on terminology like this used in the context of different programming languages.
-# There is always some flexibility nowadays as so many developers do many different langauges and learn terminology
-# from so many different educational sources. I will distill things down to the "best" terminology as I have been a
-# part of the evolution of the industry and used so many languages for so many decades. (Coding for most of 44 years
-# as I started quite young with BASIC, Pascal and Foretran and have used nearly all languages projessionally with
-# a lot of Python, Javascript, Perl, C Sharp, C, C++, Java, Visual Basic, and many frameworks, protocols and more.)
-# This puts me in a good position to distill down what I can say is a "Best Practice" usage of terminology and in
-# what contexts for what audiences.
-
 
 # #############################################    CLASS DEFINITIONS    ################################################
 
-# Now we start to make this program Object-Oriented and start using classes. In PyGame, this means using "Sprites".
-
-# TODO: Entity is a base concept, below Monster. We need to rename EntitySpec to MonsterSpec etc. PropSpec is OK.
-#     We'll be adding other Specs too I think like maybe a PlayerSpec. THIS IS NOW BEING DONE IN --THIS-- COMMIT
 
 class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
     def __init__(self, groups, spec: NpcSpec | PropSpec):
@@ -297,35 +280,15 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
 
     def update(self):
         pass
-        self.keys = pygame.key.get_pressed()  # TODO: Maybe self.keys? It won't shadow with the outer scope keys goes away later.
-
-        # As an interim technique, I'll maintain truth inside the spec object we put in the instance.
-        self.spec['d'].x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
-        self.spec['d'].y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
-
-        self.spec['d'] = self.spec['d'].normalize() if self.spec['d'] else self.spec['d']
-
-        if keys[pygame.K_SPACE]:
-            # print('fire laser')
-            pass
 
 
-
-# The plan is to have an Entity base class and then sub-class for Monster, Prop, Player. BUT since I have not finalized
-# how to separate out the attributes and or have any that stay unused in the base class for some time .. to get started,
-# I will simply copy the Entity class and then let the divergence of those and formation of Entity base class just
-# happen naturally. We are about to start adding methods.
-
-
-
-
-class Npc(Entity):
-    def __init__(self, groups, spec: NpcSpec):
+class Player(Entity):
+    def __init__(self, groups, spec: PlayerSpec):
         # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups, spec)
-        self.spec: PropSpec = spec
+        self.spec: PlayerSpec = spec
         self.image: pygame.Surface = pygame.Surface((0, 0))
-        # self.image_r: pygame.Surface = pygame.Surface((0, 0))  *** REMOVED from cloned Entity code. *** - This is a prop.
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))
         self.rect: pygame.FRect = pygame.FRect()
 
         # TODO: Since this is a prop, we probably do not need to generate the right-facing surface, but the flip feature is good.
@@ -338,15 +301,51 @@ class Npc(Entity):
             self.image = pygame.image.load(self.imgpath).convert_alpha()
             if self.spec['flip']:
                 self.image = pygame.transform.flip(self.image, True, False)
-        # Generate the RIGHT-facing surface - *** REMOVED from cloned Entity code. *** - This is a prop.
+        # Generate the RIGHT-facing surface
+        self.image_r = pygame.transform.flip(self.image, True, False)
 
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
     def update(self):
-        print(f"NPC/prop {self.spec['name']} is being updated")
+        print(f"A Player instance {self.spec['name']} is being updated")
+        pass
+        self.keys = pygame.key.get_pressed()  # TODO: Maybe self.keys? It won't shadow with the outer scope keys goes away later.
+
+        # As an interim technique, I'll maintain truth inside the spec object we put in the instance.
+        self.spec['d'].x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
+        self.spec['d'].y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
+
+        self.spec['d'] = self.spec['d'].normalize() if self.spec['d'] else self.spec['d']
+
+        if self.keys[pygame.K_SPACE]:
+            # print('fire laser')
+            pass
 
 
+class Npc(Entity):
+    def __init__(self, groups, spec: NpcSpec):
+        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
+        super().__init__(groups, spec)
+        self.spec: NpcSpec = spec
+        self.image: pygame.Surface = pygame.Surface((0, 0))
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))
+        self.rect: pygame.FRect = pygame.FRect()
 
+        if DEBUG:
+            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image.fill(self.spec['color'])
+        else:
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
+            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            if self.spec['flip']:
+                self.image = pygame.transform.flip(self.image, True, False)
+        # Generate the RIGHT-facing surface
+        self.image_r = pygame.transform.flip(self.image, True, False)
+
+        self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
+
+    def update(self):
+        print(f"An NPC instance {self.spec['name']} is being updated")
 
 
 class Prop(Entity):
@@ -373,11 +372,7 @@ class Prop(Entity):
         self.rect = self.image.get_frect(center=(self.spec['x'], self.spec['y']))
 
     def update(self):
-        print(f"NPC/prop {self.spec['name']} is being updated")
-
-
-
-
+        print(f"A Prop instance {self.spec['name']} is being updated")
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -388,14 +383,10 @@ pygame.init()
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
-# The prefix "all_" works well to identify these as sprite groups by convention in this app. Especially during our transition.
-# At least for now, I want to use 'monsters' or 'props' etc as objects/lists to hold either the spec objects or the instances.
-# eventually I think such lists will go away (or maybe not .. but probably since we can leverage sprite classes in custom ways
-# .. for the totality of iteration needs, we will remain to be seen..)
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
-all_monsters: pygame.sprite.Group = pygame.sprite.Group()
-all_props: pygame.sprite.Group = pygame.sprite.Group()
 all_players: pygame.sprite.Group = pygame.sprite.Group()
+all_npcs: pygame.sprite.Group = pygame.sprite.Group()
+all_props: pygame.sprite.Group = pygame.sprite.Group()
 
 
 # INITIALIZE NPCs - LEGACY (not OOP)
@@ -454,13 +445,29 @@ for prop_t in prop_templates:
 
 # ################################################    INSTANTIATION    #################################################
 
-# INSTANTIATE NPCs - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
+# INSTANTIATE ALL THE TYPES OF ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
-# We dynamically generate (spray) prop_specs from prop_templates, but we are moving towards phasing out prop_spec
+# NOTE: We dynamically generate (spray) prop_specs from prop_templates, but we are moving towards phasing out prop_spec
 # objects and using only sprite groups and sprite class instances. So, can look at moving some of the prop_spec
 # generation code (for spraying etc) down here to 'instantiate props'. The goal would be to do it all here and
 # eliminate the need for prop_spec objects. (Similarly we are moving towards eliminating the need for npc_spec
 # objects too.
+
+# INSTANITATE PLAYER(S)
+players: list[Player] = []
+for i, player_spec in enumerate(player_specs):
+    player_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, player_spec['img'])
+    player: Player = Player([all_sprites, all_players], player_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
+    players.append(player)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
+
+# INSTANITATE NPCs
+npcs: list[Npc] = []
+for i, npc_spec in enumerate(npc_specs):
+    npc_spec['instance_id'] = i
+    imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
+    npc: Npc = Npc([all_sprites, all_npcs], npc_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
+    npcs.append(npc)
 
 # INSTANITATE PROPS
 props: list[Prop] = []
@@ -468,15 +475,7 @@ for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
     prop: Prop = Prop([all_sprites, all_props], prop_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    props.append(prop)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
-
-# INSTANITATE MONSTERS
-monsters: list[Entity] = []
-for i, npc_spec in enumerate(npc_specs):
-    npc_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
-    monster: Entity = Entity([all_sprites, all_monsters], npc_spec)  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    monsters.append(monster)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
+    props.append(prop)
 
 
 
@@ -515,12 +514,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # BUG FIX NOTE: When I added this LEGACY_MODE if-switch, I also moved this OUT of the event loop.
-    # This was a non-obvious indentation bug. All my code comments actually made it hard to see, hence why I
-    # frequently clean up my code comments and move them in to notes files for possible use in documentation later.
-    # This never should have been inside the event loop. It was not a horrible bug and only caused some weird
-    # edge-case behavior with bouncing while holding down keys etc. Anyhow, fixing it did change behavior when
-    # input-controlled player hits a wall. No big deal. Code is more correct now and all this will be changing soon.
     if LEGACY_MODE:
         keys = pygame.key.get_pressed()
 
@@ -566,10 +559,11 @@ while running:
     # NEW for OOP:
     all_sprites.update()
 
+    # REDRAW THE BG
+    if ACID_MODE is False:
+        display_surface.blit(bg_surface, (0, 0))
+
     if LEGACY_MODE:
-        # REDRAW THE BG
-        if ACID_MODE is False:
-            display_surface.blit(bg_surface, (0, 0))
 
         # DRAW PROPS
         for prop_spec in prop_specs:

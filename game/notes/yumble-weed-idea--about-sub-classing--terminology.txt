@@ -1,0 +1,22 @@
+
+
+
+
+# TODO: Add a tumble weed prop and a wind force for those. Each responds at differnet speeds possibly based on size.
+#     This shows why Prop class also inherits from Entity. Props are like monsters that might often sit still but the
+#     don't need all the monster features. They need physics features. Props are sort of just one step up from Entity.
+#     Entity is currently not intended to be instantiated and only sub-classed. It's about code organization and how
+#     that code gets used and to what degree it gets customized etc. etc. Right now I don't see Entity ever being
+#     instantiated as it is just a repository of common code for anything that moves and reacts to physics and
+#     environmental influences on the screen.
+
+
+# NOTE: Another term for "sub-class" is to "extend" a class. There exists other equivalent terminology. I will update
+# notes in this project with more info on terminology like this used in the context of different programming languages.
+# There is always some flexibility nowadays as so many developers do many different langauges and learn terminology
+# from so many different educational sources. I will distill things down to the "best" terminology as I have been a
+# part of the evolution of the industry and used so many languages for so many decades. (Coding for most of 44 years
+# as I started quite young with BASIC, Pascal and Foretran and have used nearly all languages projessionally with
+# a lot of Python, Javascript, Perl, C Sharp, C, C++, Java, Visual Basic, and many frameworks, protocols and more.)
+# This puts me in a good position to distill down what I can say is a "Best Practice" usage of terminology and in
+# what contexts for what audiences.
