@@ -265,32 +265,42 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction  # Direction
         self.speed: float = speed  # Speed
-        self.image: pygame.Surface = pygame.Surface((0, 0))
+        self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion)
+        self.image_l: pygame.Surface = pygame.Surface((0, 0))  # Left-facing copy of the image for motion. DEFAULT.
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
         self.rect: pygame.FRect = pygame.FRect()
         self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
 
         if DEBUG:
-            self.image = pygame.Surface((self.spec['w'], self.spec['h']))
-            self.image.fill(self.spec['color'])
+            self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
+            self.image_l.fill(self.spec['color'])
         else:
             self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
-            self.image = pygame.image.load(self.imgpath).convert_alpha()
+            self.image_l = pygame.image.load(self.imgpath).convert_alpha()
             if self.spec['flip']:
-                self.image = pygame.transform.flip(self.image, True, False)
+                self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
+            # The loaded image should be facing left and if not, use the 'flip' option. The right-facing version is
+            # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
 
         # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
-        self.image_r = pygame.transform.flip(self.image, True, False)  # Generate right-facing surface.
+        self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
 
-        self.rect = self.image.get_frect(center=(self.x, self.y))
+        # CONCERN: I think this is where I will fix a bug where the rect appears to have not been initialized.
+        # It would not have been, so I know it is a good fix. ** BUT ** my concern is about the fix and the actual
+        # FRext it references. I will watch and see if we have a problem in only one direction.
+        # If we DO have a problem (and that is an IF) then the fix might be we have to set the rect every time we
+        # set the image based on direction. (so we get the reference to the SAME FRect). Updates to the FRect for
+        # motion are the concern. Is the FRect we get good with all the updates? Is it the same FRect reference or at
+        # some step did it become a new object and thus did not get all position, speed or direction updates.
+        # Easily enough detected and fixed if this is the case.
+        #self.rect = self.image.get_frect(center=(self.x, self.y))  # THIS WAS A BUG
+        self.rect = self.image_l.get_frect(center=(self.x, self.y))  # Hopefully the above concerns don't apply here.
+        # Initial tests show this appears to be working fine. We could log the address of the objects to be sure.
 
     def update(self, delta_time: float, ephase_name: str):
-        # Although ephase_name is unused here. Juses needed to make the signatures match Npc.update() and Player.update() to keep PyCharm static checking happy. TODO: Look into deeper later.
+        # TODO: Articulate the reason we have to make the update signatures match. NOTE: ephase_name ARG had to be added
+        #     to places it is not actually used. (* PyCharm static analysis warning *)
 
-        # print(f"Entity update is running for: {self.spec['name']}")
-        # ***************************
-        # WORKING ON THIS MYPY ERROR:
-        # delta_vector = pygame.Vector2(npc_spec['d'] * npc_spec['s'])  # SEEN AS A tuple[float, float] - SAME
         delta_vector = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
@@ -317,6 +327,12 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
         if self.rect.bottom >= SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT
             self.dir.y *= -1
+
+        # Activate the correctly-facing image, based on X direction.
+        if self.dir.x < 0:
+            self.image = self.image_l
+        else:
+            self.image = self.image_r
 
 
 class Player(Entity):

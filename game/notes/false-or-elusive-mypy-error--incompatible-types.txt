@@ -1,0 +1,52 @@
+
+
+    def update(self, delta_time: float, ephase_name: str):
+        # Although ephase_name is unused here. Juses needed to make the signatures match Npc.update() and Player.update() to keep PyCharm static checking happy. TODO: Look into deeper later.
+
+        # print(f"Entity update is running for: {self.spec['name']}")
+        # ***************************
+        # WORKING ON THIS MYPY ERROR:
+        # delta_vector = pygame.Vector2(npc_spec['d'] * npc_spec['s'])  # SEEN AS A tuple[float, float] - SAME
+        delta_vector = self.dir * self.speed * delta_time
+        # MYPY ERROR HERE - TRICKY ONE:
+        # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
+        #     variable has type "tuple[float, float]")  [assignment]
+        self.rect.center += delta_vector
+        # ***************************
+
+        # Bounce off LEFT wall in X Axis
+        if self.rect.left <= 0:
+            self.rect.left = 0
+            self.dir.x *= -1
+
+        # Bounce off RIGHT wall in X Axis
+        if self.rect.right >= SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
+            self.dir.x *= -1
+
+        # Bounce off TOP wall in Y Axis
+        if self.rect.top <= 0:
+            self.rect.top = 0
+            self.dir.y *= -1
+
+        # Bounce off BOTTOM wall in Y Axis
+        if self.rect.bottom >= SCREEN_HEIGHT:
+            self.rect.bottom = SCREEN_HEIGHT
+            self.dir.y *= -1
+
+
+
+
+
+
+
+
+ALSO - TOTALLY SEPARATE ISSUE NOTED AT THE TOP ABOUT WHY WE ADDED THE ephase_name ARG
+Since it looks like we added it to places we don't use it, so that parent-child overridden signatures match.
+That makes sense, but I need to grok it better.
+
+
+    def update(self, delta_time: float, ephase_name: str):
+        # Although ephase_name is unused here. Needed to make the signatures match Npc.update() and Player.update()
+        # to keep PyCharm static checking happy. TODO: Look into deeper later.
+
