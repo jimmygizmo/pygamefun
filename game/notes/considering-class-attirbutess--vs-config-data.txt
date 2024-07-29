@@ -1,0 +1,40 @@
+
+
+
+
+class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
+    def __init__(self,
+                 groups,
+                 spec: PlayerSpec | NpcSpec | PropSpec,
+                 direction: pygame.math.Vector2,
+                 speed: float,
+                 ):
+        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
+        super().__init__(groups)
+        # self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # PlayerSpec coming soon.
+        self.spec: NpcSpec | PropSpec = spec
+        # Seems like we might want to move the most important spec[] fields into attributes. Entity or a sub-class.
+        # POSSIBLY/PROBABLY. It seems like we need not pass a whole spec dictionary, but rather should be using
+        # as many named attributes as necessary. Seems like passing the spec dictionary is cheating pass all the
+        # traditional design patterns and benefits and enforcements of arguments/instantiation etc. The spec dictionary
+        # could even potentially be eliminated in favor of other config methods. There is not necessarily anything wrong with
+        # passing in many specs into a class instance contained with a dictionary, but in this case it does not seem like
+        # the right pattern or of any particular benefit. No problem is motivating this move. However, in general,
+        # replicated data needs to be addressed, unnecessary complexity needs to be reduced, proper enforcement of
+        # types and other aspects are needed and the self-documenting nature of some patterns like named parameters
+        # or instantiation are good to use and to use thoroughly and consistenyly. When you think through all of this,
+        # you realize the Specs dictionaries need at least to be minized and then possibly generalized further. It
+        # might still be good to use them for the simplest state of config after all legacy patterns are gone and
+        # the LEGACY_MODE switch is also gone. No need to replace the dicts (and TypedDicts) for any other static
+        # configuration mechanism. We just need to simplify them and move to a separate module etc. For now.
+        # Beause of all this, we will likely have the self.dir and also self.speed and self.x and self.y etc.
+        # These will all be named parameters and will be populated out of the Spec TypedDicts AT THE POINT OF INSTANTIATION.
+        # (We have to add all that.) TODO: Spock, make it so.
+        self.dir: pygame.math.Vector2 = direction  # Direction
+        self.speed: float = speed  # Speed
+        self.image: pygame.Surface = pygame.Surface((0, 0))
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
+        self.rect: pygame.FRect = pygame.FRect()
+        self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
+
+
