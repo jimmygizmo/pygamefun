@@ -1,4 +1,15 @@
 
+    # print(f"delta_time - duration of one frame - (seconds): {delta_time}")  # ----  DEBUG  ----
+
+
+        # print(f"Entity: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
+
+        # print(f"NPC: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
+
+        # print(f"Prop: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
+
+
+
 
 
         if DEBUG:  # We don't really need this cool DEBUG. Keep around for inspiration until we have much such features propagated.

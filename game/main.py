@@ -284,7 +284,9 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
 
         self.rect = self.image.get_frect(center=(self.x, self.y))
 
-    def update(self, delta_time: float):
+    def update(self, delta_time: float, ephase_name: str):
+        # Although ephase_name is unused here. Juses needed to make the signatures match Npc.update() and Player.update() to keep PyCharm static checking happy. TODO: Look into deeper later.
+
         # print(f"Entity update is running for: {self.spec['name']}")
         # ***************************
         # WORKING ON THIS MYPY ERROR:
@@ -316,8 +318,6 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
             self.rect.bottom = SCREEN_HEIGHT
             self.dir.y *= -1
 
-        # print(f"Entity: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-
 
 class Player(Entity):
     def __init__(self,
@@ -330,7 +330,9 @@ class Player(Entity):
                  ):
         super().__init__(groups, spec, x, y, direction, speed)
 
-    def update(self, delta_time: float):
+    def update(self, delta_time: float, ephase_name: str):
+        enviro_influence(self, ephase_name)
+
         self.keys = pygame.key.get_pressed()
         self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
         self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
@@ -343,7 +345,7 @@ class Player(Entity):
         # print(f"Player: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         # TODO: Is this the order of processing we want? Is it the same as legacy? I think yes and yes, but CONFIRM!
-        super().update(delta_time)
+        super().update(delta_time, ephase_name)
 
 
 class Npc(Entity):
@@ -357,9 +359,9 @@ class Npc(Entity):
                  ):
         super().__init__(groups, spec, x, y, direction, speed)
 
-    def update(self, delta_time: float):
-        # print(f"NPC: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-        super().update(delta_time)
+    def update(self, delta_time: float, ephase_name: str):
+        enviro_influence(self, ephase_name)
+        super().update(delta_time, ephase_name)
 
 
 class Prop(Entity):
@@ -374,8 +376,28 @@ class Prop(Entity):
         super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)
 
     def update(self, delta_time: float):
-        # print(f"Prop: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-        super().update(delta_time)
+        super().update(delta_time, ephase_name)
+
+
+# #############################################    FUNCTION DEFINITIONS    #############################################
+
+def enviro_influence(xself: Player | Npc, ephase_name: str) -> None:
+    # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
+    if ephase_name == 'peace':
+        xself.spec['s'] = xself.spec['p']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['p']  # TODO: Choose which to maintain and then where to set default + update
+    elif ephase_name == 'rogue':
+        xself.spec['s'] = xself.spec['r']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['r']  # TODO: Choose which to maintain and then where to set default + update
+    elif ephase_name == 'chaos':
+        xself.spec['s'] = xself.spec['c']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['c']  # TODO: Choose which to maintain and then where to set default + update
+    elif ephase_name == 'frozen':
+        xself.spec['s'] = xself.spec['f']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['f']  # TODO: Choose which to maintain and then where to set default + update
+    else:
+        raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
+                         "Check values in ENVIRO_PHASES config.")
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -485,12 +507,10 @@ keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # All this requ
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
-#   * * * * * * * * * * * * * * * * * * * *
+
 #   * * * * * *    MAIN LOOP    * * * * * *
-#   * * * * * * * * * * * * * * * * * * * *
 while running:
     delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
-    # print(f"delta_time - duration of one frame - (seconds): {delta_time}")  # ----  DEBUG  ----
 
 
     # ##################################################    INPUT    ###################################################
@@ -504,7 +524,9 @@ while running:
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
     # TODO: THis will have to be adapted to the new OOP architecture and will probably move into Entity, maybe update()
-    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify npc_spec behavior per their enviro-reaction profiles.
+    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify Npc and Player behavior per their enviro-reaction profiles in their specs.
+    # ENVIRO_PHASES is a collections.deque instance and we popleft() the first/current 'phase'.
+    #     Then we add the phase we removed from the left/start of the (deque) to the end (right side/last position).
     if ephase is None:
         ephase = ENVIRO_PHASES[0]
         ephase_name = ephase[0]
@@ -512,20 +534,6 @@ while running:
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
     else:
-        # APPLY THE EFFECTS HERE - NPCs CHANGE THEIR SPEEDS
-        for npc_spec in npc_specs:
-            if ephase_name == 'peace':
-                npc_spec['s'] = npc_spec['p']
-            elif ephase_name == 'rogue':
-                npc_spec['s'] = npc_spec['r']
-            elif ephase_name == 'chaos':
-                npc_spec['s'] = npc_spec['c']
-            elif ephase_name == 'frozen':
-                npc_spec['s'] = npc_spec['f']
-            else:
-                raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
-                        "Check values in ENVIRO_PHASES config.")
-
         ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
             ephase = None
@@ -533,16 +541,20 @@ while running:
 
     # ##################################################    DRAW    ####################################################
 
-    # all_sprites.update(delta_time)  # Do not do this. Sub-class update() will call the Entity.update() for you.
+
+    #   ^ ^ ^ ^ ^ ^    MAIN UPDATE ACTIONS    ^ ^ ^ ^ ^ ^
     all_props.update(delta_time)
-    all_npcs.update(delta_time)
-    all_players.update(delta_time)
+    all_npcs.update(delta_time, ephase_name)
+    all_players.update(delta_time, ephase_name)
 
     # REDRAW THE BG
     if ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
-    all_sprites.draw(display_surface)  # MAIN DRAWING ACTION
+    #   | | | | | |    MAIN DRAWING ACTIONS    | | | | | |
+    all_props.draw(display_surface)
+    all_npcs.draw(display_surface)
+    all_players.draw(display_surface)
 
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
