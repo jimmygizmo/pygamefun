@@ -349,7 +349,7 @@ class Player(Entity):
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
 
-        self.keys = pygame.key.get_pressed()
+        self.keys = pygame.key.get_pressed()  # *** MyPy ERROR suggests that self.keys maybe should be ScancodeWrapper ???
         self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
         self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
 
@@ -358,7 +358,6 @@ class Player(Entity):
         if self.keys[pygame.K_SPACE]:
             print('fire laser')
 
-        # print(f"Player: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         # TODO: Is this the order of processing we want? Is it the same as legacy? I think yes and yes, but CONFIRM!
         super().update(delta_time, ephase_name)
@@ -391,26 +390,23 @@ class Prop(Entity):
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)
 
-    def update(self, delta_time: float):
+    def update(self, delta_time: float, ephase_name: str):
         super().update(delta_time, ephase_name)
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
+# *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
 def enviro_influence(xself: Player | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     if ephase_name == 'peace':
-        xself.spec['s'] = xself.spec['p']  # TODO: Choose which to maintain and then where to set default + update
-        xself.speed = xself.spec['p']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['p']  # TODO: eventually eliminate spec dict usage as much as possible.
     elif ephase_name == 'rogue':
-        xself.spec['s'] = xself.spec['r']  # TODO: Choose which to maintain and then where to set default + update
-        xself.speed = xself.spec['r']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['r']  # TODO: eventually eliminate spec dict usage as much as possible.
     elif ephase_name == 'chaos':
-        xself.spec['s'] = xself.spec['c']  # TODO: Choose which to maintain and then where to set default + update
-        xself.speed = xself.spec['c']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['c']  # TODO: eventually eliminate spec dict usage as much as possible.
     elif ephase_name == 'frozen':
-        xself.spec['s'] = xself.spec['f']  # TODO: Choose which to maintain and then where to set default + update
-        xself.speed = xself.spec['f']  # TODO: Choose which to maintain and then where to set default + update
+        xself.speed = xself.spec['f']  # TODO: eventually eliminate spec dict usage as much as possible.
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
@@ -559,7 +555,7 @@ while running:
 
 
     #   ^ ^ ^ ^ ^ ^    MAIN UPDATE ACTIONS    ^ ^ ^ ^ ^ ^
-    all_props.update(delta_time)
+    all_props.update(delta_time, ephase_name)
     all_npcs.update(delta_time, ephase_name)
     all_players.update(delta_time, ephase_name)
 
