@@ -1,12 +1,10 @@
 #! /usr/bin/env -vS python
-import math
 
 import pygame
 from typing import TypedDict
 import os.path
 import random
 import collections
-from typing import Union
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -25,8 +23,6 @@ ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left si
 )  # p, r, c, f
 # ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
-
-LEGACY_MODE = False  # To be used during transition to using Classes/Sprites. Can be removed after transition.
 
 
 PlayerSpec = TypedDict('PlayerSpec', {
@@ -100,69 +96,69 @@ NpcSpec = TypedDict('NpcSpec', {
 # NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
 npc_specs = []
 
-# npc1: NpcSpec = {
-#            'name': 'red-flower-floaty',
-#            'instance_id': -1,
-#            'img':  'red-flower-66x64.png',
-#            'flip': False,
-#            'w': 66,
-#            'h': 64,
-#            'color': 'red1',
-#            'x': 240.0,
-#            'y': 300.0,
-#            'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
-#            's': 100.0,
-#            'p': 100.0,
-#            'r': 100.0,
-#            'c': 350.0,
-#            'f': 2.0,
-#            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-#            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-#            'rect': pygame.FRect(),  # placeholder instance (mypy)
-#            }
-# npc_specs.append(npc1)
-# npc2: NpcSpec = {
-#            'name': 'red-flower-drifty',
-#            'instance_id': -1,
-#            'img':  'red-flower-66x64.png',
-#            'flip': True,
-#            'w': 66,
-#            'h': 64,
-#            'color': 'orangered',
-#            'x': 240.0,
-#            'y': 300.0,
-#            'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
-#            's': 100.0,
-#            'p': 100.0,
-#            'r': 100.0,
-#            'c': 420.0,
-#            'f': 3.0,
-#            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-#            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-#            'rect': pygame.FRect(),  # placeholder instance (mypy)
-#            }
-# npc_specs.append(npc2)
-# npc3: NpcSpec = {
-#            'name': 'goldie',
-#            'instance_id': -1,
-#            'img': 'gold-retriever-160x142.png',
-#            'flip': True,
-#            'w': 160,
-#            'h': 142,
-#            'color': 'gold',
-#            'x': 500.0,
-#            'y': 300.0,
-#            'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
-#            's': 141.0,
-#            'p': 160.0,
-#            'r': 880.0,
-#            'c': 1290.0,
-#            'f': 10.0,
-#            'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-#            'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-#            'rect': pygame.FRect(),  # placeholder instance (mypy)
-#            }
-# npc_specs.append(npc3)
+npc1: NpcSpec = {
+           'name': 'red-flower-floaty',
+           'instance_id': -1,
+           'img':  'red-flower-66x64.png',
+           'flip': False,
+           'w': 66,
+           'h': 64,
+           'color': 'red1',
+           'x': 240.0,
+           'y': 300.0,
+           'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
+           's': 100.0,
+           'p': 100.0,
+           'r': 100.0,
+           'c': 350.0,
+           'f': 2.0,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
+           }
+npc_specs.append(npc1)
+npc2: NpcSpec = {
+           'name': 'red-flower-drifty',
+           'instance_id': -1,
+           'img':  'red-flower-66x64.png',
+           'flip': True,
+           'w': 66,
+           'h': 64,
+           'color': 'orangered',
+           'x': 240.0,
+           'y': 300.0,
+           'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
+           's': 100.0,
+           'p': 100.0,
+           'r': 100.0,
+           'c': 420.0,
+           'f': 3.0,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
+           }
+npc_specs.append(npc2)
+npc3: NpcSpec = {
+           'name': 'goldie',
+           'instance_id': -1,
+           'img': 'gold-retriever-160x142.png',
+           'flip': True,
+           'w': 160,
+           'h': 142,
+           'color': 'gold',
+           'x': 500.0,
+           'y': 300.0,
+           'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
+           's': 141.0,
+           'p': 160.0,
+           'r': 880.0,
+           'c': 1290.0,
+           'f': 10.0,
+           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
+           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
+           'rect': pygame.FRect(),  # placeholder instance (mypy)
+           }
+npc_specs.append(npc3)
 npc4: NpcSpec = {
            'name': 'grumpy',
            'instance_id': -1,
@@ -246,8 +242,6 @@ PropSpec = TypedDict('PropSpec',{
         'color': str,
         'x': float,
         'y': float,
-        'surface': pygame.Surface,
-        'rect': pygame.FRect,
         })
 
 
@@ -322,8 +316,7 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
             self.rect.bottom = SCREEN_HEIGHT
             self.dir.y *= -1
 
-        # self.rect = self.image.get_frect(center=(self.x, self.y))  # THIS SEEMS WRONG. IT WIPES OUT OUR MAIN MOVEMENT CALC AT THE TOP OF THIS UPDATE. IT WAS A MISTAKEN FIX ATTEMPT.
-        print(f"Entity: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
+        # print(f"Entity: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
 
 
 class Player(Entity):
@@ -335,14 +328,10 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups, spec, x, y, direction, speed)
 
     def update(self, delta_time: float):
-        print(f"A Player instance {self.spec['name']} is being updated")
-        self.keys = pygame.key.get_pressed()  # TODO: This is an experiment. Not sure if it is right to do this here like this.
-
-        # As an interim technique, I'll maintain truth inside the spec object we put in the instance.
+        self.keys = pygame.key.get_pressed()
         self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
         self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
 
@@ -351,12 +340,9 @@ class Player(Entity):
         if self.keys[pygame.K_SPACE]:
             print('fire laser')
 
-        # ----  DEBUG ----
-        print(f"Player: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-
-        # IMPORTANT - NOW IN OOP, WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING.
-        # TODO: ANALYZE IF THIS CHANGE FROM LEGACY METHOD. I think this is the same. That is what we want.
-        # We can fix any issue if it changed, but ideally this is same order. TODO: CONFIRM THIS.
+        # print(f"Player: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
+        # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
+        # TODO: Is this the order of processing we want? Is it the same as legacy? I think yes and yes, but CONFIRM!
         super().update(delta_time)
 
 
@@ -369,15 +355,10 @@ class Npc(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         super().__init__(groups, spec, x, y, direction, speed)
 
     def update(self, delta_time: float):
-        # print(f"An NPC instance {self.spec['name']} is being updated")
-
-        # ----  DEBUG ----
-        print(f"NPC: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-
+        # print(f"NPC: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
         super().update(delta_time)
 
 
@@ -388,17 +369,12 @@ class Prop(Entity):
                  x: float,
                  y: float,
                  ):
-        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)
 
     def update(self, delta_time: float):
-        # print(f"A Prop instance {self.spec['name']} is being updated")
-
-        # ----  DEBUG ----
-        print(f"Prop: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
-
+        # print(f"Prop: dir.x: {self.dir.x}    dir.y: {self.dir.y}    speed: {self.speed}   x: {self.x}   y: {self.y}    {self.spec['name']}")
         super().update(delta_time)
 
 
@@ -415,28 +391,7 @@ all_players: pygame.sprite.Group = pygame.sprite.Group()
 all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
 
-
-if LEGACY_MODE:
-    # INITIALIZE NPCs - LEGACY (not OOP)
-    for npc_spec in npc_specs:
-        if DEBUG:
-            npc_spec['surface'] = pygame.Surface((npc_spec['w'], npc_spec['h']))
-            npc_spec['surface'].fill(npc_spec['color'])
-        else:
-            imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
-            npc_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
-            if npc_spec['flip']:
-                npc_spec['surface'] = pygame.transform.flip(npc_spec['surface'], True, False)
-        # Generate the RIGHT-facing surface
-        npc_spec['surface_r'] = pygame.transform.flip(npc_spec['surface'], True, False)
-
-        npc_spec['rect'] = npc_spec['surface'].get_frect(center=(npc_spec['x'], npc_spec['y']))
-
-# We still need to SPRAY the prop_specs, so the OOP code can instantiate from those prop_specs. We are phasing out
-# the use of much of the prop specs, this code cannot be put inside a LEGACY_MODE switch, BUT it will be greatly
-# simplified. Some form of it will remain after all LEGACY_MODE code is gone.
-
-# INITIALIZE PROPS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
+# GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
 prop_specs = []
 for prop_t in prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
@@ -450,8 +405,6 @@ for prop_t in prop_templates:
                 'color': prop_t['color'],
                 'x': 0.0,  # placeholder (mpypy)
                 'y': 0.0,  # placeholder (mpypy)
-                'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
-                'rect': pygame.FRect(),  # placeholder instance (mypy)
                 }
 
         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
@@ -461,29 +414,15 @@ for prop_t in prop_templates:
         prop_spec['x'] = prop_t['x'] + x_offset
         prop_spec['y'] = prop_t['y'] + y_offset
 
-        if DEBUG:
-            prop_spec['surface'] = pygame.Surface((prop_spec['w'], prop_spec['h']))
-            prop_spec['surface'].fill(prop_spec['color'])
-        else:
-            imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
-            prop_spec['surface'] = pygame.image.load(imgpath).convert_alpha()
-
-        prop_spec['rect'] = prop_spec['surface'].get_frect(center=(prop_spec['x'], prop_spec['y']))
-
-        prop_specs.append(prop_spec)
-
         # print(prop_spec)  # ----  DEBUG  ----
+        prop_specs.append(prop_spec)
 
 
 # ################################################    INSTANTIATION    #################################################
 
 # INSTANTIATE ALL THE TYPES OF ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
-# NOTE: We dynamically generate (spray) prop_specs from prop_templates, but we are moving towards phasing out prop_spec
-# objects and using only sprite groups and sprite class instances. So, can look at moving some of the prop_spec
-# generation code (for spraying etc) down here to 'instantiate props'. The goal would be to do it all here and
-# eliminate the need for prop_spec objects. (Similarly we are moving towards eliminating the need for npc_spec
-# objects too.
+# TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
 
 # INSTANITATE PLAYER(S)
 players: list[Player] = []
@@ -526,7 +465,6 @@ for i, prop_spec in enumerate(prop_specs):
     props.append(prop)
 
 
-
 # ###############################################    MAIN EXECUTION    #################################################
 
 bgpath = os.path.join(ASSET_PATH, BGIMG)
@@ -562,18 +500,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    if LEGACY_MODE:
-        keys = pygame.key.get_pressed()
 
-        npc_specs[3]['d'].x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-        npc_specs[3]['d'].y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
-
-        npc_specs[3]['d'] = npc_specs[3]['d'].normalize() if npc_specs[3]['d'] else npc_specs[3]['d']
-
-        if keys[pygame.K_SPACE]:
-            # print('fire laser')
-            pass
-
+    # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
     # TODO: THis will have to be adapted to the new OOP architecture and will probably move into Entity, maybe update()
     # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify npc_spec behavior per their enviro-reaction profiles.
@@ -605,76 +533,23 @@ while running:
 
     # ##################################################    DRAW    ####################################################
 
-    # NEW for OOP:
-    # all_sprites.update(delta_time)  # MIGHT RESULT IN DOUBLE UPDATING, BECAUSE:
-    # Not sure, but since we override update() in each class, even if all we do is log(), we might not want to call
-    # all_sprites. THis might result in double updates. Might be best to update the three types individually:
-    all_players.update(delta_time)
+    # all_sprites.update(delta_time)  # Do not do this. Sub-class update() will call the Entity.update() for you.
+    all_props.update(delta_time)
     all_npcs.update(delta_time)
-    ####all_props.update(delta_time)
+    all_players.update(delta_time)
 
     # REDRAW THE BG
     if ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
-    if LEGACY_MODE:
+    all_sprites.draw(display_surface)  # MAIN DRAWING ACTION
 
-        # DRAW PROPS
-        for prop_spec in prop_specs:
-            display_surface.blit(prop_spec['surface'], prop_spec['rect'])
-
-        # DRAW NPCs
-        for npc_spec in npc_specs:
-            if npc_spec['d'].x <= 0:
-                display_surface.blit(npc_spec['surface'], npc_spec['rect'])  # LEFT-facing
-            else:
-                display_surface.blit(npc_spec['surface_r'], npc_spec['rect'])  # RIGHT-facing
-
-        # TODO: LEGACY code needs player added here .. if we are keeping lagacy functionality. (not much longer)
-        # The reason is we moved Player into its own Spec dict, so it is no longer part of NPC.
-
-
-    # NEW for OOP:
-    all_sprites.draw(display_surface)
-
-
-    # pygame.display.update()  # update entire surface or use  .flip() which will update only part of the surface.
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
 
     # ################################################    PHYSICS    ###################################################
 
-    if LEGACY_MODE:
-        for npc_spec in npc_specs:
-            # ***************************
-            # WORKING ON THIS MYPY ERROR:
-            # delta_vector = pygame.Vector2(npc_spec['d'] * npc_spec['s'])  # SEEN AS A tuple[float, float] - SAME
-            delta_vector = npc_spec['d'] * npc_spec['s'] * delta_time
-            # MYPY ERROR HERE - TRICKY ONE:
-            # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
-            #     variable has type "tuple[float, float]")  [assignment]
-            npc_spec['rect'].center += delta_vector
-            # ***************************
-
-            # Bounce off LEFT wall in X Axis
-            if npc_spec['rect'].left <= 0:
-                npc_spec['rect'].left = 0
-                npc_spec['d'].x *= -1
-
-            # Bounce off RIGHT wall in X Axis
-            if npc_spec['rect'].right >= SCREEN_WIDTH:
-                npc_spec['rect'].right = SCREEN_WIDTH
-                npc_spec['d'].x *= -1
-
-            # Bounce off TOP wall in Y Axis
-            if npc_spec['rect'].top <= 0:
-                npc_spec['rect'].top = 0
-                npc_spec['d'].y *= -1
-
-            # Bounce off BOTTOM wall in Y Axis
-            if npc_spec['rect'].bottom >= SCREEN_HEIGHT:
-                npc_spec['rect'].bottom = SCREEN_HEIGHT
-                npc_spec['d'].y *= -1
+    # All physics/motion code now in Entity update() and/or Player or Npc update(). This section marker may go away.
 
 
 pygame.quit()
