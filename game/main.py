@@ -41,9 +41,6 @@ PlayerSpec = TypedDict('PlayerSpec', {
         'r': float,  # Enviro: Rogue (speed)
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
-        'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
-        'surface_r': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more  (RIGHT direction)
-        'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
 # PLAYER DATA - Initial state for a single player (usually) or possibly multiple players.
@@ -65,9 +62,6 @@ player1: PlayerSpec = {
            'r': 100.0,
            'c': 700.0,
            'f': 2850.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 player_specs.append(player1)
 
@@ -88,9 +82,6 @@ NpcSpec = TypedDict('NpcSpec', {
         'r': float,  # Enviro: Rogue (speed)
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
-        'surface': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more
-        'surface_r': pygame.Surface,  # The PyGame-CE Surface object - Displays the image and more  (RIGHT direction)
-        'rect': pygame.FRect,  # The PyGame-CE FRect object - Positions the Surface and more
         })
 
 # NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
@@ -112,9 +103,6 @@ npc1: NpcSpec = {
            'r': 100.0,
            'c': 350.0,
            'f': 2.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 npc_specs.append(npc1)
 npc2: NpcSpec = {
@@ -133,9 +121,6 @@ npc2: NpcSpec = {
            'r': 100.0,
            'c': 420.0,
            'f': 3.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 npc_specs.append(npc2)
 npc3: NpcSpec = {
@@ -154,9 +139,6 @@ npc3: NpcSpec = {
            'r': 880.0,
            'c': 1290.0,
            'f': 10.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 npc_specs.append(npc3)
 npc4: NpcSpec = {
@@ -175,9 +157,6 @@ npc4: NpcSpec = {
            'r': 50.0,
            'c': 2170.0,
            'f': 40.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  Default/LEFT-facing
-           'surface_r': pygame.Surface((0, 0)),  # placeholder instance (mypy)  -  RIGHT-facing (generated)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 npc_specs.append(npc4)
 
@@ -194,8 +173,6 @@ PropTemplate = TypedDict('PropTemplate', {
         'y': float,
         'spray_count': int,
         'spray_radius': float,
-        'surface': pygame.Surface,
-        'rect': pygame.FRect,
         })
 
 # PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
@@ -211,8 +188,6 @@ prop_template1: PropTemplate = {
            'y': 360.0,
            'spray_count': 40,
            'spray_radius': 600.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 prop_templates.append(prop_template1)
 prop_template2: PropTemplate = {
@@ -226,8 +201,6 @@ prop_template2: PropTemplate = {
            'y': 160.0,
            'spray_count': 10,
            'spray_radius': 480.0,
-           'surface': pygame.Surface((0, 0)),  # placeholder instance (mypy)
-           'rect': pygame.FRect(),  # placeholder instance (mypy)
            }
 prop_templates.append(prop_template2)
 
@@ -283,17 +256,7 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
         # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
         self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
 
-        # CONCERN: I think this is where I will fix a bug where the rect appears to have not been initialized.
-        # It would not have been, so I know it is a good fix. ** BUT ** my concern is about the fix and the actual
-        # FRext it references. I will watch and see if we have a problem in only one direction.
-        # If we DO have a problem (and that is an IF) then the fix might be we have to set the rect every time we
-        # set the image based on direction. (so we get the reference to the SAME FRect). Updates to the FRect for
-        # motion are the concern. Is the FRect we get good with all the updates? Is it the same FRect reference or at
-        # some step did it become a new object and thus did not get all position, speed or direction updates.
-        # Easily enough detected and fixed if this is the case.
-        #self.rect = self.image.get_frect(center=(self.x, self.y))  # THIS WAS A BUG
-        self.rect = self.image_l.get_frect(center=(self.x, self.y))  # Hopefully the above concerns don't apply here.
-        # Initial tests show this appears to be working fine. We could log the address of the objects to be sure.
+        self.rect = self.image_l.get_frect(center=(self.x, self.y))
 
     def update(self, delta_time: float, ephase_name: str):
         # TODO: Articulate the reason we have to make the update signatures match. NOTE: ephase_name ARG had to be added
@@ -400,13 +363,13 @@ class Prop(Entity):
 def enviro_influence(xself: Player | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     if ephase_name == 'peace':
-        xself.speed = xself.spec['p']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
+        xself.speed = xself.spec['p']
     elif ephase_name == 'rogue':
-        xself.speed = xself.spec['r']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
+        xself.speed = xself.spec['r']
     elif ephase_name == 'chaos':
-        xself.speed = xself.spec['c']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
+        xself.speed = xself.spec['c']
     elif ephase_name == 'frozen':
-        xself.speed = xself.spec['f']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
+        xself.speed = xself.spec['f']
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
