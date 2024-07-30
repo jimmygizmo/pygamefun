@@ -9,14 +9,14 @@ import collections
 
 # ###############################################    CONFIGURATION    ##################################################
 
-SCREEN_WIDTH = 1280.0
-SCREEN_HEIGHT = 720.0
+SCREEN_WIDTH = 1640.0
+SCREEN_HEIGHT = 920.0
 TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
-DEBUG = True
+DEBUG = False
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
@@ -192,10 +192,10 @@ prop_templates: list[PropTemplate] = [
        'w': 66,
        'h': 64,
        'color': 'crimson',
-       'x': 640.0,
-       'y': 360.0,
-       'spray_count': 40,
-       'spray_radius': 600.0,
+       'x': 804.0,
+       'y': 440.0,
+       'spray_count': 60,
+       'spray_radius': 780.0,
     },
     {
        'name': 'blue-flower',
@@ -204,10 +204,10 @@ prop_templates: list[PropTemplate] = [
        'w': 160,
        'h': 158,
        'color': 'darkturquoise',
-       'x': 510.0,
-       'y': 160.0,
-       'spray_count': 10,
-       'spray_radius': 480.0,
+       'x': 880.0,
+       'y': 360.0,
+       'spray_count': 18,
+       'spray_radius': 680.0,
     },
 ]  # prop_templates: list[PropTemplate]
 
@@ -230,7 +230,7 @@ PropSpec = TypedDict('PropSpec',
 # #############################################    CLASS DEFINITIONS    ################################################
 
 
-class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
+class Entity(pygame.sprite.Sprite):
     def __init__(self,
                  groups,
                  spec: PlayerSpec | NpcSpec | PropSpec,
@@ -239,8 +239,7 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # PlayerSpec coming soon.
-        self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # Phasing out most/all of this. Separately, Spec dicts are being simplified.
+        self.spec: PlayerSpec | NpcSpec | PropSpec = spec
         self.x: float = x
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction  # Direction
@@ -278,6 +277,15 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
         self.rect.center += delta_vector
         # ***************************
 
+        self.physics_outer_walls()  # Handle bouncing off walls. NOTE: Props override this and pass. Props ignore walls.
+
+        # Activate the correctly-facing image, based on X direction.
+        if self.dir.x < 0:
+            self.image = self.image_l
+        else:
+            self.image = self.image_r
+
+    def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
         if self.rect.left <= 0:
             self.rect.left = 0
@@ -298,12 +306,6 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
             self.rect.bottom = SCREEN_HEIGHT
             self.dir.y *= -1
 
-        # Activate the correctly-facing image, based on X direction.
-        if self.dir.x < 0:
-            self.image = self.image_l
-        else:
-            self.image = self.image_r
-
 
 class Player(Entity):
     def __init__(self,
@@ -314,19 +316,24 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()
+        # Consider that unless the following two keys ever need to persist until the next frame/iteration, they could
+        # be moved into local variables inside update. I could only forsee a weird de-bounce need edge-case to be a
+        # scenario in which you would need to persist key scans in an instance attibute, so barring those, TODO: move them.
+        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: hort-lived. Consider moving into a local var.
+        self.recent_keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: Short-lived. Consider moving into a local var.
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
 
         self.keys = pygame.key.get_pressed()  # *** MyPy ERROR suggests that self.keys maybe should be ScancodeWrapper ???
+        self.recent_keys = pygame.key.get_just_pressed()  # *** MyPy ERROR suggests that self.keys maybe should be ScancodeWrapper ???
         self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
         self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
 
         self.dir = self.dir.normalize() if self.dir else self.dir
 
-        if self.keys[pygame.K_SPACE]:
+        if self.recent_keys[pygame.K_SPACE]:
             print('fire laser')
 
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
@@ -363,6 +370,14 @@ class Prop(Entity):
 
     def update(self, delta_time: float, ephase_name: str):
         super().update(delta_time, ephase_name)
+
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
+        # print(f"Since in Prop class, physics_outer_walls has been overridden: pass. Walls don't bound props.")
+        # NOTE: In the Player and Npc classes, this is not overridden and Entity.physics_outer_walls() takes effect.
+        # The result is that Props can be 'sprayed' crossing or even beyond display_surface boundaries, while Npc and
+        # Player instances will bounce off of walls or stop up against them but not cross them, depending on other
+        # motion factors/controls.
+        pass
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
