@@ -10,7 +10,7 @@ import collections
 # ###############################################    CONFIGURATION    ##################################################
 
 SCREEN_WIDTH = 1640.0
-SCREEN_HEIGHT = 920.0
+SCREEN_HEIGHT = 860.0
 TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
