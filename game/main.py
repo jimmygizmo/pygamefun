@@ -16,16 +16,24 @@ GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
 BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH = 'assets'  # Relative path with no trailing slash.
-DEBUG = False
-# List of tuples of the phase name and the phase duration in phase units (currently 1 second) TODO: Fix. FRAMES!!!!!
-ENVIRO_PHASES = collections.deque(  # More efficient at popping from the left side of a list.
-    [('peace', 800), ('rogue', 160), ('chaos', 400), ('frozen', 60), ('rogue', 50), ('frozen', 110)]
-)  # p, r, c, f
-# ANOTHER PERSPECTIVE: ephases are sort of motion-modification macros on a timer schedule that repeats (currently.)
+DEBUG = True
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 
+# List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
+# to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
+ENVIRO_PHASES = collections.deque([
+     ('peace', 800),
+     ('rogue', 160),
+     ('chaos', 400),
+     ('frozen', 60),
+     ('rogue', 50),
+     ('frozen', 110),
+     ]
+)  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
 
-PlayerSpec = TypedDict('PlayerSpec', {
+
+PlayerSpec = TypedDict('PlayerSpec',
+    {
         'name': str,  # Player short name
         'instance_id' : int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,  # Filename of PNG (with transparency)
@@ -41,32 +49,33 @@ PlayerSpec = TypedDict('PlayerSpec', {
         'r': float,  # Enviro: Rogue (speed)
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
-        })
+    }
+)  # PlayerSpec
 
 # PLAYER DATA - Initial state for a single player (usually) or possibly multiple players.
-player_specs = []
+player_specs: list[PlayerSpec] = [
+    {
+        'name': 'fishy',
+        'instance_id': -1,
+        'img':  'goldfish-280x220.png',
+        'flip': False,
+        'w': 280,
+        'h': 220,
+        'color': 'darkgoldenrod1',
+        'x': 840.0,
+        'y': 300.0,
+        'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
+        's': 80.0,
+        'p': 90.0,
+        'r': 100.0,
+        'c': 700.0,
+        'f': 2850.0,
+    },
+]  # player_specs: list[PlayerSpec]
 
-player1: PlayerSpec = {
-           'name': 'fishy',
-           'instance_id': -1,
-           'img':  'goldfish-280x220.png',
-           'flip': False,
-           'w': 280,
-           'h': 220,
-           'color': 'darkgoldenrod1',
-           'x': 840.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-           's': 80.0,
-           'p': 90.0,
-           'r': 100.0,
-           'c': 700.0,
-           'f': 2850.0,
-           }
-player_specs.append(player1)
 
-
-NpcSpec = TypedDict('NpcSpec', {
+NpcSpec = TypedDict('NpcSpec',
+    {
         'name': str,  # NPC short name
         'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,  # Filename of PNG (with transparency)
@@ -82,87 +91,85 @@ NpcSpec = TypedDict('NpcSpec', {
         'r': float,  # Enviro: Rogue (speed)
         'c': float,  # Enviro: Chaos (speed)
         'f': float,  # Enviro: Frozen (speed)
-        })
+    }
+)  # NpcSpec
 
 # NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
-npc_specs = []
-
-npc1: NpcSpec = {
-           'name': 'red-flower-floaty',
-           'instance_id': -1,
-           'img':  'red-flower-66x64.png',
-           'flip': False,
-           'w': 66,
-           'h': 64,
-           'color': 'red1',
-           'x': 240.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
-           's': 100.0,
-           'p': 100.0,
-           'r': 100.0,
-           'c': 350.0,
-           'f': 2.0,
-           }
-npc_specs.append(npc1)
-npc2: NpcSpec = {
-           'name': 'red-flower-drifty',
-           'instance_id': -1,
-           'img':  'red-flower-66x64.png',
-           'flip': True,
-           'w': 66,
-           'h': 64,
-           'color': 'orangered',
-           'x': 240.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
-           's': 100.0,
-           'p': 100.0,
-           'r': 100.0,
-           'c': 420.0,
-           'f': 3.0,
-           }
-npc_specs.append(npc2)
-npc3: NpcSpec = {
-           'name': 'goldie',
-           'instance_id': -1,
-           'img': 'gold-retriever-160x142.png',
-           'flip': True,
-           'w': 160,
-           'h': 142,
-           'color': 'gold',
-           'x': 500.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
-           's': 141.0,
-           'p': 160.0,
-           'r': 880.0,
-           'c': 1290.0,
-           'f': 10.0,
-           }
-npc_specs.append(npc3)
-npc4: NpcSpec = {
-           'name': 'grumpy',
-           'instance_id': -1,
-           'img':  'grumpy-cat-110x120.png',
-           'flip': True,
-           'w': 110,
-           'h': 120,
-           'color': 'blanchedalmond',
-           'x': 780.0,
-           'y': 300.0,
-           'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
-           's': 90.0,
-           'p': 80.0,
-           'r': 50.0,
-           'c': 2170.0,
-           'f': 40.0,
-           }
-npc_specs.append(npc4)
+npc_specs: list[NpcSpec] = [
+    {
+       'name': 'red-flower-floaty',
+       'instance_id': -1,
+       'img':  'red-flower-66x64.png',
+       'flip': False,
+       'w': 66,
+       'h': 64,
+       'color': 'red1',
+       'x': 240.0,
+       'y': 300.0,
+       'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
+       's': 100.0,
+       'p': 100.0,
+       'r': 100.0,
+       'c': 350.0,
+       'f': 2.0,
+    },
+    {
+       'name': 'red-flower-drifty',
+       'instance_id': -1,
+       'img':  'red-flower-66x64.png',
+       'flip': True,
+       'w': 66,
+       'h': 64,
+       'color': 'orangered',
+       'x': 240.0,
+       'y': 300.0,
+       'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
+       's': 100.0,
+       'p': 100.0,
+       'r': 100.0,
+       'c': 420.0,
+       'f': 3.0,
+    },
+    {
+       'name': 'goldie',
+       'instance_id': -1,
+       'img': 'gold-retriever-160x142.png',
+       'flip': True,
+       'w': 160,
+       'h': 142,
+       'color': 'gold',
+       'x': 500.0,
+       'y': 300.0,
+       'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
+       's': 141.0,
+       'p': 160.0,
+       'r': 880.0,
+       'c': 1290.0,
+       'f': 10.0,
+    },
+    {
+       'name': 'grumpy',
+       'instance_id': -1,
+       'img':  'grumpy-cat-110x120.png',
+       'flip': True,
+       'w': 110,
+       'h': 120,
+       'color': 'blanchedalmond',
+       'x': 780.0,
+       'y': 300.0,
+       'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
+       's': 90.0,
+       'p': 80.0,
+       'r': 50.0,
+       'c': 2170.0,
+       'f': 40.0,
+    },
+]  # npc_specs: list[NpcSpec]
 
 
 # TypedDict for PROP_TEMPLATE
-PropTemplate = TypedDict('PropTemplate', {
+PropTemplate = TypedDict('PropTemplate',
+    {
         'name': str,
         'img': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
@@ -173,39 +180,40 @@ PropTemplate = TypedDict('PropTemplate', {
         'y': float,
         'spray_count': int,
         'spray_radius': float,
-        })
+    }
+)  # PropTemplate
 
 # PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
-prop_templates = []
-prop_template1: PropTemplate = {
-           'name': 'red-flower',
-           'img':  'red-flower-66x64.png',
-           'flip': False,
-           'w': 66,
-           'h': 64,
-           'color': 'crimson',
-           'x': 640.0,
-           'y': 360.0,
-           'spray_count': 40,
-           'spray_radius': 600.0,
-           }
-prop_templates.append(prop_template1)
-prop_template2: PropTemplate = {
-           'name': 'blue-flower',
-           'img':  'blue-flower-160x158.png',
-           'flip': False,
-           'w': 160,
-           'h': 158,
-           'color': 'darkturquoise',
-           'x': 510.0,
-           'y': 160.0,
-           'spray_count': 10,
-           'spray_radius': 480.0,
-           }
-prop_templates.append(prop_template2)
+prop_templates: list[PropTemplate] = [
+    {
+       'name': 'red-flower',
+       'img':  'red-flower-66x64.png',
+       'flip': False,
+       'w': 66,
+       'h': 64,
+       'color': 'crimson',
+       'x': 640.0,
+       'y': 360.0,
+       'spray_count': 40,
+       'spray_radius': 600.0,
+    },
+    {
+       'name': 'blue-flower',
+       'img':  'blue-flower-160x158.png',
+       'flip': False,
+       'w': 160,
+       'h': 158,
+       'color': 'darkturquoise',
+       'x': 510.0,
+       'y': 160.0,
+       'spray_count': 10,
+       'spray_radius': 480.0,
+    },
+]  # prop_templates: list[PropTemplate]
 
 # TypedDict for PROP. Props are generated dynamically, when we "spray" props from their template.
-PropSpec = TypedDict('PropSpec',{
+PropSpec = TypedDict('PropSpec',
+    {
         'name': str,
         'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img': str,
@@ -215,7 +223,8 @@ PropSpec = TypedDict('PropSpec',{
         'color': str,
         'x': float,
         'y': float,
-        })
+    }
+)  # PropSpec
 
 
 # #############################################    CLASS DEFINITIONS    ################################################
@@ -305,8 +314,7 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
-        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # BETTER than the above?
+        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
     def update(self, delta_time: float, ephase_name: str):
@@ -316,7 +324,7 @@ class Player(Entity):
         self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
         self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
 
-        self.dir = self.dir.normalize() if self.dir  else self.dir
+        self.dir = self.dir.normalize() if self.dir else self.dir
 
         if self.keys[pygame.K_SPACE]:
             print('fire laser')
@@ -542,34 +550,6 @@ pygame.quit()
 
 # ###################################################    NOTES    ######################################################
 
-# GREAT page on Python Exceptions:
-# https://docs.python.org/3/library/exceptions.html
-
-# For those developing Python on Windows. Now with WSL/Ubuntu live all the time on my Windows 10/11 dev machines,
-# I am now just as happy as when using a Mac. Almost no difference. By the way, I heavily use IntelliJ IDEs like PyCharm.
-# So, on your Windows, you will want to install WSL:
-# https://learn.microsoft.com/en-us/windows/wsl/install
-
-# I'll add much more info on setting up the ultimate Windows Python/Full-Stack/Open-Source Developers Workstation.
-# I'll provide the same for Mac. Docker will be involved for some use-cases. There will be MUCH more info than just
-# the WSL link above. I work hard on fine-tuning the ultimate development environments, so you will want to check this
-# topic area out independently of this PyGame-CE project.
-
-
-# Interesting input handling - found via stackexchange:
-# https://github.com/rik-cross/pygamepal/blob/main/src/pygamepal/input.py
-
-# IMPORTANT!
-# Union type in type hinting solves the problem of allowing None pre-initialization vales and also of allowing
-# multiple/different similar types as passed arguments. I will solve both these problems using this.
-# There is a compact syntax now we can use which is extremely intuitive. I love it! Go Python! Go MyPy! Go strong typing!
-# https://medium.com/@apps.merkurev/union-type-expression-in-python-50a1b7d012cd
-
-# NOW WE CAN:
-# def f(lst: list[int | str], param: int | None) -> float | str:
-#     return ''
-#
-# f([1, 'abc'], None)
 
 
 ##

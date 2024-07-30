@@ -1,0 +1,36 @@
+# TUTORIAL VIDEO  (Notice some comments have a Video Timing Marker: Vid28:46)
+# This video is over 11 hours long and covers about 5 different games and a lot of PyGame details.
+# https://www.youtube.com/watch?v=8OMghdHP-zs
+
+# DOCS:
+# https://pyga.me/docs/
+
+# PyGame vs Arcade:
+# https://aircada.com/pygame-vs-arcade/
+
+# Named Colors:
+# https://pyga.me/docs/ref/color_list.html
+
+
+# GREAT page on Python Exceptions:
+# https://docs.python.org/3/library/exceptions.html
+
+# On Windows, install WSL:
+# https://learn.microsoft.com/en-us/windows/wsl/install
+
+# Interesting input handling - found via stackexchange:
+# https://github.com/rik-cross/pygamepal/blob/main/src/pygamepal/input.py
+
+# Using Union in Type Hinting .. like this:    # def f(lst: list[int | str], param: int | None) -> float | str:
+# https://medium.com/@apps.merkurev/union-type-expression-in-python-50a1b7d012cd
+
+
+
+
+
+
+
+
+
+##
+#

@@ -1,0 +1,30 @@
+
+# GREAT page on Python Exceptions:
+# https://docs.python.org/3/library/exceptions.html
+
+# For those developing Python on Windows. Now with WSL/Ubuntu live all the time on my Windows 10/11 dev machines,
+# I am now just as happy as when using a Mac. Almost no difference. By the way, I heavily use IntelliJ IDEs like PyCharm.
+# So, on your Windows, you will want to install WSL:
+# https://learn.microsoft.com/en-us/windows/wsl/install
+
+# I'll add much more info on setting up the ultimate Windows Python/Full-Stack/Open-Source Developers Workstation.
+# I'll provide the same for Mac. Docker will be involved for some use-cases. There will be MUCH more info than just
+# the WSL link above. I work hard on fine-tuning the ultimate development environments, so you will want to check this
+# topic area out independently of this PyGame-CE project.
+
+
+# Interesting input handling - found via stackexchange:
+# https://github.com/rik-cross/pygamepal/blob/main/src/pygamepal/input.py
+
+# IMPORTANT!
+# Union type in type hinting solves the problem of allowing None pre-initialization vales and also of allowing
+# multiple/different similar types as passed arguments. I will solve both these problems using this.
+# There is a compact syntax now we can use which is extremely intuitive. I love it! Go Python! Go MyPy! Go strong typing!
+# https://medium.com/@apps.merkurev/union-type-expression-in-python-50a1b7d012cd
+
+# NOW WE CAN:
+# def f(lst: list[int | str], param: int | None) -> float | str:
+#     return ''
+#
+# f([1, 'abc'], None)
+
