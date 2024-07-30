@@ -257,8 +257,6 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # TODO: We could append prop group the groups list here since each class will always assign at least their own group.
-        super().__init__(groups)
         # self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # PlayerSpec coming soon.
         self.spec: PlayerSpec | NpcSpec | PropSpec = spec  # Phasing out most/all of this. Separately, Spec dicts are being simplified.
         self.x: float = x
@@ -269,7 +267,7 @@ class Entity(pygame.sprite.Sprite):  # TODO: Add PlayerSpec soon.
         self.image_l: pygame.Surface = pygame.Surface((0, 0))  # Left-facing copy of the image for motion. DEFAULT.
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
         self.rect: pygame.FRect = pygame.FRect()
-        self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
+        super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
         if DEBUG:
             self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
@@ -344,7 +342,9 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        super().__init__(groups, spec, x, y, direction, speed)
+        # self.keys: list[int] = [0]  # Placeholder. MyPy gymnastics. Do we really have to do this all the time now for MyPy? I like None much better for pre-initialization.
+        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # BETTER than the above?
+        super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
@@ -372,7 +372,7 @@ class Npc(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        super().__init__(groups, spec, x, y, direction, speed)
+        super().__init__(groups, spec, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
 
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
@@ -388,7 +388,7 @@ class Prop(Entity):
                  ):
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
-        super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)
+        super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
 
     def update(self, delta_time: float, ephase_name: str):
         super().update(delta_time, ephase_name)
@@ -400,13 +400,13 @@ class Prop(Entity):
 def enviro_influence(xself: Player | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     if ephase_name == 'peace':
-        xself.speed = xself.spec['p']  # TODO: eventually eliminate spec dict usage as much as possible.
+        xself.speed = xself.spec['p']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
     elif ephase_name == 'rogue':
-        xself.speed = xself.spec['r']  # TODO: eventually eliminate spec dict usage as much as possible.
+        xself.speed = xself.spec['r']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
     elif ephase_name == 'chaos':
-        xself.speed = xself.spec['c']  # TODO: eventually eliminate spec dict usage as much as possible.
+        xself.speed = xself.spec['c']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
     elif ephase_name == 'frozen':
-        xself.speed = xself.spec['f']  # TODO: eventually eliminate spec dict usage as much as possible.
+        xself.speed = xself.spec['f']  # Use of Spec dicts is being minimized, but this maybe remain as a good one.
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
@@ -511,10 +511,7 @@ else:
 
 running = True
 ephase = None
-ephase_name = None
-
-keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # All this required to satisfy strict typing of MyPy.
-# Originally the above was simply keys = [], which we dont even necessarily need here, but this var MIGHT be good to be available at this scope or at the start of the loop before being freshly re-populated. (Last-keys analysis of change etc.)
+g_ephase_name = None
 
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
@@ -522,26 +519,23 @@ clock = pygame.time.Clock()
 
 #   * * * * * *    MAIN LOOP    * * * * * *
 while running:
-    delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
+    g_delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
 
 
     # ##################################################    INPUT    ###################################################
 
-    # Check all new events since the last main loop iteration
-    for event in pygame.event.get():
+    for event in pygame.event.get():  # Check all new events since the last main loop iteration
         if event.type == pygame.QUIT:
             running = False
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
-    # TODO: THis will have to be adapted to the new OOP architecture and will probably move into Entity, maybe update()
-    # ENVIRONMENT PHASE PROCESSING - Rotate enviro sequence. Modify Npc and Player behavior per their enviro-reaction profiles in their specs.
     # ENVIRO_PHASES is a collections.deque instance and we popleft() the first/current 'phase'.
     #     Then we add the phase we removed from the left/start of the (deque) to the end (right side/last position).
     if ephase is None:
         ephase = ENVIRO_PHASES[0]
-        ephase_name = ephase[0]
+        g_ephase_name = ephase[0]
         ephase_count = ephase[1]
         cut_ephase = ENVIRO_PHASES.popleft()
         ENVIRO_PHASES.append(cut_ephase)
@@ -555,9 +549,9 @@ while running:
 
 
     #   ^ ^ ^ ^ ^ ^    MAIN UPDATE ACTIONS    ^ ^ ^ ^ ^ ^
-    all_props.update(delta_time, ephase_name)
-    all_npcs.update(delta_time, ephase_name)
-    all_players.update(delta_time, ephase_name)
+    all_props.update(g_delta_time, g_ephase_name)
+    all_npcs.update(g_delta_time, g_ephase_name)
+    all_players.update(g_delta_time, g_ephase_name)
 
     # REDRAW THE BG
     if ACID_MODE is False:
