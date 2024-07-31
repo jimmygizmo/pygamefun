@@ -316,11 +316,6 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # Consider that unless the following two keys ever need to persist until the next frame/iteration, they could
-        # be moved into local variables inside update. I could only forsee a weird de-bounce need edge-case to be a
-        # scenario in which you would need to persist key scans in an instance attibute, so barring those, TODO: move them.
-        self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: hort-lived. Consider moving into a local var.
-        self.recent_keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: Short-lived. Consider moving into a local var.
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = 700  # milliseconds
@@ -329,14 +324,15 @@ class Player(Entity):
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
 
-        self.keys = pygame.key.get_pressed()  # *** MyPy ERROR suggests that self.keys maybe should be ScancodeWrapper ???
-        self.recent_keys = pygame.key.get_just_pressed()  # *** MyPy ERROR suggests that self.keys maybe should be ScancodeWrapper ???
-        self.dir.x = int(self.keys[pygame.K_RIGHT]) - int(self.keys[pygame.K_LEFT])
-        self.dir.y = int(self.keys[pygame.K_DOWN]) - int(self.keys[pygame.K_UP])
+        keys = pygame.key.get_pressed()
+        recent_keys = pygame.key.get_just_pressed()
+
+        self.dir.x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
+        self.dir.y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
 
         self.dir = self.dir.normalize() if self.dir else self.dir
 
-        if self.recent_keys[pygame.K_SPACE]:
+        if recent_keys[pygame.K_SPACE]:
             print('fire laser')
 
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
