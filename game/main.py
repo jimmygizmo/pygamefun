@@ -321,6 +321,9 @@ class Player(Entity):
         # scenario in which you would need to persist key scans in an instance attibute, so barring those, TODO: move them.
         self.keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: hort-lived. Consider moving into a local var.
         self.recent_keys: pygame.key.ScancodeWrapper = pygame.key.ScancodeWrapper()  # TODO: Short-lived. Consider moving into a local var.
+        self.can_shoot: bool = True
+        self.laser_shoot_time: int = 0
+        self.cooldown_duration: int = 700  # milliseconds
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
     def update(self, delta_time: float, ephase_name: str):
@@ -502,6 +505,10 @@ g_ephase_name = None
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
+# CUSTOM EVENTS - Random tumbleweeds
+tumbleweed_event = pygame.event.custom_type()
+pygame.time.set_timer(tumbleweed_event, 4500)
+
 
 #   * * * * * *    MAIN LOOP    * * * * * *
 while running:
@@ -513,6 +520,8 @@ while running:
     for event in pygame.event.get():  # Check all new events since the last main loop iteration
         if event.type == pygame.QUIT:
             running = False
+        if event.type == tumbleweed_event:
+            print(f"Look out! Here comes a tumbleweed!")
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
@@ -539,7 +548,7 @@ while running:
     all_npcs.update(g_delta_time, g_ephase_name)
     all_players.update(g_delta_time, g_ephase_name)
 
-    # REDRAW THE BG
+    # REDRAW THE BACKGROUND
     if ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
@@ -550,10 +559,7 @@ while running:
 
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
-
-    # ################################################    PHYSICS    ###################################################
-
-    # All physics/motion code now in Entity update() and/or Player or Npc update(). This section marker may go away.
+    # ______________________________________________    END MAIN LOOP    _______________________________________________
 
 
 pygame.quit()
@@ -565,6 +571,8 @@ pygame.quit()
 
 # ###################################################    NOTES    ######################################################
 
+# PYGMAE-CE DOCS:
+# https://pyga.me/docs/
 
 
 ##

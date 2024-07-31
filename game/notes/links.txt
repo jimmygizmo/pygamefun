@@ -2,7 +2,7 @@
 # This video is over 11 hours long and covers about 5 different games and a lot of PyGame details.
 # https://www.youtube.com/watch?v=8OMghdHP-zs
 
-# DOCS:
+# PYGMAE-CE DOCS:
 # https://pyga.me/docs/
 
 # PyGame vs Arcade:
