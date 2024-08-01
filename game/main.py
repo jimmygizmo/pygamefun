@@ -107,12 +107,12 @@ weapon_specs: list[WeaponSpec] = [
         'color': 'green3',
         'x': 890.0,
         'y': 260.0,
-        'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-        's': 80.0,
-        'p': 90.0,
-        'r': 100.0,
-        'c': 700.0,
-        'f': 1650.0,
+        'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
+        's': 134.0,
+        'p': 98.0,
+        'r': 122.0,
+        'c': 840.0,
+        'f': 2350.0,
     },
 ]  # weapon_specs: list[WeaponSpec]
 
@@ -293,13 +293,19 @@ PropSpec = TypedDict('PropSpec',
 class Entity(pygame.sprite.Sprite):
     def __init__(self,
                  groups,
-                 spec: PlayerSpec | NpcSpec | PropSpec,
+                 spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        self.spec: PlayerSpec | NpcSpec | PropSpec = spec
+        print(f"-*-*-*-*-*-  NEW ENTITY INIT  -*-*-*-*-*- groups: {groups}")
+        # print(spec)
+        # print(x)
+        # print(y)
+        # print(direction)
+        # print(speed)
+        self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
         self.x: float = x
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction  # Direction
@@ -371,11 +377,16 @@ class Player(Entity):
     def __init__(self,
                  groups,
                  spec: PlayerSpec,
+                 weapon_spec: WeaponSpec,
+                 all_weapons_group_ref: pygame.sprite.Group,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
+        self.weapon_spec = weapon_spec
+        self.all_weapons_group_ref = all_weapons_group_ref
+        print(f"# # # # # # # # Player got special weapon attrs (group ref):{self.all_weapons_group_ref}")
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
@@ -402,18 +413,28 @@ class Player(Entity):
             print('fire laser')
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
-
+            projectile: Weapon = Weapon(groups=[all_sprites, self.all_weapons_group_ref],
+                                         spec=self.weapon_spec,
+                                         x=self.rect.midtop[0],
+                                         y=self.rect.midtop[1],
+                                         direction=self.weapon_spec['d'],
+                                         speed=self.weapon_spec['s'],
+                   )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+        # self.all_weapons_group_ref.add(projectile)  # FIX? Adding when instantiating not seeming to work. NOPE. DELETE.
         self.laser_timer()
 
+
+        #   **   TROUBLE HERE - CANNOT GET Weapon ADDED TO THE all_weapons GROUP   **
+
+
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
-        # TODO: Is this the order of processing we want? Is it the same as legacy? I think yes and yes, but CONFIRM!
         super().update(delta_time, ephase_name)
 
 
 class Weapon(Entity):
     def __init__(self,
                  groups,
-                 spec: PlayerSpec,
+                 spec: WeaponSpec,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
@@ -422,6 +443,7 @@ class Weapon(Entity):
         # self.can_shoot: bool = True
         # self.laser_shoot_time: int = 0
         # self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
+        print(f"* * * * * * Will now call Weapon.super.init: groups:{groups}")
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
     # TODO: WEAPON/PROJECTILE BEHAVIORS TBD
@@ -431,7 +453,33 @@ class Weapon(Entity):
     #         if current_time - self.laser_shoot_time >= self.cooldown_duration:
     #             self.can_shoot = True
 
+
+
+#=======================================================================================================================
+# ISSUE - WE ARE NEVER COMPLETING THE INIT. ERRROR COMPLAINS OF A SURFACE MISSING WHEN TRYING TO DRAW .. BUT
+    # WE SHOULD NOT BE DRAWING JUST YET IT SEEMS.
+
+    # /home/bilbo/.pyenv/versions/3.12.4/envs/ve.pygamefun/bin/python /home/bilbo/repos/pygamefun/game/main.py
+    # pygame-ce 2.5.0 (SDL 2.30.3, Python 3.12.4)
+    # # # # # # # # # Player got special weapon attrs (group ref):<Group(0 sprites)>
+    # fire laser
+    # * * * * * * Will now call Weapon.super.init: groups:[<Group(84 sprites)>, <Group(0 sprites)>]
+    # Traceback (most recent call last):
+    #   File "/home/bilbo/repos/pygamefun/game/main.py", line 704, in <module>
+    #     all_weapons.draw(display_surface)
+    #   File "/home/bilbo/.pyenv/versions/3.12.4/envs/ve.pygamefun/lib/python3.12/site-packages/pygame/sprite.py", line 567, in draw
+    #     zip(sprites, surface.blits((spr.image, spr.rect) for spr in sprites))
+    #                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # TypeError: Source objects must be a surface
+
+    # Process finished with exit code 1
+
+#=======================================================================================================================
+
+
+
     def update(self, delta_time: float, ephase_name: str):
+        print(f" === === === === NOW IN Weapon.update() === === === ===")
         enviro_influence(self, ephase_name)
 
         # TODO: WEAPON/PROJECTILE BEHAVIORS TBD
@@ -451,6 +499,10 @@ class Weapon(Entity):
         # self.laser_timer()
 
         super().update(delta_time, ephase_name)
+        print(f"+ + + + + + + + + + + After Weapon+Entity updates, Surfaces - (main) self.image: {self.image}")
+        print(f"self.image_l: {self.image_l}")
+        print(f"self.image_r: {self.image_r}")
+        # Suspect these might be missing (based on error during Weapon instantiation, but at this point we SHOULD have them.
 
 
 class Npc(Entity):
@@ -484,18 +536,13 @@ class Prop(Entity):
         super().update(delta_time, ephase_name)
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
-        # print(f"Since in Prop class, physics_outer_walls has been overridden: pass. Walls don't bound props.")
-        # NOTE: In the Player and Npc classes, this is not overridden and Entity.physics_outer_walls() takes effect.
-        # The result is that Props can be 'sprayed' crossing or even beyond display_surface boundaries, while Npc and
-        # Player instances will bounce off of walls or stop up against them but not cross them, depending on other
-        # motion factors/controls.
         pass
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
 # *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
-def enviro_influence(xself: Player | Npc, ephase_name: str) -> None:
+def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     if ephase_name == 'peace':
         xself.speed = xself.spec['p']
@@ -547,13 +594,10 @@ for prop_t in prop_templates:
         prop_spec['x'] = prop_t['x'] + x_offset
         prop_spec['y'] = prop_t['y'] + y_offset
 
-        # print(prop_spec)  # ----  DEBUG  ----
         prop_specs.append(prop_spec)
 
 
 # ################################################    INSTANTIATION    #################################################
-
-# INSTANTIATE ALL THE TYPES OF ENTITIES - OOP - Classes/PyGame Sprites    (Leaving out the DEBUG features for now.)
 
 # TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
 
@@ -564,6 +608,8 @@ for i, player_spec in enumerate(player_specs):
     imgpath = os.path.join(ASSET_PATH, player_spec['img'])
     player: Player = Player( groups=[all_sprites, all_players],
                              spec=player_spec,
+                             weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
+                             all_weapons_group_ref=all_weapons,  # THIS IS A HACK. Temporary.
                              x=player_spec['x'],
                              y=player_spec['y'],
                              direction=player_spec['d'],
@@ -572,18 +618,18 @@ for i, player_spec in enumerate(player_specs):
     players.append(player)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 # INSTANITATE WEAPONS/PROJECTILES - TEMPORARY/EXPERIMENTAL - THIS WILL CHANGE TO 'FIRING' (DYNAMIC INSTANTIATION)
-weapons: list[Weapon] = []
-for i, weapon_spec in enumerate(weapon_specs):
-    weapon_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, weapon_spec['img'])
-    weapon: Weapon = Weapon( groups=[all_sprites, all_weapons],
-                             spec=weapon_spec,
-                             x=weapon_spec['x'],
-                             y=weapon_spec['y'],
-                             direction=weapon_spec['d'],
-                             speed=weapon_spec['s'],
-                             )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    weapons.append(weapon)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
+# weapons: list[Weapon] = []
+# for i, weapon_spec in enumerate(weapon_specs):
+#     weapon_spec['instance_id'] = i
+#     imgpath = os.path.join(ASSET_PATH, weapon_spec['img'])
+#     weapon: Weapon = Weapon( groups=[all_sprites, all_weapons],
+#                              spec=weapon_spec,
+#                              x=weapon_spec['x'],
+#                              y=weapon_spec['y'],
+#                              direction=weapon_spec['d'],
+#                              speed=weapon_spec['s'],
+#                              )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+#     weapons.append(weapon)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
 # INSTANITATE NPCs
 npcs: list[Npc] = []
@@ -670,8 +716,31 @@ while running:
     #   ^ ^ ^ ^ ^ ^    MAIN UPDATE ACTIONS    ^ ^ ^ ^ ^ ^
     all_props.update(g_delta_time, g_ephase_name)
     all_npcs.update(g_delta_time, g_ephase_name)
-    all_weapons.update(g_delta_time, g_ephase_name)
     all_players.update(g_delta_time, g_ephase_name)
+    all_weapons.update(g_delta_time, g_ephase_name)  # Must update Weapons AFTER Player since Player creates Weapons during Player update.
+    # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ THE BIG BUG FIX WAS HERE!!!!! SIMPLY HAD TO MOVE all_weapons.update()
+    #                                                          TO --AFTER--  all_players.update()
+    # This is because the Weapon is instantiated during the player update cycle .. BUT it has not had any update
+    # of its own yet, and the update() is where the main surface is put in place (possibly for the first time).
+    # Our error was basically (no surface yet!) .. so it made sense, we had done instantiation but NOT our first update
+    # and then draw was getting called. This was happening when all_weapons.update was before all_players.update(),
+    # but now that it is AFTER, everything works.
+    # I considered another fix as well, similar .. and that is to put in a single bootstrapping call to Weapon.update()
+    # inside of Player.update, right after instantiating the Weapon. That would most likely work as well and depending,
+    # of the logic of what you want your first frame of the firing of a weapon to be, then you might choose one fix
+    # over the other. For example, you might have some OTHER concern causing you to but all_players.update() LAST, no
+    # matter what (its just hypothetical) BUT if that was the case (for whatever reason) THEN you might need to choose
+    # the fix of calling the single Weapon.update() right after you have Player instantiate that Weapon.
+
+    # This bug was a little tricky to figure out, but really it is totally logical (like most bugs ha ha, if not ALL
+    # bugs lol) .. however since it was a timing issue and involved a bit of a hierarchy/sequence of actions, then
+    # that is what added a little bit of the challenge to figuring it out. One can see that I added quite a lot of
+    # print statements to help pinpoint the state of things at precise points of execution. Really this just helped
+    # me think things thgough, because the right values/references were in fact ALWAYS there in the right place .. the
+    # problem was simply one of chicken and egg, and when the update was called for the Weapon since it is the update
+    # of the Player the even creates that Weapon to update in the first place.
+    # Clearly, updating of the Weapon must come after the updating of Player (or the other fix) so that Surfaces are in
+    # place for the DRAW calls we have st the end of every main loop.
 
     # REDRAW THE BACKGROUND
     if ACID_MODE is False:
@@ -700,6 +769,12 @@ pygame.quit()
 # PYGMAE-CE DOCS:
 # https://pyga.me/docs/
 
+# Slightly-related and very interesting topic: Different methods of high-performance image storage and retrieval for
+# Python (like LMDB, HDF5, filesystem etc.) I'm considering this topic as I prepare to write an image-loading and
+# pre-processing function and so I was thinking what is the best way to store the image data. It will be used
+# to instantiate surfaces, which will then be passed into the init of new entity instances. This is to prevent repeated
+# unnecessary source-loading of image data and is a core concept to efficiently instantiating sprites.
+# https://realpython.com/storing-images-in-python/
 
 ##
 #

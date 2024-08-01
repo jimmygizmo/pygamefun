@@ -1,0 +1,12 @@
+
+
+
+
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
+        # print(f"Since in Prop class, physics_outer_walls has been overridden: pass. Walls don't bound props.")
+        # NOTE: In the Player and Npc classes, this is not overridden and Entity.physics_outer_walls() takes effect.
+        # The result is that Props can be 'sprayed' crossing or even beyond display_surface boundaries, while Npc and
+        # Player instances will bounce off of walls or stop up against them but not cross them, depending on other
+        # motion factors/controls.
+        pass
+
