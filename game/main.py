@@ -292,6 +292,7 @@ PropSpec = TypedDict('PropSpec',
 
 
 class Entity(pygame.sprite.Sprite):
+    base_instance_count: int = 0
     def __init__(self,
                  groups,
                  spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec,
@@ -300,6 +301,7 @@ class Entity(pygame.sprite.Sprite):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
+        self.base_instance_id: int = Entity.base_instance_count
         self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
         self.x: float = x
         self.y: float = y
@@ -310,6 +312,7 @@ class Entity(pygame.sprite.Sprite):
         self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        Entity.base_instance_count += 1
 
         if DEBUG:
             self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
@@ -369,6 +372,7 @@ class Entity(pygame.sprite.Sprite):
 
 
 class Player(Entity):
+    instance_count: int = 0
     def __init__(self,
                  groups,
                  spec: PlayerSpec,
@@ -379,14 +383,14 @@ class Player(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
+        self.instance_id: int = Player.instance_count
         self.weapon_spec = weapon_spec
-        self.all_weapons_group_ref = all_weapons_group_ref
-        # TODO: CLEAN UP AROUND HERE
-        print(f"# # # # # # # # Player got special weapon attrs (group ref):{self.all_weapons_group_ref}")
+        self.all_weapons_group_ref = all_weapons_group_ref  # TODO: On the fence about keeping this. Should minimize global usage though, so this might be good.
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        Player.instance_count += 1
 
     def laser_timer(self):
         if not self.can_shoot:
@@ -422,6 +426,7 @@ class Player(Entity):
 
 
 class Weapon(Entity):
+    instance_count: int = 0
     def __init__(self,
                  groups,
                  spec: WeaponSpec,
@@ -430,7 +435,9 @@ class Weapon(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
+        self.instance_id: int = Weapon.instance_count
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        Weapon.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
@@ -460,6 +467,7 @@ class Weapon(Entity):
 
 
 class Npc(Entity):
+    instance_count: int = 0
     def __init__(self,
                  groups,
                  spec: NpcSpec,
@@ -468,7 +476,9 @@ class Npc(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
+        self.instance_id: int = Npc.instance_count
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        Npc.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
         enviro_influence(self, ephase_name)
@@ -476,15 +486,18 @@ class Npc(Entity):
 
 
 class Prop(Entity):
+    instance_count: int = 0
     def __init__(self,
                  groups,
                  spec: PropSpec,
                  x: float,
                  y: float,
                  ):
+        self.instance_id: int = Prop.instance_count
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        Prop.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
         super().update(delta_time, ephase_name)
@@ -672,6 +685,11 @@ while running:
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
 #   * _ * _ * _ *    END MAIN LOOP    * _ * _ * _ *
+    print(f"Entity instances: {Entity.base_instance_count}")
+    print(f"Player instances: {Player.instance_count}")
+    print(f"Weapon instances: {Weapon.instance_count}")
+    print(f"Npc instances: {Npc.instance_count}")
+    print(f"Prop instances: {Prop.instance_count}")
 
 
 pygame.quit()
