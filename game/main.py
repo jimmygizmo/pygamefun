@@ -19,6 +19,7 @@ ASSET_PATH = 'assets'  # Relative path with no trailing slash.
 DEBUG = False
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
+PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
 
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
 # to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
@@ -299,12 +300,6 @@ class Entity(pygame.sprite.Sprite):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        print(f"-*-*-*-*-*-  NEW ENTITY INIT  -*-*-*-*-*- groups: {groups}")
-        # print(spec)
-        # print(x)
-        # print(y)
-        # print(direction)
-        # print(speed)
         self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
         self.x: float = x
         self.y: float = y
@@ -386,6 +381,7 @@ class Player(Entity):
                  ):
         self.weapon_spec = weapon_spec
         self.all_weapons_group_ref = all_weapons_group_ref
+        # TODO: CLEAN UP AROUND HERE
         print(f"# # # # # # # # Player got special weapon attrs (group ref):{self.all_weapons_group_ref}")
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
@@ -420,13 +416,7 @@ class Player(Entity):
                                          direction=self.weapon_spec['d'],
                                          speed=self.weapon_spec['s'],
                    )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-        # self.all_weapons_group_ref.add(projectile)  # FIX? Adding when instantiating not seeming to work. NOPE. DELETE.
         self.laser_timer()
-
-
-        #   **   TROUBLE HERE - CANNOT GET Weapon ADDED TO THE all_weapons GROUP   **
-
-
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         super().update(delta_time, ephase_name)
 
@@ -440,69 +430,33 @@ class Weapon(Entity):
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
-        # self.can_shoot: bool = True
-        # self.laser_shoot_time: int = 0
-        # self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
-        print(f"* * * * * * Will now call Weapon.super.init: groups:{groups}")
         super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
-    # TODO: WEAPON/PROJECTILE BEHAVIORS TBD
-    # def weapon_timer(self):
-    #     if not self.can_shoot:
-    #         current_time = pygame.time.get_ticks()  # Milliseconds since pygame.init() was called.
-    #         if current_time - self.laser_shoot_time >= self.cooldown_duration:
-    #             self.can_shoot = True
-
-
-
-#=======================================================================================================================
-# ISSUE - WE ARE NEVER COMPLETING THE INIT. ERRROR COMPLAINS OF A SURFACE MISSING WHEN TRYING TO DRAW .. BUT
-    # WE SHOULD NOT BE DRAWING JUST YET IT SEEMS.
-
-    # /home/bilbo/.pyenv/versions/3.12.4/envs/ve.pygamefun/bin/python /home/bilbo/repos/pygamefun/game/main.py
-    # pygame-ce 2.5.0 (SDL 2.30.3, Python 3.12.4)
-    # # # # # # # # # Player got special weapon attrs (group ref):<Group(0 sprites)>
-    # fire laser
-    # * * * * * * Will now call Weapon.super.init: groups:[<Group(84 sprites)>, <Group(0 sprites)>]
-    # Traceback (most recent call last):
-    #   File "/home/bilbo/repos/pygamefun/game/main.py", line 704, in <module>
-    #     all_weapons.draw(display_surface)
-    #   File "/home/bilbo/.pyenv/versions/3.12.4/envs/ve.pygamefun/lib/python3.12/site-packages/pygame/sprite.py", line 567, in draw
-    #     zip(sprites, surface.blits((spr.image, spr.rect) for spr in sprites))
-    #                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    # TypeError: Source objects must be a surface
-
-    # Process finished with exit code 1
-
-#=======================================================================================================================
-
-
-
     def update(self, delta_time: float, ephase_name: str):
-        print(f" === === === === NOW IN Weapon.update() === === === ===")
         enviro_influence(self, ephase_name)
-
-        # TODO: WEAPON/PROJECTILE BEHAVIORS TBD
-        # keys = pygame.key.get_pressed()
-        # recent_keys = pygame.key.get_just_pressed()
-        #
-        # self.dir.x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])
-        # self.dir.y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
-        #
-        # self.dir = self.dir.normalize() if self.dir else self.dir
-        #
-        # if recent_keys[pygame.K_SPACE] and self.can_shoot:
-        #     print('fire laser')
-        #     self.can_shoot = False
-        #     self.laser_shoot_time = pygame.time.get_ticks()
-        #
-        # self.laser_timer()
-
         super().update(delta_time, ephase_name)
-        print(f"+ + + + + + + + + + + After Weapon+Entity updates, Surfaces - (main) self.image: {self.image}")
-        print(f"self.image_l: {self.image_l}")
-        print(f"self.image_r: {self.image_r}")
-        # Suspect these might be missing (based on error during Weapon instantiation, but at this point we SHOULD have them.
+
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
+
+        # Finalize (projectile) a little beyond LEFT wall in X Axis
+        if self.rect.left <= 0 - PROJECTILE_MARGIN:
+            print(f"Finalizing projectile: {self}")
+            self.kill()  # Cleanly remove the sprite instance from group and delete it
+
+        # Finalize (projectile) a little beyond RIGHT wall in X Axis
+        if self.rect.right >= SCREEN_WIDTH + PROJECTILE_MARGIN:
+            print(f"Finalizing projectile: {self}")
+            self.kill()  # Cleanly remove the sprite instance from group and delete it
+
+        # Finalize (projectile) a little beyond TOP wall in Y Axis
+        if self.rect.top <= 0 - PROJECTILE_MARGIN:
+            print(f"Finalizing projectile: {self}")
+            self.kill()  # Cleanly remove the sprite instance from group and delete it
+
+        # Finalize (projectile) a little beyond BOTTOM wall in Y Axis
+        if self.rect.bottom >= SCREEN_HEIGHT + PROJECTILE_MARGIN:
+            print(f"Finalizing projectile: {self}")
+            self.kill()  # Cleanly remove the sprite instance from group and delete it
 
 
 class Npc(Entity):
@@ -617,20 +571,6 @@ for i, player_spec in enumerate(player_specs):
                              )  # PyCharm FALSE WARNING HERE (AbstractGroup)
     players.append(player)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
 
-# INSTANITATE WEAPONS/PROJECTILES - TEMPORARY/EXPERIMENTAL - THIS WILL CHANGE TO 'FIRING' (DYNAMIC INSTANTIATION)
-# weapons: list[Weapon] = []
-# for i, weapon_spec in enumerate(weapon_specs):
-#     weapon_spec['instance_id'] = i
-#     imgpath = os.path.join(ASSET_PATH, weapon_spec['img'])
-#     weapon: Weapon = Weapon( groups=[all_sprites, all_weapons],
-#                              spec=weapon_spec,
-#                              x=weapon_spec['x'],
-#                              y=weapon_spec['y'],
-#                              direction=weapon_spec['d'],
-#                              speed=weapon_spec['s'],
-#                              )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-#     weapons.append(weapon)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
-
 # INSTANITATE NPCs
 npcs: list[Npc] = []
 for i, npc_spec in enumerate(npc_specs):
@@ -718,29 +658,6 @@ while running:
     all_npcs.update(g_delta_time, g_ephase_name)
     all_players.update(g_delta_time, g_ephase_name)
     all_weapons.update(g_delta_time, g_ephase_name)  # Must update Weapons AFTER Player since Player creates Weapons during Player update.
-    # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ THE BIG BUG FIX WAS HERE!!!!! SIMPLY HAD TO MOVE all_weapons.update()
-    #                                                          TO --AFTER--  all_players.update()
-    # This is because the Weapon is instantiated during the player update cycle .. BUT it has not had any update
-    # of its own yet, and the update() is where the main surface is put in place (possibly for the first time).
-    # Our error was basically (no surface yet!) .. so it made sense, we had done instantiation but NOT our first update
-    # and then draw was getting called. This was happening when all_weapons.update was before all_players.update(),
-    # but now that it is AFTER, everything works.
-    # I considered another fix as well, similar .. and that is to put in a single bootstrapping call to Weapon.update()
-    # inside of Player.update, right after instantiating the Weapon. That would most likely work as well and depending,
-    # of the logic of what you want your first frame of the firing of a weapon to be, then you might choose one fix
-    # over the other. For example, you might have some OTHER concern causing you to but all_players.update() LAST, no
-    # matter what (its just hypothetical) BUT if that was the case (for whatever reason) THEN you might need to choose
-    # the fix of calling the single Weapon.update() right after you have Player instantiate that Weapon.
-
-    # This bug was a little tricky to figure out, but really it is totally logical (like most bugs ha ha, if not ALL
-    # bugs lol) .. however since it was a timing issue and involved a bit of a hierarchy/sequence of actions, then
-    # that is what added a little bit of the challenge to figuring it out. One can see that I added quite a lot of
-    # print statements to help pinpoint the state of things at precise points of execution. Really this just helped
-    # me think things thgough, because the right values/references were in fact ALWAYS there in the right place .. the
-    # problem was simply one of chicken and egg, and when the update was called for the Weapon since it is the update
-    # of the Player the even creates that Weapon to update in the first place.
-    # Clearly, updating of the Weapon must come after the updating of Player (or the other fix) so that Surfaces are in
-    # place for the DRAW calls we have st the end of every main loop.
 
     # REDRAW THE BACKGROUND
     if ACID_MODE is False:

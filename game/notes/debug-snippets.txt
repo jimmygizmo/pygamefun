@@ -46,3 +46,33 @@ for entity_spec in entity_specs:
 
 
 
+=======================================================================================================
+
+
+class Entity(pygame.sprite.Sprite):
+    def __init__(self,
+                 groups,
+                 spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec,
+                 x: float,
+                 y: float,
+                 direction: pygame.math.Vector2,
+                 speed: float,
+                 ):
+        print(f"-*-*-*-*-*-  NEW ENTITY INIT  -*-*-*-*-*- groups: {groups}")
+        # print(spec)
+        # print(x)
+        # print(y)
+        # print(direction)
+        # print(speed)
+        self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
+        self.x: float = x
+        self.y: float = y
+        self.dir: pygame.math.Vector2 = direction  # Direction
+        self.speed: float = speed  # Speed
+        self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion)
+        self.image_l: pygame.Surface = pygame.Surface((0, 0))  # Left-facing copy of the image for motion. DEFAULT.
+        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
+        self.rect: pygame.FRect = pygame.FRect()
+        super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
+
+
