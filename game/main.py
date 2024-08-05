@@ -94,6 +94,8 @@ player_specs: list[PlayerSpec] = [
         'name': 'buck',
         'instance_id': -1,
         'img_filename':  'rocket-200x252.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 200,
         'h': 252,
@@ -115,6 +117,8 @@ WeaponSpec = TypedDict('WeaponSpec',
         'name': str,  # Weapon/projectile short name
         'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
+        'surf_l': pygame.Surface,
+        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -136,6 +140,8 @@ weapon_specs: list[WeaponSpec] = [
         'name': 'orb',
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 140,
         'h': 140,
@@ -157,6 +163,8 @@ NpcSpec = TypedDict('NpcSpec',
         'name': str,  # NPC short name
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
+        'surf_l': pygame.Surface,
+        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -175,77 +183,87 @@ NpcSpec = TypedDict('NpcSpec',
 # NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
 npc_specs: list[NpcSpec] = [
     {
-       'name': 'red-flower-floaty',
-       'instance_id': -1,
-       'img_filename':  'red-flower-66x64.png',
-       'flip': False,
-       'w': 66,
-       'h': 64,
-       'color': 'red1',
-       'x': 240.0,
-       'y': 300.0,
-       'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
-       's': 100.0,
-       'p': 100.0,
-       'r': 100.0,
-       'c': 350.0,
-       'f': 2.0,
+        'name': 'red-flower-floaty',
+        'instance_id': -1,
+        'img_filename':  'red-flower-66x64.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': False,
+        'w': 66,
+        'h': 64,
+        'color': 'red1',
+        'x': 240.0,
+        'y': 300.0,
+        'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
+        's': 100.0,
+        'p': 100.0,
+        'r': 100.0,
+        'c': 350.0,
+        'f': 2.0,
     },
     {
-       'name': 'red-flower-drifty',
-       'instance_id': -1,
-       'img_filename':  'red-flower-66x64.png',
-       'flip': True,
-       'w': 66,
-       'h': 64,
-       'color': 'orangered',
-       'x': 240.0,
-       'y': 300.0,
-       'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
-       's': 100.0,
-       'p': 100.0,
-       'r': 100.0,
-       'c': 420.0,
-       'f': 3.0,
+        'name': 'red-flower-drifty',
+        'instance_id': -1,
+        'img_filename':  'red-flower-66x64.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': True,
+        'w': 66,
+        'h': 64,
+        'color': 'orangered',
+        'x': 240.0,
+        'y': 300.0,
+        'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
+        's': 100.0,
+        'p': 100.0,
+        'r': 100.0,
+        'c': 420.0,
+        'f': 3.0,
     },
     {
-       'name': 'goldie',
-       'instance_id': -1,
-       'img_filename': 'gold-retriever-160x142.png',
-       'flip': True,
-       'w': 160,
-       'h': 142,
-       'color': 'gold',
-       'x': 500.0,
-       'y': 300.0,
-       'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
-       's': 141.0,
-       'p': 160.0,
-       'r': 880.0,
-       'c': 1290.0,
-       'f': 10.0,
+        'name': 'goldie',
+        'instance_id': -1,
+        'img_filename': 'gold-retriever-160x142.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': True,
+        'w': 160,
+        'h': 142,
+        'color': 'gold',
+        'x': 500.0,
+        'y': 300.0,
+        'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
+        's': 141.0,
+        'p': 160.0,
+        'r': 880.0,
+        'c': 1290.0,
+        'f': 10.0,
     },
     {
-       'name': 'grumpy',
-       'instance_id': -1,
-       'img_filename':  'grumpy-cat-110x120.png',
-       'flip': True,
-       'w': 110,
-       'h': 120,
-       'color': 'blanchedalmond',
-       'x': 780.0,
-       'y': 300.0,
-       'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
-       's': 90.0,
-       'p': 80.0,
-       'r': 50.0,
-       'c': 2170.0,
-       'f': 40.0,
+        'name': 'grumpy',
+        'instance_id': -1,
+        'img_filename':  'grumpy-cat-110x120.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': True,
+        'w': 110,
+        'h': 120,
+        'color': 'blanchedalmond',
+        'x': 780.0,
+        'y': 300.0,
+        'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
+        's': 90.0,
+        'p': 80.0,
+        'r': 50.0,
+        'c': 2170.0,
+        'f': 40.0,
     },
     {
         'name': 'fishy',
         'instance_id': -1,
         'img_filename':  'goldfish-280x220.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 280,
         'h': 220,
@@ -267,6 +285,8 @@ PropTemplate = TypedDict('PropTemplate',
     {
         'name': str,
         'img_filename': str,
+        'surf_l': pygame.Surface,
+        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -281,28 +301,32 @@ PropTemplate = TypedDict('PropTemplate',
 # PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
 prop_templates: list[PropTemplate] = [
     {
-       'name': 'red-flower',
-       'img_filename':  'red-flower-66x64.png',
-       'flip': False,
-       'w': 66,
-       'h': 64,
-       'color': 'crimson',
-       'x': 804.0,
-       'y': 440.0,
-       'spray_count': 60,
-       'spray_radius': 780.0,
+        'name': 'red-flower',
+        'img_filename':  'red-flower-66x64.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': False,
+        'w': 66,
+        'h': 64,
+        'color': 'crimson',
+        'x': 804.0,
+        'y': 440.0,
+        'spray_count': 60,
+        'spray_radius': 780.0,
     },
     {
-       'name': 'blue-flower',
-       'img_filename':  'blue-flower-160x158.png',
-       'flip': False,
-       'w': 160,
-       'h': 158,
-       'color': 'darkturquoise',
-       'x': 880.0,
-       'y': 360.0,
-       'spray_count': 18,
-       'spray_radius': 680.0,
+        'name': 'blue-flower',
+        'img_filename':  'blue-flower-160x158.png',
+        'surf_l': pygame.Surface((0, 0)),
+        'surf_r': pygame.Surface((0, 0)),
+        'flip': False,
+        'w': 160,
+        'h': 158,
+        'color': 'darkturquoise',
+        'x': 880.0,
+        'y': 360.0,
+        'spray_count': 18,
+        'spray_radius': 680.0,
     },
 ]  # prop_templates: list[PropTemplate]
 
@@ -312,6 +336,8 @@ PropSpec = TypedDict('PropSpec',
         'name': str,
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,
+        'surf_l': pygame.Surface,
+        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -609,6 +635,7 @@ pygame.init()
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
 
+# CREATE SPRITE GROUPS
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
 all_players: pygame.sprite.Group = pygame.sprite.Group()
 all_weapons: pygame.sprite.Group = pygame.sprite.Group()
@@ -623,6 +650,8 @@ for prop_t in prop_templates:
                 'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+                'surf_l': pygame.Surface((0, 0)),  # TODO: **************************************
+                'surf_r': pygame.Surface((0, 0)),  # TODO: **************************************
                 'flip': False,
                 'w': prop_t['w'],
                 'h': prop_t['h'],
@@ -648,6 +677,7 @@ for prop_t in prop_templates:
 # INSTANITATE PLAYER(S)
 players: list[Player] = []
 for i, player_spec in enumerate(player_specs):
+    player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
     imgpath = os.path.join(ASSET_PATH, player_spec['img_filename'])
     player: Player = Player( groups=[all_sprites, all_players],
@@ -689,6 +719,20 @@ for i, prop_spec in enumerate(prop_specs):
 
 
 # ###############################################    MAIN EXECUTION    #################################################
+
+if not __name__ == '__main__':
+    print("PyGameFun main.py has been imported. Some initialization has been performed.")
+    print("Exiting without starting the main loop. The code which imported can also leverage the initialization.")
+    # This is here for illustrative purposes. This code is not really intended to be imported, but one should still
+    # have some kind of appropriate behavior in case the code is imported. It matters where we put a check like this
+    # as we could have skipped the initialization by moving this up. In the current program, we do different kinds of
+    # initialization inline in the global scope but as the app evolves we might stop doing that and put EVERYTHING
+    # inside a class or function. Some might argue that we should have nothing at global scope, but I am usually
+    # fine with some things like config and high-level/early initialization at the global scope, but this decreases as
+    # an app grows and at some point it might be necessary that even config is passed around as an argument and not
+    # referenced globally.
+    # In the current location, this simply informs the user that the current code is not meant for import, but it is
+    # ok and that the program will not be further started up but rather will exit.
 
 bgpath = os.path.join(ASSET_PATH, BGIMG)
 
