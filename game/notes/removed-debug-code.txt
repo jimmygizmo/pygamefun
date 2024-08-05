@@ -1,0 +1,14 @@
+
+
+        # if DEBUG:
+        #     self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
+        #     self.image_l.fill(self.spec['color'])
+        # else:
+        #     self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img_filename'])  # Var added for clarity. Don't need.
+        #     self.image_l = pygame.image.load(self.imgpath).convert_alpha()
+        #     if self.spec['flip']:
+        #         self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
+        #     # The loaded image should be facing left and if not, use the 'flip' option. The right-facing version is
+        #     # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
+
+

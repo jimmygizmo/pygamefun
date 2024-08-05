@@ -36,7 +36,6 @@ PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectil
 
 SurfCacheItem = TypedDict('SurfCacheItem',
     {
-        'surface': pygame.Surface,  # Possibly won't be used. (Current active image.)
         'surface_l': pygame.Surface,  # Image as loaded and with 'flip' option applied if True. Should be LEFT facing.
         'surface_r': pygame.Surface,  # Flipped (assumed to be RIGHT-facing) version of image.
     }
@@ -45,12 +44,7 @@ SurfCacheItem = TypedDict('SurfCacheItem',
 # load. The right-facing surface is created assuming the default surface is left facing, (or was made left-facing
 # upon load using 'flip'.)
 
-SCACHE = TypedDict('SCACHE',
-    {
-        'filename': str,
-        'cacheitem': SurfCacheItem,
-    }
-)
+SCACHE = {}  # Was using a TypedDict, but I need dynammic and not pre-set keys, so I need a regular dict.
 
 
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
@@ -335,32 +329,21 @@ class Entity(pygame.sprite.Sprite):
                  ):
         self.base_instance_id: int = Entity.base_instance_count
         self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
+        self.surface_l: pygame.Surface = SCACHE[self.spec['img_filename']]['surface_l']
+        self.surface_r: pygame.Surface = SCACHE[self.spec['img_filename']]['surface_r']
         self.x: float = x
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction  # Direction
         self.speed: float = speed  # Speed
         self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion)
-        self.image_l: pygame.Surface = pygame.Surface((0, 0))  # Left-facing copy of the image for motion. DEFAULT.
-        self.image_r: pygame.Surface = pygame.Surface((0, 0))  # Right-facing copy of the image for motion. Generated.
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
 
-        if DEBUG:
-            self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
-            self.image_l.fill(self.spec['color'])
-        else:
-            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img_filename'])  # Var added for clarity. Don't need.
-            self.image_l = pygame.image.load(self.imgpath).convert_alpha()
-            if self.spec['flip']:
-                self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
-            # The loaded image should be facing left and if not, use the 'flip' option. The right-facing version is
-            # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
+        # # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
+        # self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
 
-        # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
-        self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
-
-        self.rect = self.image_l.get_frect(center=(self.x, self.y))
+        self.rect = self.surface_l.get_frect(center=(self.x, self.y))
 
     def update(self, delta_time: float, ephase_name: str):
         # TODO: Articulate the reason we have to make the update signatures match. NOTE: ephase_name ARG had to be added
@@ -377,9 +360,9 @@ class Entity(pygame.sprite.Sprite):
 
         # Activate the correctly-facing image, based on X direction.
         if self.dir.x < 0:
-            self.image = self.image_l
+            self.image = self.surface_l
         else:
-            self.image = self.image_r
+            self.image = self.surface_r
 
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
@@ -476,7 +459,6 @@ class Weapon(Entity):
         super().update(delta_time, ephase_name)
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
-
         # Finalize (projectile) a little beyond LEFT wall in X Axis
         if self.rect.left <= 0 - PROJECTILE_MARGIN:
             print(f"Finalizing projectile: {self}")
@@ -649,7 +631,20 @@ players: list[Player] = []
 for i, player_spec in enumerate(player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, player_spec['img_filename'])
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    player_surface_l: pygame.Surface = pygame.image.load(
+        os.path.join(ASSET_PATH, player_spec['img_filename'])
+    ).convert_alpha()
+    if player_spec['flip']:
+        player_surface_l = pygame.transform.flip(player_surface_l, True, False)
+
+    player_surface_r: pygame.Surface = pygame.transform.flip(player_surface_l, True, False)
+    c_item: SurfCacheItem = {
+        'surface_l': player_surface_l,
+        'surface_r': player_surface_r,
+    }
+    SCACHE[player_spec['img_filename']] = c_item
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
     player: Player = Player( groups=[all_sprites, all_players],
                              spec=player_spec,
                              weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
@@ -665,7 +660,20 @@ for i, player_spec in enumerate(player_specs):
 npcs: list[Npc] = []
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, npc_spec['img_filename'])
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    npc_surface_l: pygame.Surface = pygame.image.load(
+        os.path.join(ASSET_PATH, npc_spec['img_filename'])
+    ).convert_alpha()
+    if npc_spec['flip']:
+        npc_surface_l = pygame.transform.flip(npc_surface_l, True, False)
+
+    npc_surface_r: pygame.Surface = pygame.transform.flip(npc_surface_l, True, False)
+    c_item: SurfCacheItem = {
+        'surface_l': npc_surface_l,
+        'surface_r': npc_surface_r,
+    }
+    SCACHE[npc_spec['img_filename']] = c_item
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
     npc: Npc = Npc( groups=[all_sprites, all_npcs],
                     spec=npc_spec,
                     x=npc_spec['x'],
@@ -679,13 +687,46 @@ for i, npc_spec in enumerate(npc_specs):
 props: list[Prop] = []
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, prop_spec['img_filename'])
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    prop_surface_l: pygame.Surface = pygame.image.load(
+        os.path.join(ASSET_PATH, prop_spec['img_filename'])
+    ).convert_alpha()
+    if prop_spec['flip']:
+        prop_surface_l = pygame.transform.flip(prop_surface_l, True, False)
+
+    prop_surface_r: pygame.Surface = pygame.transform.flip(prop_surface_l, True, False)
+    c_item: SurfCacheItem = {
+        'surface_l': prop_surface_l,
+        'surface_r': prop_surface_r,
+    }
+    SCACHE[prop_spec['img_filename']] = c_item
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
     prop: Prop = Prop( groups=[all_sprites, all_props],
                        spec=prop_spec,
                        x=prop_spec['x'],
                        y=prop_spec['y'],
                        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
     props.append(prop)
+
+
+# LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
+weapons: list[Weapon] = []  # We actually will not use this. Weapons dynamically come and go. We don't use the others in fact.
+for i, weapon_spec in enumerate(weapon_specs):
+    weapon_spec['instance_id'] = i
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    weapon_surface_l: pygame.Surface = pygame.image.load(
+        os.path.join(ASSET_PATH, weapon_spec['img_filename'])
+    ).convert_alpha()
+    if weapon_spec['flip']:
+        prop_surface_l = pygame.transform.flip(weapon_surface_l, True, False)
+
+    weapon_surface_r: pygame.Surface = pygame.transform.flip(weapon_surface_l, True, False)
+    c_item: SurfCacheItem = {
+        'surface_l': weapon_surface_l,
+        'surface_r': weapon_surface_r,
+    }
+    SCACHE[weapon_spec['img_filename']] = c_item
+    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
 
 
 # ###############################################    MAIN EXECUTION    #################################################
