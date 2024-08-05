@@ -76,3 +76,13 @@ class Entity(pygame.sprite.Sprite):
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
 
 
+============================================================================================================
+
+
+#   * _ * _ * _ *    END MAIN LOOP    * _ * _ * _ *
+#     print(f"Entity instances: {Entity.base_instance_count}")
+#     print(f"Player instances: {Player.instance_count}")
+#     print(f"Weapon instances: {Weapon.instance_count}")
+#     print(f"Npc instances: {Npc.instance_count}")
+#     print(f"Prop instances: {Prop.instance_count}")
+

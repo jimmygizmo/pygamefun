@@ -21,6 +21,38 @@ ACID_MODE = False  # Suppress background re-painting. This makes objects leave p
 LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
 PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
 
+# SURFACE CACHE - 'SCACHE'
+# The Surface Cache SCACHE pre-loads images into surfaces. All images under ASSET_PATH will be loaded and processed.
+# This cache is populated during initialization processing of spec data and the images are loaded prior to sprite
+# instantiation. This is because many sprites are instantiated frequently and we must pull the image/surface data from
+# RAM memory and most-certainly not from filesystem I/O. TODO: It is very likely this cache implementation will
+# evolve over time as this is starting out as as simple global-level dictionary of dictionaries of filenames of images
+# linking to a set of 2 or 3 surfaces for each, to be available for efficient instantation of sprites and also for the
+# efficient changing of component/related surfaces/images for sprite instances .. such as a LEFT/RIGHT surface in place
+# for left/right direction changes. This concept could expand to dozens of component surfaces for every character/object,
+# for instance for multi-direction and animated movement. Such a cache will be needed in all games, but cahces can take
+# make forms and have many options to consider, thus I expect this area to evolve a lot as this 'game' or all the games
+# in the project/repo progress.
+
+SurfCacheItem = TypedDict('SurfCacheItem',
+    {
+        'surface': pygame.Surface,  # Possibly won't be used. (Current active image.)
+        'surface_l': pygame.Surface,  # Image as loaded and with 'flip' option applied if True. Should be LEFT facing.
+        'surface_r': pygame.Surface,  # Flipped (assumed to be RIGHT-facing) version of image.
+    }
+)  # SurfCacheitem
+# NOTE: The developer can set the 'flip' spec option to make any right-facing source images to be left-facing upon
+# load. The right-facing surface is created assuming the default surface is left facing, (or was made left-facing
+# upon load using 'flip'.)
+
+SCACHE = TypedDict('SCACHE',
+    {
+        'filename': str,
+        'cacheitem': SurfCacheItem,
+    }
+)
+
+
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
 # to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
 ENVIRO_PHASES = collections.deque([
@@ -37,8 +69,10 @@ ENVIRO_PHASES = collections.deque([
 PlayerSpec = TypedDict('PlayerSpec',
     {
         'name': str,  # Player short name
-        'instance_id' : int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img': str,  # Filename of PNG (with transparency)
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'img_filename': str,  # Filename of PNG (with transparency)
+        'surf_l': pygame.Surface,  # LEFT-facing surface (performance: preload image prior to sprite instantiation)
+        'surf_r': pygame.Surface,  # RIGHT-facing surface (performance: preload image prior to sprite instantiation)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -59,7 +93,7 @@ player_specs: list[PlayerSpec] = [
     {
         'name': 'buck',
         'instance_id': -1,
-        'img':  'rocket-200x252.png',
+        'img_filename':  'rocket-200x252.png',
         'flip': False,
         'w': 200,
         'h': 252,
@@ -79,8 +113,8 @@ player_specs: list[PlayerSpec] = [
 WeaponSpec = TypedDict('WeaponSpec',
     {
         'name': str,  # Weapon/projectile short name
-        'instance_id' : int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img': str,  # Filename of PNG (with transparency)
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -101,7 +135,7 @@ weapon_specs: list[WeaponSpec] = [
     {
         'name': 'orb',
         'instance_id': -1,
-        'img':  'green-ball-140x140.png',
+        'img_filename':  'green-ball-140x140.png',
         'flip': False,
         'w': 140,
         'h': 140,
@@ -121,8 +155,8 @@ weapon_specs: list[WeaponSpec] = [
 NpcSpec = TypedDict('NpcSpec',
     {
         'name': str,  # NPC short name
-        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img': str,  # Filename of PNG (with transparency)
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -143,7 +177,7 @@ npc_specs: list[NpcSpec] = [
     {
        'name': 'red-flower-floaty',
        'instance_id': -1,
-       'img':  'red-flower-66x64.png',
+       'img_filename':  'red-flower-66x64.png',
        'flip': False,
        'w': 66,
        'h': 64,
@@ -160,7 +194,7 @@ npc_specs: list[NpcSpec] = [
     {
        'name': 'red-flower-drifty',
        'instance_id': -1,
-       'img':  'red-flower-66x64.png',
+       'img_filename':  'red-flower-66x64.png',
        'flip': True,
        'w': 66,
        'h': 64,
@@ -177,7 +211,7 @@ npc_specs: list[NpcSpec] = [
     {
        'name': 'goldie',
        'instance_id': -1,
-       'img': 'gold-retriever-160x142.png',
+       'img_filename': 'gold-retriever-160x142.png',
        'flip': True,
        'w': 160,
        'h': 142,
@@ -194,7 +228,7 @@ npc_specs: list[NpcSpec] = [
     {
        'name': 'grumpy',
        'instance_id': -1,
-       'img':  'grumpy-cat-110x120.png',
+       'img_filename':  'grumpy-cat-110x120.png',
        'flip': True,
        'w': 110,
        'h': 120,
@@ -211,7 +245,7 @@ npc_specs: list[NpcSpec] = [
     {
         'name': 'fishy',
         'instance_id': -1,
-        'img':  'goldfish-280x220.png',
+        'img_filename':  'goldfish-280x220.png',
         'flip': False,
         'w': 280,
         'h': 220,
@@ -232,7 +266,7 @@ npc_specs: list[NpcSpec] = [
 PropTemplate = TypedDict('PropTemplate',
     {
         'name': str,
-        'img': str,
+        'img_filename': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -248,7 +282,7 @@ PropTemplate = TypedDict('PropTemplate',
 prop_templates: list[PropTemplate] = [
     {
        'name': 'red-flower',
-       'img':  'red-flower-66x64.png',
+       'img_filename':  'red-flower-66x64.png',
        'flip': False,
        'w': 66,
        'h': 64,
@@ -260,7 +294,7 @@ prop_templates: list[PropTemplate] = [
     },
     {
        'name': 'blue-flower',
-       'img':  'blue-flower-160x158.png',
+       'img_filename':  'blue-flower-160x158.png',
        'flip': False,
        'w': 160,
        'h': 158,
@@ -276,8 +310,8 @@ prop_templates: list[PropTemplate] = [
 PropSpec = TypedDict('PropSpec',
     {
         'name': str,
-        'instance_id' : int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img': str,
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'img_filename': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -318,7 +352,7 @@ class Entity(pygame.sprite.Sprite):
             self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
             self.image_l.fill(self.spec['color'])
         else:
-            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img'])  # Var added for clarity. Don't need.
+            self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img_filename'])  # Var added for clarity. Don't need.
             self.image_l = pygame.image.load(self.imgpath).convert_alpha()
             if self.spec['flip']:
                 self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
@@ -508,6 +542,30 @@ class Prop(Entity):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
+
+# PUTTING ON HOLD. THIS MULTI-TYPE HANDLING IS INTERESTING. IT SORT OF NEEDS TO ALSO HAVE DYNAMIC RETURN TYPE
+# TO MATCH THE INPUT TYPE .. BUT I HAVE TO PAUSE AND SHIFT FROM GLOBAL CACHE LOADING TO PROCESSING THE SPECS AGAIN
+# SINCE I NEED TO KNOW FLIP FOR EACH OBJECT/IMAGE. THIS FUNCTION MAY STILL BE NEEDED BUT I MIGHT HAVE TO JUST REPEAT
+# CODE FOR A WHILE IN THE SPEC ITERATIONS I NEED TO ADD BACK NOW.
+
+# def load_image(spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec ) -> PlayerSpec | WeaponSpec | NpcSpec | PropSpec:
+#     if DEBUG:
+#         self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
+#         self.image_l.fill(self.spec['color'])
+#     else:
+#         self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img_filename'])  # Var added for clarity. Don't need.
+#         self.image_l = pygame.image.load(self.imgpath).convert_alpha()
+#         if self.spec['flip']:
+#             self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
+#         # The loaded image should be facing left and if not, use the 'flip' option. The right-facing version is
+#         # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
+#
+#     # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
+#     self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
+#     if isinstance(spec, PlayerSpec):
+#         return PlayerSpec(spec)
+
+
 # *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
@@ -528,6 +586,25 @@ def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
 
 pygame.init()
 
+# SURFACE CACHE - SCACHE - Load and process all image files.
+# Processes only png files and simply processes the entire 'ASSETS' directory.
+
+
+
+
+# CANNOT DO THIS. I NEED TO KNOW THE SPEC FLIP SETTING. WILL HAVE TO ITERATE SPECS LIKE WE STARTED OUT DOING.
+# asset_files: list[str] = os.listdir(ASSET_PATH)
+# for asset_file in asset_files:
+#     item: SurfCacheItem = SurfCacheItem(
+#         surface=pygame.Surface((0, 0)),
+#         surface_l=pygame.image.load(os.path.join(ASSET_PATH, asset_file)).convert_alpha(),
+#         surface_r=pygame.Surface((0, 0)),
+#     )
+#     item['surface_r'] = pygame.transform.flip(item['surface'], True, False)
+
+
+
+
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption(GAME_TITLE)
@@ -545,7 +622,7 @@ for prop_t in prop_templates:
         prop_spec: PropSpec = {
                 'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
-                'img': prop_t['img'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+                'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'flip': False,
                 'w': prop_t['w'],
                 'h': prop_t['h'],
@@ -572,7 +649,7 @@ for prop_t in prop_templates:
 players: list[Player] = []
 for i, player_spec in enumerate(player_specs):
     player_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, player_spec['img'])
+    imgpath = os.path.join(ASSET_PATH, player_spec['img_filename'])
     player: Player = Player( groups=[all_sprites, all_players],
                              spec=player_spec,
                              weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
@@ -588,7 +665,7 @@ for i, player_spec in enumerate(player_specs):
 npcs: list[Npc] = []
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, npc_spec['img'])
+    imgpath = os.path.join(ASSET_PATH, npc_spec['img_filename'])
     npc: Npc = Npc( groups=[all_sprites, all_npcs],
                     spec=npc_spec,
                     x=npc_spec['x'],
@@ -602,7 +679,7 @@ for i, npc_spec in enumerate(npc_specs):
 props: list[Prop] = []
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
-    imgpath = os.path.join(ASSET_PATH, prop_spec['img'])
+    imgpath = os.path.join(ASSET_PATH, prop_spec['img_filename'])
     prop: Prop = Prop( groups=[all_sprites, all_props],
                        spec=prop_spec,
                        x=prop_spec['x'],
@@ -685,11 +762,6 @@ while running:
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
 
 #   * _ * _ * _ *    END MAIN LOOP    * _ * _ * _ *
-    print(f"Entity instances: {Entity.base_instance_count}")
-    print(f"Player instances: {Player.instance_count}")
-    print(f"Weapon instances: {Weapon.instance_count}")
-    print(f"Npc instances: {Npc.instance_count}")
-    print(f"Prop instances: {Prop.instance_count}")
 
 
 pygame.quit()
