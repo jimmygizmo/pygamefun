@@ -71,8 +71,6 @@ PlayerSpec = TypedDict('PlayerSpec',
         'name': str,  # Player short name
         'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
-        'surf_l': pygame.Surface,  # LEFT-facing surface (performance: preload image prior to sprite instantiation)
-        'surf_r': pygame.Surface,  # RIGHT-facing surface (performance: preload image prior to sprite instantiation)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -94,8 +92,6 @@ player_specs: list[PlayerSpec] = [
         'name': 'buck',
         'instance_id': -1,
         'img_filename':  'rocket-200x252.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 200,
         'h': 252,
@@ -117,8 +113,6 @@ WeaponSpec = TypedDict('WeaponSpec',
         'name': str,  # Weapon/projectile short name
         'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
-        'surf_l': pygame.Surface,
-        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -140,8 +134,6 @@ weapon_specs: list[WeaponSpec] = [
         'name': 'orb',
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 140,
         'h': 140,
@@ -163,8 +155,6 @@ NpcSpec = TypedDict('NpcSpec',
         'name': str,  # NPC short name
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
-        'surf_l': pygame.Surface,
-        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
@@ -186,8 +176,6 @@ npc_specs: list[NpcSpec] = [
         'name': 'red-flower-floaty',
         'instance_id': -1,
         'img_filename':  'red-flower-66x64.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 66,
         'h': 64,
@@ -205,8 +193,6 @@ npc_specs: list[NpcSpec] = [
         'name': 'red-flower-drifty',
         'instance_id': -1,
         'img_filename':  'red-flower-66x64.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': True,
         'w': 66,
         'h': 64,
@@ -224,8 +210,6 @@ npc_specs: list[NpcSpec] = [
         'name': 'goldie',
         'instance_id': -1,
         'img_filename': 'gold-retriever-160x142.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': True,
         'w': 160,
         'h': 142,
@@ -243,8 +227,6 @@ npc_specs: list[NpcSpec] = [
         'name': 'grumpy',
         'instance_id': -1,
         'img_filename':  'grumpy-cat-110x120.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': True,
         'w': 110,
         'h': 120,
@@ -262,8 +244,6 @@ npc_specs: list[NpcSpec] = [
         'name': 'fishy',
         'instance_id': -1,
         'img_filename':  'goldfish-280x220.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 280,
         'h': 220,
@@ -285,8 +265,6 @@ PropTemplate = TypedDict('PropTemplate',
     {
         'name': str,
         'img_filename': str,
-        'surf_l': pygame.Surface,
-        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -303,8 +281,6 @@ prop_templates: list[PropTemplate] = [
     {
         'name': 'red-flower',
         'img_filename':  'red-flower-66x64.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 66,
         'h': 64,
@@ -317,8 +293,6 @@ prop_templates: list[PropTemplate] = [
     {
         'name': 'blue-flower',
         'img_filename':  'blue-flower-160x158.png',
-        'surf_l': pygame.Surface((0, 0)),
-        'surf_r': pygame.Surface((0, 0)),
         'flip': False,
         'w': 160,
         'h': 158,
@@ -336,8 +310,6 @@ PropSpec = TypedDict('PropSpec',
         'name': str,
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,
-        'surf_l': pygame.Surface,
-        'surf_r': pygame.Surface,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'w': int,
         'h': int,
@@ -650,8 +622,6 @@ for prop_t in prop_templates:
                 'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
-                'surf_l': pygame.Surface((0, 0)),  # TODO: **************************************
-                'surf_r': pygame.Surface((0, 0)),  # TODO: **************************************
                 'flip': False,
                 'w': prop_t['w'],
                 'h': prop_t['h'],
