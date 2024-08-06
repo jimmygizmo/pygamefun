@@ -80,11 +80,11 @@ player_specs: list[PlayerSpec] = [
         'x': 890.0,
         'y': 540.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-        's': 80.0,
-        'p': 90.0,
-        'r': 100.0,
-        'c': 700.0,
-        'f': 1650.0,
+        's': 480.0,
+        'p': 590.0,
+        'r': 1100.0,
+        'c': 1700.0,
+        'f': 2650.0,
     },
 ]  # player_specs: list[PlayerSpec]
 
@@ -127,6 +127,23 @@ weapon_specs: list[WeaponSpec] = [
         'r': 122.0,
         'c': 840.0,
         'f': 2350.0,
+    },
+    {
+        'name': 'meatball',
+        'instance_id': -1,
+        'img_filename':  'meatball-204x220.png',
+        'flip': False,
+        'w': 204,
+        'h': 220,
+        'color': 'brown',
+        'x': 890.0,
+        'y': 260.0,
+        'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
+        's': 734.0,
+        'p': 698.0,
+        'r': 822.0,
+        'c': 1640.0,
+        'f': 3350.0,
     },
 ]  # weapon_specs: list[WeaponSpec]
 
@@ -441,26 +458,16 @@ class Weapon(Entity):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
-    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
-        # Finalize (projectile) a little beyond LEFT wall in X Axis
-        if self.rect.left <= 0 - PROJECTILE_MARGIN:
-            print(f"Finalizing projectile: {self}")
-            self.kill()  # Cleanly remove the sprite instance from group and delete it
-
-        # Finalize (projectile) a little beyond RIGHT wall in X Axis
-        if self.rect.right >= SCREEN_WIDTH + PROJECTILE_MARGIN:
-            print(f"Finalizing projectile: {self}")
-            self.kill()  # Cleanly remove the sprite instance from group and delete it
-
-        # Finalize (projectile) a little beyond TOP wall in Y Axis
-        if self.rect.top <= 0 - PROJECTILE_MARGIN:
-            print(f"Finalizing projectile: {self}")
-            self.kill()  # Cleanly remove the sprite instance from group and delete it
-
-        # Finalize (projectile) a little beyond BOTTOM wall in Y Axis
-        if self.rect.bottom >= SCREEN_HEIGHT + PROJECTILE_MARGIN:
-            print(f"Finalizing projectile: {self}")
-            self.kill()  # Cleanly remove the sprite instance from group and delete it
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls().
+        # Projectiles/weapons are deleted beyond some margin and do not bounce off the outer walls.
+        if self.rect.left <= 0 - PROJECTILE_MARGIN:  # A little beyond LEFT wall in X Axis
+            self.kill()
+        if self.rect.right >= SCREEN_WIDTH + PROJECTILE_MARGIN:  # A little beyond RIGHT wall in X Axis
+            self.kill()
+        if self.rect.top <= 0 - PROJECTILE_MARGIN:  # A little beyond TOP wall in Y Axis
+            self.kill()
+        if self.rect.bottom >= SCREEN_HEIGHT + PROJECTILE_MARGIN:  # A little beyond BOTTOM wall in Y Axis
+            self.kill()
 
 
 class Npc(Entity):
@@ -595,7 +602,7 @@ for i, player_spec in enumerate(player_specs):
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=weapon_specs[0],  # TODO: Felt hackish initially. Keep like this?
+            weapon_spec=weapon_specs[1],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
             x=player_spec['x'],
             y=player_spec['y'],
