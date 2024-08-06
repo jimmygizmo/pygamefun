@@ -31,7 +31,7 @@ SurfCacheItem = TypedDict('SurfCacheItem',
         'surface_r': pygame.Surface,  # Flipped (assumed to be RIGHT-facing) version of image.
     }
 )  # SurfCacheitem
-SCACHE = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
+SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
 
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
@@ -308,16 +308,15 @@ class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
                  groups,
-                 spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec,
+                 img_filename: str,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
         self.base_instance_id: int = Entity.base_instance_count
-        self.spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec = spec
-        self.surface_l: pygame.Surface = SCACHE[self.spec['img_filename']]['surface_l']
-        self.surface_r: pygame.Surface = SCACHE[self.spec['img_filename']]['surface_r']
+        self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
+        self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
         self.x: float = x
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction  # Direction
@@ -373,7 +372,7 @@ class Player(Entity):
     instance_count: int = 0
     def __init__(self,
                  groups,
-                 spec: PlayerSpec,
+                 img_filename: str,
                  weapon_spec: WeaponSpec,
                  all_weapons_group_ref: pygame.sprite.Group,
                  x: float,
@@ -387,7 +386,7 @@ class Player(Entity):
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
-        super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Player.instance_count += 1
 
     def laser_timer(self):
@@ -411,8 +410,9 @@ class Player(Entity):
             print('fire laser')
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
+            weapon_img_filename = self.weapon_spec['img_filename']
             projectile: Weapon = Weapon(groups=[all_sprites, self.all_weapons_group_ref],
-                                         spec=self.weapon_spec,
+                                         img_filename=weapon_img_filename,
                                          x=self.rect.midtop[0],
                                          y=self.rect.midtop[1],
                                          direction=self.weapon_spec['d'],
@@ -427,14 +427,14 @@ class Weapon(Entity):
     instance_count: int = 0
     def __init__(self,
                  groups,
-                 spec: WeaponSpec,
+                 img_filename: str,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
         self.instance_id: int = Weapon.instance_count
-        super().__init__(groups, spec, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
@@ -467,14 +467,14 @@ class Npc(Entity):
     instance_count: int = 0
     def __init__(self,
                  groups,
-                 spec: NpcSpec,
+                 img_filename: str,
                  x: float,
                  y: float,
                  direction: pygame.math.Vector2,
                  speed: float,
                  ):
         self.instance_id: int = Npc.instance_count
-        super().__init__(groups, spec, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Npc.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
@@ -486,14 +486,14 @@ class Prop(Entity):
     instance_count: int = 0
     def __init__(self,
                  groups,
-                 spec: PropSpec,
+                 img_filename: str,
                  x: float,
                  y: float,
                  ):
         self.instance_id: int = Prop.instance_count
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
-        super().__init__(groups, spec, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
@@ -505,20 +505,27 @@ class Prop(Entity):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
+# NOTE: Disabling enviro_influence temporarily for many reasons:
+# 1. I have removed spec from instances and this was where new enviro speeds are stored. I need to pass another way now.
+# 2. I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
+# 3. This macro system needs to be super simple and process efficiently OR just pass a simpler dict than spec.
+# 4. Or use callbacks to little functions which implement the enviro responses.
+# 5. When this is figured out I will re-enable the new form. None of this is in the tutorial anyhow.
 # *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
-    # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
-    if ephase_name == 'peace':
-        xself.speed = xself.spec['p']
-    elif ephase_name == 'rogue':
-        xself.speed = xself.spec['r']
-    elif ephase_name == 'chaos':
-        xself.speed = xself.spec['c']
-    elif ephase_name == 'frozen':
-        xself.speed = xself.spec['f']
-    else:
-        raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
-                         "Check values in ENVIRO_PHASES config.")
+    pass  # TEMPORARILY DISABLED PER THE ABOVE REASONS.
+    # # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
+    # if ephase_name == 'peace':
+    #     xself.speed = xself.spec['p']
+    # elif ephase_name == 'rogue':
+    #     xself.speed = xself.spec['r']
+    # elif ephase_name == 'chaos':
+    #     xself.speed = xself.spec['c']
+    # elif ephase_name == 'frozen':
+    #     xself.speed = xself.spec['f']
+    # else:
+    #     raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
+    #                      "Check values in ENVIRO_PHASES config.")
 
 def load_image(filename: str, flip: bool) -> None:
     prop_surface_l: pygame.Surface = pygame.image.load(
@@ -587,9 +594,9 @@ for i, player_spec in enumerate(player_specs):
     load_image(filename=player_spec['img_filename'], flip=player_spec['flip'])
     player: Player = Player(
             groups=[all_sprites, all_players],
-            spec=player_spec,
-            weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
-            all_weapons_group_ref=all_weapons,  # THIS IS A HACK. Temporary.
+            img_filename=player_spec['img_filename'],
+            weapon_spec=weapon_specs[0],  # TODO: Felt hackish initially. Keep like this?
+            all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
             x=player_spec['x'],
             y=player_spec['y'],
             direction=player_spec['d'],
@@ -602,7 +609,7 @@ for i, npc_spec in enumerate(npc_specs):
     load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'])
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs],
-            spec=npc_spec,
+            img_filename=npc_spec['img_filename'],
             x=npc_spec['x'],
             y=npc_spec['y'],
             direction=npc_spec['d'],
@@ -615,7 +622,7 @@ for i, prop_spec in enumerate(prop_specs):
     load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'])
     prop: Prop = Prop(
             groups=[all_sprites, all_props],
-            spec=prop_spec,
+            img_filename=prop_spec['img_filename'],
             x=prop_spec['x'],
             y=prop_spec['y'],
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
