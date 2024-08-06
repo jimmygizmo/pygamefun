@@ -1,0 +1,28 @@
+
+# SURFACE CACHE - 'SCACHE'
+# The Surface Cache SCACHE pre-loads images into surfaces. All images under ASSET_PATH will be loaded and processed.
+# This cache is populated during initialization processing of spec data and the images are loaded prior to sprite
+# instantiation. This is because many sprites are instantiated frequently and we must pull the image/surface data from
+# RAM memory and most-certainly not from filesystem I/O. TODO: It is very likely this cache implementation will
+# evolve over time as this is starting out as as simple global-level dictionary of dictionaries of filenames of images
+# linking to a set of 2 or 3 surfaces for each, to be available for efficient instantation of sprites and also for the
+# efficient changing of component/related surfaces/images for sprite instances .. such as a LEFT/RIGHT surface in place
+# for left/right direction changes. This concept could expand to dozens of component surfaces for every character/object,
+# for instance for multi-direction and animated movement. Such a cache will be needed in all games, but cahces can take
+# make forms and have many options to consider, thus I expect this area to evolve a lot as this 'game' or all the games
+# in the project/repo progress.
+
+SurfCacheItem = TypedDict('SurfCacheItem',
+    {
+        'surface_l': pygame.Surface,  # Image as loaded and with 'flip' option applied if True. Should be LEFT facing.
+        'surface_r': pygame.Surface,  # Flipped (assumed to be RIGHT-facing) version of image.
+    }
+)  # SurfCacheitem
+# NOTE: The developer can set the 'flip' spec option to make any right-facing source images to be left-facing upon
+# load. The right-facing surface is created assuming the default surface is left facing, (or was made left-facing
+# upon load using 'flip'.)
+
+SCACHE = {}  # Was using a TypedDict, but I need dynammic and not pre-set keys, so I need a regular dict.
+
+
+

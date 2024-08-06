@@ -1,10 +1,11 @@
 #! /usr/bin/env -vS python
 
-import pygame
-from typing import TypedDict
+import sys
 import os.path
-import random
+from typing import TypedDict
+import pygame
 import collections
+import random
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -22,29 +23,15 @@ LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firin
 PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
 
 # SURFACE CACHE - 'SCACHE'
-# The Surface Cache SCACHE pre-loads images into surfaces. All images under ASSET_PATH will be loaded and processed.
-# This cache is populated during initialization processing of spec data and the images are loaded prior to sprite
-# instantiation. This is because many sprites are instantiated frequently and we must pull the image/surface data from
-# RAM memory and most-certainly not from filesystem I/O. TODO: It is very likely this cache implementation will
-# evolve over time as this is starting out as as simple global-level dictionary of dictionaries of filenames of images
-# linking to a set of 2 or 3 surfaces for each, to be available for efficient instantation of sprites and also for the
-# efficient changing of component/related surfaces/images for sprite instances .. such as a LEFT/RIGHT surface in place
-# for left/right direction changes. This concept could expand to dozens of component surfaces for every character/object,
-# for instance for multi-direction and animated movement. Such a cache will be needed in all games, but cahces can take
-# make forms and have many options to consider, thus I expect this area to evolve a lot as this 'game' or all the games
-# in the project/repo progress.
-
+# The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
+# for surfaces and not need to load them from disk. This is important for dynamically/frequently spawned/destroyed sprites.
 SurfCacheItem = TypedDict('SurfCacheItem',
     {
         'surface_l': pygame.Surface,  # Image as loaded and with 'flip' option applied if True. Should be LEFT facing.
         'surface_r': pygame.Surface,  # Flipped (assumed to be RIGHT-facing) version of image.
     }
 )  # SurfCacheitem
-# NOTE: The developer can set the 'flip' spec option to make any right-facing source images to be left-facing upon
-# load. The right-facing surface is created assuming the default surface is left facing, (or was made left-facing
-# upon load using 'flip'.)
-
-SCACHE = {}  # Was using a TypedDict, but I need dynammic and not pre-set keys, so I need a regular dict.
+SCACHE = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
 
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
@@ -340,14 +327,10 @@ class Entity(pygame.sprite.Sprite):
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
 
-        # # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
-        # self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
-
         self.rect = self.surface_l.get_frect(center=(self.x, self.y))
 
     def update(self, delta_time: float, ephase_name: str):
-        # TODO: Articulate the reason we have to make the update signatures match. NOTE: ephase_name ARG had to be added
-        #     to places it is not actually used. (* PyCharm static analysis warning *)
+        # NOTE: ephase_name ARG had to be added to places it is not actually used. (* PyCharm static analysis warning *)
 
         delta_vector = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
@@ -522,30 +505,6 @@ class Prop(Entity):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-
-# PUTTING ON HOLD. THIS MULTI-TYPE HANDLING IS INTERESTING. IT SORT OF NEEDS TO ALSO HAVE DYNAMIC RETURN TYPE
-# TO MATCH THE INPUT TYPE .. BUT I HAVE TO PAUSE AND SHIFT FROM GLOBAL CACHE LOADING TO PROCESSING THE SPECS AGAIN
-# SINCE I NEED TO KNOW FLIP FOR EACH OBJECT/IMAGE. THIS FUNCTION MAY STILL BE NEEDED BUT I MIGHT HAVE TO JUST REPEAT
-# CODE FOR A WHILE IN THE SPEC ITERATIONS I NEED TO ADD BACK NOW.
-
-# def load_image(spec: PlayerSpec | WeaponSpec | NpcSpec | PropSpec ) -> PlayerSpec | WeaponSpec | NpcSpec | PropSpec:
-#     if DEBUG:
-#         self.image_l = pygame.Surface((self.spec['w'], self.spec['h']))
-#         self.image_l.fill(self.spec['color'])
-#     else:
-#         self.imgpath: str = os.path.join(ASSET_PATH, self.spec['img_filename'])  # Var added for clarity. Don't need.
-#         self.image_l = pygame.image.load(self.imgpath).convert_alpha()
-#         if self.spec['flip']:
-#             self.image_l = pygame.transform.flip(self.image_l, True, False)  # Happens once at init.
-#         # The loaded image should be facing left and if not, use the 'flip' option. The right-facing version is
-#         # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
-#
-#     # Props TODO: For efficiency, since we could have MANY props, detect PropSpec type and then don't generate this:
-#     self.image_r = pygame.transform.flip(self.image_l, True, False)  # Generate right-facing surface.
-#     if isinstance(spec, PlayerSpec):
-#         return PlayerSpec(spec)
-
-
 # *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
@@ -561,29 +520,24 @@ def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
 
+def load_image(filename: str, flip: bool) -> None:
+    prop_surface_l: pygame.Surface = pygame.image.load(
+            os.path.join(ASSET_PATH, filename)
+        ).convert_alpha()
+    if flip:
+        prop_surface_l = pygame.transform.flip(prop_surface_l, True, False)
+
+    prop_surface_r: pygame.Surface = pygame.transform.flip(prop_surface_l, True, False)
+    c_item: SurfCacheItem = {
+            'surface_l': prop_surface_l,
+            'surface_r': prop_surface_r,
+        }
+    SCACHE[filename] = c_item
+
 
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
-
-# SURFACE CACHE - SCACHE - Load and process all image files.
-# Processes only png files and simply processes the entire 'ASSETS' directory.
-
-
-
-
-# CANNOT DO THIS. I NEED TO KNOW THE SPEC FLIP SETTING. WILL HAVE TO ITERATE SPECS LIKE WE STARTED OUT DOING.
-# asset_files: list[str] = os.listdir(ASSET_PATH)
-# for asset_file in asset_files:
-#     item: SurfCacheItem = SurfCacheItem(
-#         surface=pygame.Surface((0, 0)),
-#         surface_l=pygame.image.load(os.path.join(ASSET_PATH, asset_file)).convert_alpha(),
-#         surface_r=pygame.Surface((0, 0)),
-#     )
-#     item['surface_r'] = pygame.transform.flip(item['surface'], True, False)
-
-
-
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
 display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -631,20 +585,7 @@ players: list[Player] = []
 for i, player_spec in enumerate(player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
-    player_surface_l: pygame.Surface = pygame.image.load(
-        os.path.join(ASSET_PATH, player_spec['img_filename'])
-    ).convert_alpha()
-    if player_spec['flip']:
-        player_surface_l = pygame.transform.flip(player_surface_l, True, False)
-
-    player_surface_r: pygame.Surface = pygame.transform.flip(player_surface_l, True, False)
-    c_item: SurfCacheItem = {
-        'surface_l': player_surface_l,
-        'surface_r': player_surface_r,
-    }
-    SCACHE[player_spec['img_filename']] = c_item
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    load_image(filename=player_spec['img_filename'], flip=player_spec['flip'])
     player: Player = Player( groups=[all_sprites, all_players],
                              spec=player_spec,
                              weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
@@ -660,20 +601,7 @@ for i, player_spec in enumerate(player_specs):
 npcs: list[Npc] = []
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
-    npc_surface_l: pygame.Surface = pygame.image.load(
-        os.path.join(ASSET_PATH, npc_spec['img_filename'])
-    ).convert_alpha()
-    if npc_spec['flip']:
-        npc_surface_l = pygame.transform.flip(npc_surface_l, True, False)
-
-    npc_surface_r: pygame.Surface = pygame.transform.flip(npc_surface_l, True, False)
-    c_item: SurfCacheItem = {
-        'surface_l': npc_surface_l,
-        'surface_r': npc_surface_r,
-    }
-    SCACHE[npc_spec['img_filename']] = c_item
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'])
     npc: Npc = Npc( groups=[all_sprites, all_npcs],
                     spec=npc_spec,
                     x=npc_spec['x'],
@@ -687,20 +615,7 @@ for i, npc_spec in enumerate(npc_specs):
 props: list[Prop] = []
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
-    prop_surface_l: pygame.Surface = pygame.image.load(
-        os.path.join(ASSET_PATH, prop_spec['img_filename'])
-    ).convert_alpha()
-    if prop_spec['flip']:
-        prop_surface_l = pygame.transform.flip(prop_surface_l, True, False)
-
-    prop_surface_r: pygame.Surface = pygame.transform.flip(prop_surface_l, True, False)
-    c_item: SurfCacheItem = {
-        'surface_l': prop_surface_l,
-        'surface_r': prop_surface_r,
-    }
-    SCACHE[prop_spec['img_filename']] = c_item
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'])
     prop: Prop = Prop( groups=[all_sprites, all_props],
                        spec=prop_spec,
                        x=prop_spec['x'],
@@ -715,16 +630,16 @@ for i, weapon_spec in enumerate(weapon_specs):
     weapon_spec['instance_id'] = i
     #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
     weapon_surface_l: pygame.Surface = pygame.image.load(
-        os.path.join(ASSET_PATH, weapon_spec['img_filename'])
-    ).convert_alpha()
+            os.path.join(ASSET_PATH, weapon_spec['img_filename'])
+        ).convert_alpha()
     if weapon_spec['flip']:
         prop_surface_l = pygame.transform.flip(weapon_surface_l, True, False)
 
     weapon_surface_r: pygame.Surface = pygame.transform.flip(weapon_surface_l, True, False)
     c_item: SurfCacheItem = {
-        'surface_l': weapon_surface_l,
-        'surface_r': weapon_surface_r,
-    }
+            'surface_l': weapon_surface_l,
+            'surface_r': weapon_surface_r,
+        }
     SCACHE[weapon_spec['img_filename']] = c_item
     #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
 
@@ -732,18 +647,9 @@ for i, weapon_spec in enumerate(weapon_specs):
 # ###############################################    MAIN EXECUTION    #################################################
 
 if not __name__ == '__main__':
-    print("PyGameFun main.py has been imported. Some initialization has been performed.")
-    print("Exiting without starting the main loop. The code which imported can also leverage the initialization.")
-    # This is here for illustrative purposes. This code is not really intended to be imported, but one should still
-    # have some kind of appropriate behavior in case the code is imported. It matters where we put a check like this
-    # as we could have skipped the initialization by moving this up. In the current program, we do different kinds of
-    # initialization inline in the global scope but as the app evolves we might stop doing that and put EVERYTHING
-    # inside a class or function. Some might argue that we should have nothing at global scope, but I am usually
-    # fine with some things like config and high-level/early initialization at the global scope, but this decreases as
-    # an app grows and at some point it might be necessary that even config is passed around as an argument and not
-    # referenced globally.
-    # In the current location, this simply informs the user that the current code is not meant for import, but it is
-    # ok and that the program will not be further started up but rather will exit.
+    print("PyGameFun main.py has been imported. Some initialization has been performed. "
+        "Main execution will not be started.")
+    sys.exit(0)
 
 bgpath = os.path.join(ASSET_PATH, BGIMG)
 

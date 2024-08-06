@@ -12,3 +12,24 @@
         #     # generated after the image is loaded and optionally flipped. Don't use flip on images already facing left.
 
 
+
+
+
+
+
+
+
+if not __name__ == '__main__':
+    print("PyGameFun main.py has been imported. Some initialization has been performed. Not starting main. Exiting.")
+    print("Exiting without starting the main loop. The code which imported can also leverage the initialization.")
+    # This is here for illustrative purposes. This code is not really intended to be imported, but one should still
+    # have some kind of appropriate behavior in case the code is imported. It matters where we put a check like this
+    # as we could have skipped the initialization by moving this up. In the current program, we do different kinds of
+    # initialization inline in the global scope but as the app evolves we might stop doing that and put EVERYTHING
+    # inside a class or function. Some might argue that we should have nothing at global scope, but I am usually
+    # fine with some things like config and high-level/early initialization at the global scope, but this decreases as
+    # an app grows and at some point it might be necessary that even config is passed around as an argument and not
+    # referenced globally.
+    # In the current location, this simply informs the user that the current code is not meant for import, but it is
+    # ok and that the program will not be further started up but rather will exit.
+
