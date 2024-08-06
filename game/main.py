@@ -580,68 +580,51 @@ for prop_t in prop_templates:
 
 # TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
 
-# INSTANITATE PLAYER(S)
-players: list[Player] = []
+# INSTANITATE PLAYER SPRITE(S)
 for i, player_spec in enumerate(player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
     load_image(filename=player_spec['img_filename'], flip=player_spec['flip'])
-    player: Player = Player( groups=[all_sprites, all_players],
-                             spec=player_spec,
-                             weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
-                             all_weapons_group_ref=all_weapons,  # THIS IS A HACK. Temporary.
-                             x=player_spec['x'],
-                             y=player_spec['y'],
-                             direction=player_spec['d'],
-                             speed=player_spec['s'],
-                             )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    players.append(player)  # Although considered for removal in lieu of sprite groups, I see reasons to keep such lists.
+    player: Player = Player(
+            groups=[all_sprites, all_players],
+            spec=player_spec,
+            weapon_spec=weapon_specs[0],  # THIS IS A HACK. Temporary.
+            all_weapons_group_ref=all_weapons,  # THIS IS A HACK. Temporary.
+            x=player_spec['x'],
+            y=player_spec['y'],
+            direction=player_spec['d'],
+            speed=player_spec['s'],
+        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
-# INSTANITATE NPCs
-npcs: list[Npc] = []
+# INSTANITATE NPC SPRITES
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
     load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'])
-    npc: Npc = Npc( groups=[all_sprites, all_npcs],
-                    spec=npc_spec,
-                    x=npc_spec['x'],
-                    y=npc_spec['y'],
-                    direction=npc_spec['d'],
-                    speed=npc_spec['s'],
-                    )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    npcs.append(npc)
+    npc: Npc = Npc(
+            groups=[all_sprites, all_npcs],
+            spec=npc_spec,
+            x=npc_spec['x'],
+            y=npc_spec['y'],
+            direction=npc_spec['d'],
+            speed=npc_spec['s'],
+        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
-# INSTANITATE PROPS
-props: list[Prop] = []
+# INSTANITATE PROP SPRITES
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
     load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'])
-    prop: Prop = Prop( groups=[all_sprites, all_props],
-                       spec=prop_spec,
-                       x=prop_spec['x'],
-                       y=prop_spec['y'],
-                       )  # PyCharm FALSE WARNING HERE (AbstractGroup)
-    props.append(prop)
+    prop: Prop = Prop(
+            groups=[all_sprites, all_props],
+            spec=prop_spec,
+            x=prop_spec['x'],
+            y=prop_spec['y'],
+        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
-weapons: list[Weapon] = []  # We actually will not use this. Weapons dynamically come and go. We don't use the others in fact.
 for i, weapon_spec in enumerate(weapon_specs):
     weapon_spec['instance_id'] = i
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
-    weapon_surface_l: pygame.Surface = pygame.image.load(
-            os.path.join(ASSET_PATH, weapon_spec['img_filename'])
-        ).convert_alpha()
-    if weapon_spec['flip']:
-        prop_surface_l = pygame.transform.flip(weapon_surface_l, True, False)
-
-    weapon_surface_r: pygame.Surface = pygame.transform.flip(weapon_surface_l, True, False)
-    c_item: SurfCacheItem = {
-            'surface_l': weapon_surface_l,
-            'surface_r': weapon_surface_r,
-        }
-    SCACHE[weapon_spec['img_filename']] = c_item
-    #### NEW CACHE PER-OBJECT CODE - START - ###################################################### ------------------
+    load_image(filename=weapon_spec['img_filename'], flip=weapon_spec['flip'])
 
 
 # ###############################################    MAIN EXECUTION    #################################################
