@@ -6,6 +6,7 @@ from typing import TypedDict
 import pygame
 import collections
 import random
+import resizer
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -21,6 +22,8 @@ DEBUG = False
 ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
 LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
 PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
+PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
+# 0 = green ball    1 = meatball
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -116,13 +119,13 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
         'flip': False,
-        'w': 140,
-        'h': 140,
+        'w': 70,
+        'h': 70,
         'color': 'green3',
         'x': 890.0,
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
-        's': 134.0,
+        's': 334.0,
         'p': 98.0,
         'r': 122.0,
         'c': 840.0,
@@ -133,8 +136,8 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'meatball-204x220.png',
         'flip': False,
-        'w': 204,
-        'h': 220,
+        'w': 102,
+        'h': 110,
         'color': 'brown',
         'x': 890.0,
         'y': 260.0,
@@ -534,10 +537,13 @@ def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     #     raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
     #                      "Check values in ENVIRO_PHASES config.")
 
-def load_image(filename: str, flip: bool) -> None:
-    prop_surface_l: pygame.Surface = pygame.image.load(
-            os.path.join(ASSET_PATH, filename)
-        ).convert_alpha()
+def load_image(filename: str, flip: bool, width: int | None, height: int | None) -> None:
+    image_path = os.path.join(ASSET_PATH, filename)
+    prop_surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
+    if width and height:
+        temp_surface = pygame.Surface((width, height))
+        pygame.transform.smoothscale(prop_surface_l, (width, height), temp_surface)
+        prop_surface_l = temp_surface
     if flip:
         prop_surface_l = pygame.transform.flip(prop_surface_l, True, False)
 
@@ -547,6 +553,26 @@ def load_image(filename: str, flip: bool) -> None:
             'surface_r': prop_surface_r,
         }
     SCACHE[filename] = c_item
+
+    # OPENCV CUSTOM IMAGE RESIZE EXPERIMENT - See file: resizer.py
+    # New experiment with binary image data OpenCV initially as a way to PROPERLY resize a PNG with transparency.
+    if width and height:
+        with open(image_path, 'rb') as fh:
+            img_bytes = fh.read()
+        resizer.alphonic_resize(img_data=img_bytes, width=width, height=height)
+
+
+def event_meatball(group_ref: pygame.sprite.Group):
+    # NOTE: Pending a different design, we must pass the group INTO ANYTHING which instantiates sprites for that group.
+    #     This group does not exist yet, when func defined. We will have it when this func is called, however.
+    #     I use the suffix _ref here mostly for further clarity that it is a different variable and what we are doing
+    #     with it. It is the same thing as passing the group itself. They are the same reference, same memory address.
+    #     In Python, almost everyhting is passed by reference anyhow. Passing and copying is a other special set of scenarios.
+    #     I'm doing absolutely nothing special by calling this group_ref.
+    meatball_spec = weapon_specs[1]
+    print(f"Look out! Here comes a meatball! And it's a juicy one!")
+
+
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -593,16 +619,17 @@ for prop_t in prop_templates:
 # ################################################    INSTANTIATION    #################################################
 
 # TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
+# NOTE: When using load_image(): To keep image size original, specify None for width and height.
 
 # INSTANITATE PLAYER SPRITE(S)
 for i, player_spec in enumerate(player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
-    load_image(filename=player_spec['img_filename'], flip=player_spec['flip'])
+    load_image(filename=player_spec['img_filename'], flip=player_spec['flip'], width=None, height=None)
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=weapon_specs[1],  # TODO: Felt hackish initially. Keep like this?
+            weapon_spec=weapon_specs[PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
             x=player_spec['x'],
             y=player_spec['y'],
@@ -613,7 +640,7 @@ for i, player_spec in enumerate(player_specs):
 # INSTANITATE NPC SPRITES
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
-    load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'])
+    load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'], width=None, height=None)
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs],
             img_filename=npc_spec['img_filename'],
@@ -626,7 +653,7 @@ for i, npc_spec in enumerate(npc_specs):
 # INSTANITATE PROP SPRITES
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
-    load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'])
+    load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'], width=None, height=None)
     prop: Prop = Prop(
             groups=[all_sprites, all_props],
             img_filename=prop_spec['img_filename'],
@@ -638,7 +665,12 @@ for i, prop_spec in enumerate(prop_specs):
 # LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
 for i, weapon_spec in enumerate(weapon_specs):
     weapon_spec['instance_id'] = i
-    load_image(filename=weapon_spec['img_filename'], flip=weapon_spec['flip'])
+    load_image(
+            filename=weapon_spec['img_filename'],
+            flip=weapon_spec['flip'],
+            width=weapon_spec['w'],
+            height=weapon_spec['h'],
+        )
 
 
 # ###############################################    MAIN EXECUTION    #################################################
@@ -663,9 +695,11 @@ g_ephase_name = None
 ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
-# CUSTOM EVENTS - Random tumbleweeds
-tumbleweed_event = pygame.event.custom_type()
-pygame.time.set_timer(tumbleweed_event, 4500)
+# CUSTOM EVENTS - Random meatballs
+meatball_event = pygame.event.custom_type()
+pygame.time.set_timer(meatball_event, 4500)
+
+all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to anything that instantiates weapons.
 
 
 #   * * * * * * *    MAIN LOOP    * * * * * * *
@@ -678,8 +712,8 @@ while running:
     for event in pygame.event.get():  # Check all new events since the last main loop iteration
         if event.type == pygame.QUIT:
             running = False
-        if event.type == tumbleweed_event:
-            print(f"Look out! Here comes a tumbleweed!")
+        if event.type == meatball_event:
+            event_meatball(all_weapons_group_ref)
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################

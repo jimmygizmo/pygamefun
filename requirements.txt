@@ -1,5 +1,7 @@
 mypy==1.11.0
 mypy-extensions==1.0.0
+numpy==2.0.1
+opencv-contrib-python==4.10.0.84
 pygame-ce==2.5.0
-setuptools==71.1.0
+setuptools==72.1.0
 typing_extensions==4.12.2
