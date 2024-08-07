@@ -37,6 +37,12 @@ SurfCacheItem = TypedDict('SurfCacheItem',
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
 
+# TODO: This looks like a cool way to apply type-hinting to literal enums like this (constant lists, dicts etc):
+# PygameSurfaceFormatType = Union[
+#     Literal["P"], Literal["RGB"], Literal["RGBX"], Literal["RGBA"], Literal["ARGB"]
+# ]
+# USAGE: format: PygameSurfaceFormatType = "RGBA"
+
 # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
 # to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
 ENVIRO_PHASES = collections.deque([
@@ -537,29 +543,56 @@ def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     #     raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
     #                      "Check values in ENVIRO_PHASES config.")
 
-def load_image(filename: str, flip: bool, width: int | None, height: int | None) -> None:
+def load_image(
+            filename: str,
+            flip: bool,
+            resize: bool,
+            width: int | None,
+            height: int | None,
+        ) -> None:
     image_path = os.path.join(ASSET_PATH, filename)
-    prop_surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
-    if width and height:
-        temp_surface = pygame.Surface((width, height))
-        pygame.transform.smoothscale(prop_surface_l, (width, height), temp_surface)
-        prop_surface_l = temp_surface
-    if flip:
-        prop_surface_l = pygame.transform.flip(prop_surface_l, True, False)
+    surface_l: pygame.Surface = pygame.Surface((0, 0))
+    if resize:
+        if width and height:
+            with open(image_path, 'rb') as fh:
+                img_bytes = fh.read()
+            resized_png_bytes = resizer.alphonic_resize(
+                    img_data=img_bytes,
+                    width=width,
+                    height=height,
+                )
+            # DEV HACK (pygame.image.frombytes is not working yet) - output data to a file. Check valid PNG. Hack load it?
+            # TODO: If desperate, we could load the image from disk. Horribly bad but could work until a proper fix.
+            with open('load-image-temp-out-png.png', 'wb') as fh:
+                fh.write(resized_png_bytes)
+            # END DEV HACK - Proves the image data is good. Helps prove out problem is with pygame.image.frombytes()
+            new_size = (width, height)  # NOTE: This is the size of the already-resized image. No resizing occurs here.
+            alphonically_resized_surface = pygame.image.frombytes(
+                    resized_png_bytes,
+                    size=new_size,
+                    format='RGBA',
+                ).convert_alpha()
+            # ******************************************************************
+            # PERSISTENT ERROR:
+            #     fbtest = pygame.image.frombytes(img_bytes, size=(140, 140), format='RGBA').convert_alpha()
+            #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # ValueError: Bytes length does not equal format and resolution size
+            # ******************************************************************
+            surface_l = alphonically_resized_surface
+    else:
+        surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
 
-    prop_surface_r: pygame.Surface = pygame.transform.flip(prop_surface_l, True, False)
+    if flip:
+        surface_l = pygame.transform.flip(surface_l, True, False)
+
+    # Create RIGHT-facing surface:
+    surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
+    # ADD CACHE ITEM:
     c_item: SurfCacheItem = {
-            'surface_l': prop_surface_l,
-            'surface_r': prop_surface_r,
+            'surface_l': surface_l,
+            'surface_r': surface_r,
         }
     SCACHE[filename] = c_item
-
-    # OPENCV CUSTOM IMAGE RESIZE EXPERIMENT - See file: resizer.py
-    # New experiment with binary image data OpenCV initially as a way to PROPERLY resize a PNG with transparency.
-    if width and height:
-        with open(image_path, 'rb') as fh:
-            img_bytes = fh.read()
-        resizer.alphonic_resize(img_data=img_bytes, width=width, height=height)
 
 
 def event_meatball(group_ref: pygame.sprite.Group):
@@ -625,7 +658,13 @@ for prop_t in prop_templates:
 for i, player_spec in enumerate(player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
-    load_image(filename=player_spec['img_filename'], flip=player_spec['flip'], width=None, height=None)
+    load_image(
+            filename=player_spec['img_filename'],
+            flip=player_spec['flip'],
+            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=None,
+            height=None,
+        )
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
@@ -640,7 +679,13 @@ for i, player_spec in enumerate(player_specs):
 # INSTANITATE NPC SPRITES
 for i, npc_spec in enumerate(npc_specs):
     npc_spec['instance_id'] = i
-    load_image(filename=npc_spec['img_filename'], flip=npc_spec['flip'], width=None, height=None)
+    load_image(
+            filename=npc_spec['img_filename'],
+            flip=npc_spec['flip'],
+            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=None,
+            height=None,
+        )
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs],
             img_filename=npc_spec['img_filename'],
@@ -653,7 +698,13 @@ for i, npc_spec in enumerate(npc_specs):
 # INSTANITATE PROP SPRITES
 for i, prop_spec in enumerate(prop_specs):
     prop_spec['instance_id'] = i
-    load_image(filename=prop_spec['img_filename'], flip=prop_spec['flip'], width=None, height=None)
+    load_image(
+            filename=prop_spec['img_filename'],
+            flip=prop_spec['flip'],
+            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=None,
+            height=None,
+        )
     prop: Prop = Prop(
             groups=[all_sprites, all_props],
             img_filename=prop_spec['img_filename'],
@@ -668,6 +719,7 @@ for i, weapon_spec in enumerate(weapon_specs):
     load_image(
             filename=weapon_spec['img_filename'],
             flip=weapon_spec['flip'],
+            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
             width=weapon_spec['w'],
             height=weapon_spec['h'],
         )

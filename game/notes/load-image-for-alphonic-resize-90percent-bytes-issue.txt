@@ -1,0 +1,55 @@
+def load_image(
+            filename: str,
+            flip: bool,
+            resize: bool,
+            width: int | None,
+            height: int | None,
+        ) -> None:
+    print(f"LOAD IMAGE")
+    print(f"width: {width}, height: {height}")
+    # VERY TEMPORARY AND IMPERFECT CONVENTION (prior to addind a do_resize spec attribute or similar) IS THAT
+    # IF WE SPECIFY width None and height None it means we don't want any resize.
+    image_path = os.path.join(ASSET_PATH, filename)
+    # ******************************************************************
+    # surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
+    # if width and height:
+    #     temp_surface = pygame.Surface((width, height))
+    #     pygame.transform.smoothscale(surface_l, (width, height), temp_surface)
+    #     surface_l = temp_surface
+    # ******************************************************************
+    # ABOVE DISABLED FOR THE BELOW EXPERIMENT. UPDATE: pygame.image.frombytes not working yet but new image data seems good.
+    # ******************************************************************
+    surface_l: pygame.Surface = pygame.Surface((0, 0))  # Excessive placeholders like this keep type-hinting and more happy.
+    if width and height:
+        with open(image_path, 'rb') as fh:
+            img_bytes = fh.read()
+        #  *-* Next line is just a separate test of frombytes(). Can it convert img_bytes, unmodified by our other code?
+        # fbtest = pygame.image.frombytes(img_bytes, size=(140, 140), format='RGBA').convert_alpha()  # SAME ERROR.
+        #  *-* End frombytes() test.
+        resized_png_bytes = resizer.alphonic_resize(img_data=img_bytes, width=width, height=height)
+        # DEV HACK (pygame.image.frombytes is not working yet) - output data to a file. Check valid PNG. Hack load it?
+        with open('load-image-temp-out-png.png', 'wb') as fh:
+            fh.write(resized_png_bytes)
+        # END DEV HACK -- UPDATE - PROVEN NOW - THE IMAGE DATA IS GOOD!!  pygame.image.frombytes SHOULD work.
+        new_size = (width, height)  # NOTE: This is the size of the already-resized image. No resizing occurs here.
+        alphonically_resized_surface = pygame.image.frombytes(resized_png_bytes, size=new_size, format='RGBA').convert_alpha()
+        # alphonically_resized_surface = pygame.image.frombuffer(resized_png_bytes, size=new_size, format='RGBA').convert_alpha()
+        surface_l = alphonically_resized_surface
+    # ******************************************************************
+    # PERSISTENT ERROR:
+    #     fbtest = pygame.image.frombytes(img_bytes, size=(140, 140), format='RGBA').convert_alpha()
+    #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # ValueError: Bytes length does not equal format and resolution size
+    # ******************************************************************
+    else:
+        surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
+    if flip:
+        surface_l = pygame.transform.flip(surface_l, True, False)
+
+    surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
+    c_item: SurfCacheItem = {
+            'surface_l': surface_l,
+            'surface_r': surface_r,
+        }
+    SCACHE[filename] = c_item
+

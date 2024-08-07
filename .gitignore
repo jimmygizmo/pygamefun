@@ -2,6 +2,7 @@
 # Project-specific.
 # This is a temporary file used in an experimental OpenCV image resize hack. See resizer.py
 game/*temp-png.png
+game/*temp-out-png.png
 
 
 # Byte-compiled / optimized / DLL files
