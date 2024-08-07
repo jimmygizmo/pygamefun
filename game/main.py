@@ -24,6 +24,7 @@ LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firin
 PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
 PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
 # 0 = green ball    1 = meatball
+PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -567,18 +568,25 @@ def load_image(
                 fh.write(resized_png_bytes)
             # END DEV HACK - Proves the image data is good. Helps prove out problem is with pygame.image.frombytes()
             new_size = (width, height)  # NOTE: This is the size of the already-resized image. No resizing occurs here.
-            alphonically_resized_surface = pygame.image.frombytes(
-                    resized_png_bytes,
-                    size=new_size,
-                    format='RGBA',
+            if PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE:  # A terrible and VERY TEMPORARY HACK (which works great)
+                # Obviously the following can have race conditions and is a very hackish hack and NOT a solution.
+                filesystem_loaded_resized_surface_hack = pygame.image.load(
+                    'load-image-temp-out-png.png'
                 ).convert_alpha()
-            # ******************************************************************
-            # PERSISTENT ERROR:
-            #     fbtest = pygame.image.frombytes(img_bytes, size=(140, 140), format='RGBA').convert_alpha()
-            #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # ValueError: Bytes length does not equal format and resolution size
-            # ******************************************************************
-            surface_l = alphonically_resized_surface
+                surface_l = filesystem_loaded_resized_surface_hack  # For clarity
+            else:
+                alphonically_resized_surface = pygame.image.frombytes(
+                        resized_png_bytes,
+                        size=new_size,
+                        format='RGBA',
+                    ).convert_alpha()
+                # ******************************************************************
+                # PERSISTENT ERROR:
+                #     fbtest = pygame.image.frombytes(img_bytes, size=(140, 140), format='RGBA').convert_alpha()
+                #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                # ValueError: Bytes length does not equal format and resolution size
+                # ******************************************************************
+                surface_l = alphonically_resized_surface
     else:
         surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
 
@@ -719,7 +727,7 @@ for i, weapon_spec in enumerate(weapon_specs):
     load_image(
             filename=weapon_spec['img_filename'],
             flip=weapon_spec['flip'],
-            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=True,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
             width=weapon_spec['w'],
             height=weapon_spec['h'],
         )
