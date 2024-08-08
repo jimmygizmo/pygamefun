@@ -11,8 +11,8 @@ import resizer
 
 # ###############################################    CONFIGURATION    ##################################################
 
-SCREEN_WIDTH = 1640.0
-SCREEN_HEIGHT = 860.0
+SCREEN_WIDTH: int = 1640
+SCREEN_HEIGHT: int = 860
 TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE = 'Space Blasto'
 BGCOLOR = 'olivedrab'
@@ -25,6 +25,7 @@ PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectil
 PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
 # 0 = green ball    1 = meatball
 PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
+MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -63,6 +64,7 @@ PlayerSpec = TypedDict('PlayerSpec',
         'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
         'color': str,  # Debug mode color of rectangle
@@ -84,8 +86,9 @@ player_specs: list[PlayerSpec] = [
         'instance_id': -1,
         'img_filename':  'rocket-200x252.png',
         'flip': False,
-        'w': 200,
-        'h': 252,
+        'resize': True,
+        'w': 100,
+        'h': 126,
         'color': 'aqua',
         'x': 890.0,
         'y': 540.0,
@@ -105,6 +108,7 @@ WeaponSpec = TypedDict('WeaponSpec',
         'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
         'color': str,  # Debug mode color of rectangle
@@ -126,6 +130,7 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
         'flip': False,
+        'resize': True,
         'w': 70,
         'h': 70,
         'color': 'green3',
@@ -143,6 +148,7 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'meatball-204x220.png',
         'flip': False,
+        'resize': True,
         'w': 102,
         'h': 110,
         'color': 'brown',
@@ -164,6 +170,7 @@ NpcSpec = TypedDict('NpcSpec',
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
         'w': int,  # PNG pixel width
         'h': int,  # PNG pixel height
         'color': str,  # Debug mode color of rectangle
@@ -185,6 +192,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'red-flower-66x64.png',
         'flip': False,
+        'resize': False,
         'w': 66,
         'h': 64,
         'color': 'red1',
@@ -202,6 +210,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'red-flower-66x64.png',
         'flip': True,
+        'resize': False,
         'w': 66,
         'h': 64,
         'color': 'orangered',
@@ -219,6 +228,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename': 'gold-retriever-160x142.png',
         'flip': True,
+        'resize': False,
         'w': 160,
         'h': 142,
         'color': 'gold',
@@ -236,8 +246,9 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'grumpy-cat-110x120.png',
         'flip': True,
-        'w': 110,
-        'h': 120,
+        'resize': True,
+        'w': 220,
+        'h': 240,
         'color': 'blanchedalmond',
         'x': 780.0,
         'y': 300.0,
@@ -253,6 +264,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'goldfish-280x220.png',
         'flip': False,
+        'resize': False,
         'w': 280,
         'h': 220,
         'color': 'darkgoldenrod1',
@@ -274,6 +286,7 @@ PropTemplate = TypedDict('PropTemplate',
         'name': str,
         'img_filename': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
         'w': int,
         'h': int,
         'color': str,
@@ -290,6 +303,7 @@ prop_templates: list[PropTemplate] = [
         'name': 'red-flower',
         'img_filename':  'red-flower-66x64.png',
         'flip': False,
+        'resize': False,
         'w': 66,
         'h': 64,
         'color': 'crimson',
@@ -302,6 +316,7 @@ prop_templates: list[PropTemplate] = [
         'name': 'blue-flower',
         'img_filename':  'blue-flower-160x158.png',
         'flip': False,
+        'resize': False,
         'w': 160,
         'h': 158,
         'color': 'darkturquoise',
@@ -319,6 +334,7 @@ PropSpec = TypedDict('PropSpec',
         'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
         'img_filename': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
         'w': int,
         'h': int,
         'color': str,
@@ -334,13 +350,13 @@ PropSpec = TypedDict('PropSpec',
 class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
-                 groups,
-                 img_filename: str,
-                 x: float,
-                 y: float,
-                 direction: pygame.math.Vector2,
-                 speed: float,
-                 ):
+                groups,
+                img_filename: str,
+                x: float,
+                y: float,
+                direction: pygame.math.Vector2,
+                speed: float,
+            ):
         self.base_instance_id: int = Entity.base_instance_count
         self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
         self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
@@ -398,15 +414,15 @@ class Entity(pygame.sprite.Sprite):
 class Player(Entity):
     instance_count: int = 0
     def __init__(self,
-                 groups,
-                 img_filename: str,
-                 weapon_spec: WeaponSpec,
-                 all_weapons_group_ref: pygame.sprite.Group,
-                 x: float,
-                 y: float,
-                 direction: pygame.math.Vector2,
-                 speed: float,
-                 ):
+                groups,
+                img_filename: str,
+                weapon_spec: WeaponSpec,
+                all_weapons_group_ref: pygame.sprite.Group,
+                x: float,
+                y: float,
+                direction: pygame.math.Vector2,
+                speed: float,
+            ):
         self.instance_id: int = Player.instance_count
         self.weapon_spec = weapon_spec
         self.all_weapons_group_ref = all_weapons_group_ref  # TODO: On the fence about keeping this. Should minimize global usage though, so this might be good.
@@ -434,17 +450,17 @@ class Player(Entity):
         self.dir = self.dir.normalize() if self.dir else self.dir
 
         if recent_keys[pygame.K_SPACE] and self.can_shoot:
-            print('fire laser')
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
             weapon_img_filename = self.weapon_spec['img_filename']
-            projectile: Weapon = Weapon(groups=[all_sprites, self.all_weapons_group_ref],
-                                         img_filename=weapon_img_filename,
-                                         x=self.rect.midtop[0],
-                                         y=self.rect.midtop[1],
-                                         direction=self.weapon_spec['d'],
-                                         speed=self.weapon_spec['s'],
-                   )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+            projectile: Weapon = Weapon(
+                    groups=[all_sprites, self.all_weapons_group_ref],
+                    img_filename=weapon_img_filename,
+                    x=self.rect.midtop[0],
+                    y=self.rect.midtop[1],
+                    direction=self.weapon_spec['d'],
+                    speed=self.weapon_spec['s'],
+                )  # PyCharm FALSE WARNING HERE (AbstractGroup)
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         super().update(delta_time, ephase_name)
@@ -453,13 +469,13 @@ class Player(Entity):
 class Weapon(Entity):
     instance_count: int = 0
     def __init__(self,
-                 groups,
-                 img_filename: str,
-                 x: float,
-                 y: float,
-                 direction: pygame.math.Vector2,
-                 speed: float,
-                 ):
+                groups,
+                img_filename: str,
+                x: float,
+                y: float,
+                direction: pygame.math.Vector2,
+                speed: float,
+            ):
         self.instance_id: int = Weapon.instance_count
         super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
@@ -483,13 +499,13 @@ class Weapon(Entity):
 class Npc(Entity):
     instance_count: int = 0
     def __init__(self,
-                 groups,
-                 img_filename: str,
-                 x: float,
-                 y: float,
-                 direction: pygame.math.Vector2,
-                 speed: float,
-                 ):
+                groups,
+                img_filename: str,
+                x: float,
+                y: float,
+                direction: pygame.math.Vector2,
+                speed: float,
+            ):
         self.instance_id: int = Npc.instance_count
         super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Npc.instance_count += 1
@@ -502,11 +518,11 @@ class Npc(Entity):
 class Prop(Entity):
     instance_count: int = 0
     def __init__(self,
-                 groups,
-                 img_filename: str,
-                 x: float,
-                 y: float,
-                 ):
+                groups,
+                img_filename: str,
+                x: float,
+                y: float,
+            ):
         self.instance_id: int = Prop.instance_count
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
@@ -595,6 +611,10 @@ def load_image(
 
     # Create RIGHT-facing surface:
     surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
+
+    print(filename)
+    print(surface_l)
+    print(surface_r)
     # ADD CACHE ITEM:
     c_item: SurfCacheItem = {
             'surface_l': surface_l,
@@ -611,7 +631,18 @@ def event_meatball(group_ref: pygame.sprite.Group):
     #     In Python, almost everyhting is passed by reference anyhow. Passing and copying is a other special set of scenarios.
     #     I'm doing absolutely nothing special by calling this group_ref.
     meatball_spec = weapon_specs[1]
-    print(f"Look out! Here comes a meatball! And it's a juicy one!")
+    spawn_x = random.randint((0 - MEATBALL_SPAWN_MARGIN), (SCREEN_WIDTH + MEATBALL_SPAWN_MARGIN))
+    spawn_y = random.randint((0 - 2 * MEATBALL_SPAWN_MARGIN), ( 0 - MEATBALL_SPAWN_MARGIN))
+    print(f"Meatball spawning at : {spawn_x}, {spawn_y}")
+    projectile: Weapon = Weapon(
+            groups=[all_sprites, group_ref],
+            img_filename=meatball_spec['img_filename'],
+            x=spawn_x,
+            y=spawn_y,
+            direction=pygame.math.Vector2((0.0, 1.0)),  # Down (Meatballs fall from the sky.)
+            speed=meatball_spec['s'],
+        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+
 
 
 
@@ -640,6 +671,7 @@ for prop_t in prop_templates:
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'flip': False,
+                'resize': False,
                 'w': prop_t['w'],
                 'h': prop_t['h'],
                 'color': prop_t['color'],
@@ -669,9 +701,9 @@ for i, player_spec in enumerate(player_specs):
     load_image(
             filename=player_spec['img_filename'],
             flip=player_spec['flip'],
-            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
-            width=None,
-            height=None,
+            resize=player_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=player_spec['w'],
+            height=player_spec['h'],
         )
     player: Player = Player(
             groups=[all_sprites, all_players],
@@ -690,9 +722,9 @@ for i, npc_spec in enumerate(npc_specs):
     load_image(
             filename=npc_spec['img_filename'],
             flip=npc_spec['flip'],
-            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
-            width=None,
-            height=None,
+            resize=npc_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=npc_spec['w'],
+            height=npc_spec['h'],
         )
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs],
@@ -709,9 +741,9 @@ for i, prop_spec in enumerate(prop_specs):
     load_image(
             filename=prop_spec['img_filename'],
             flip=prop_spec['flip'],
-            resize=False,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
-            width=None,
-            height=None,
+            resize=prop_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=prop_spec['w'],
+            height=prop_spec['h'],
         )
     prop: Prop = Prop(
             groups=[all_sprites, all_props],
@@ -727,7 +759,7 @@ for i, weapon_spec in enumerate(weapon_specs):
     load_image(
             filename=weapon_spec['img_filename'],
             flip=weapon_spec['flip'],
-            resize=True,  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=weapon_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
             width=weapon_spec['w'],
             height=weapon_spec['h'],
         )
@@ -757,7 +789,7 @@ clock = pygame.time.Clock()
 
 # CUSTOM EVENTS - Random meatballs
 meatball_event = pygame.event.custom_type()
-pygame.time.set_timer(meatball_event, 4500)
+pygame.time.set_timer(meatball_event, 200)
 
 all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to anything that instantiates weapons.
 
