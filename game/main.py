@@ -415,8 +415,8 @@ class Entity(pygame.sprite.Sprite):
             self.dir.x *= -1
 
         # Bounce off RIGHT wall in X Axis
-        if self.rect.right >= SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
+        if self.rect.right >= cfg.SCREEN_WIDTH:
+            self.rect.right = cfg.SCREEN_WIDTH
             self.dir.x *= -1
 
         # Bounce off TOP wall in Y Axis
@@ -425,8 +425,8 @@ class Entity(pygame.sprite.Sprite):
             self.dir.y *= -1
 
         # Bounce off BOTTOM wall in Y Axis
-        if self.rect.bottom >= SCREEN_HEIGHT:
-            self.rect.bottom = SCREEN_HEIGHT
+        if self.rect.bottom >= cfg.SCREEN_HEIGHT:
+            self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
 
@@ -447,7 +447,7 @@ class Player(Entity):
         self.all_weapons_group_ref = all_weapons_group_ref  # TODO: On the fence about keeping this. Should minimize global usage though, so this might be good.
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
-        self.cooldown_duration: int = LASER_COOLDOWN_DURATION  # milliseconds
+        self.cooldown_duration: int = cfg.LASER_COOLDOWN_DURATION  # milliseconds
         super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Player.instance_count += 1
 
@@ -505,13 +505,13 @@ class Weapon(Entity):
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls().
         # Projectiles/weapons are deleted beyond some margin and do not bounce off the outer walls.
-        if self.rect.left <= 0 - PROJECTILE_MARGIN:  # A little beyond LEFT wall in X Axis
+        if self.rect.left <= 0 - cfg.PROJECTILE_MARGIN:  # A little beyond LEFT wall in X Axis
             self.kill()
-        if self.rect.right >= SCREEN_WIDTH + PROJECTILE_MARGIN:  # A little beyond RIGHT wall in X Axis
+        if self.rect.right >= cfg.SCREEN_WIDTH + cfg.PROJECTILE_MARGIN:  # A little beyond RIGHT wall in X Axis
             self.kill()
-        if self.rect.top <= 0 - PROJECTILE_MARGIN:  # A little beyond TOP wall in Y Axis
+        if self.rect.top <= 0 - cfg.PROJECTILE_MARGIN:  # A little beyond TOP wall in Y Axis
             self.kill()
-        if self.rect.bottom >= SCREEN_HEIGHT + PROJECTILE_MARGIN:  # A little beyond BOTTOM wall in Y Axis
+        if self.rect.bottom >= cfg.SCREEN_HEIGHT + cfg.PROJECTILE_MARGIN:  # A little beyond BOTTOM wall in Y Axis
             self.kill()
 
 
@@ -586,7 +586,7 @@ def load_image(
             width: int | None,
             height: int | None,
         ) -> None:
-    image_path = os.path.join(ASSET_PATH, filename)
+    image_path = os.path.join(cfg.ASSET_PATH, filename)
     surface_l: pygame.Surface = pygame.Surface((0, 0))
     if resize:
         if width and height:
@@ -603,7 +603,7 @@ def load_image(
                 fh.write(resized_png_bytes)
             # END DEV HACK - Proves the image data is good. Helps prove out problem is with pygame.image.frombytes()
             new_size = (width, height)  # NOTE: This is the size of the already-resized image. No resizing occurs here.
-            if PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE:  # A terrible and VERY TEMPORARY HACK (which works great)
+            if cfg.PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE:  # A terrible and VERY TEMPORARY HACK (which works great)
                 # Obviously the following can have race conditions and is a very hackish hack and NOT a solution.
                 filesystem_loaded_resized_surface_hack = pygame.image.load(
                     'load-image-temp-out-png.png'
@@ -650,8 +650,8 @@ def event_meatball(group_ref: pygame.sprite.Group):
     #     In Python, almost everyhting is passed by reference anyhow. Passing and copying is a other special set of scenarios.
     #     I'm doing absolutely nothing special by calling this group_ref.
     meatball_spec = weapon_specs[1]
-    spawn_x = random.randint((0 - MEATBALL_SPAWN_MARGIN), (SCREEN_WIDTH + MEATBALL_SPAWN_MARGIN))
-    spawn_y = random.randint((0 - 2 * MEATBALL_SPAWN_MARGIN), ( 0 - MEATBALL_SPAWN_MARGIN))
+    spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
+    spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
     print(f"Meatball spawning at : {spawn_x}, {spawn_y}")
     projectile: Weapon = Weapon(
             groups=[all_sprites, group_ref],
@@ -663,16 +663,13 @@ def event_meatball(group_ref: pygame.sprite.Group):
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 
-
-
-
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
-display_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption(GAME_TITLE)
+display_surface = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+pygame.display.set_caption(cfg.GAME_TITLE)
 
 # CREATE SPRITE GROUPS
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
@@ -727,7 +724,7 @@ for i, player_spec in enumerate(player_specs):
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=weapon_specs[PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
+            weapon_spec=weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
             x=player_spec['x'],
             y=player_spec['y'],
@@ -791,11 +788,11 @@ if not __name__ == '__main__':
         "Main execution will not be started.")
     sys.exit(0)
 
-bgpath = os.path.join(ASSET_PATH, BGIMG)
+bgpath = os.path.join(cfg.ASSET_PATH, cfg.BGIMG)
 
-if DEBUG:
-    bg_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    bg_surface.fill(BGCOLOR)
+if cfg.DEBUG:
+    bg_surface = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
+    bg_surface.fill(cfg.BGCOLOR)
 else:
     bg_surface = pygame.image.load(bgpath)
 
@@ -808,7 +805,7 @@ clock = pygame.time.Clock()
 
 # CUSTOM EVENTS - Random meatballs
 meatball_event = pygame.event.custom_type()
-pygame.time.set_timer(meatball_event, MEATBALL_SPAWN_TIME_MIN + MEATBALL_SPAWN_TIME_RANGE)
+pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
 # These additional variables are here just to make it clear that because of timing and the order of execution vs.
@@ -832,7 +829,7 @@ all_sprites_group_ref=all_sprites  # Again, for clarity. TODO: There is a CHANGE
 
 #   * * * * * * *    MAIN LOOP    * * * * * * *
 while running:
-    g_delta_time = clock.tick(TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
+    g_delta_time = clock.tick(cfg.TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
 
 
     # ##################################################    INPUT    ###################################################
@@ -849,11 +846,11 @@ while running:
     # ENVIRO_PHASES is a collections.deque instance and we popleft() the first/current 'phase'.
     #     Then we add the phase we removed from the left/start of the (deque) to the end (right side/last position).
     if ephase is None:
-        ephase = ENVIRO_PHASES[0]
+        ephase = cfg.ENVIRO_PHASES[0]
         g_ephase_name = ephase[0]
         ephase_count = ephase[1]
-        cut_ephase = ENVIRO_PHASES.popleft()
-        ENVIRO_PHASES.append(cut_ephase)
+        cut_ephase = cfg.ENVIRO_PHASES.popleft()
+        cfg.ENVIRO_PHASES.append(cut_ephase)
     else:
         ephase_count -= 1  # Decrement the counter for the current phase.
         if ephase_count < 1:
@@ -870,7 +867,7 @@ while running:
     all_weapons.update(g_delta_time, g_ephase_name)  # Must update Weapons AFTER Player since Player creates Weapons during Player update.
 
     # REDRAW THE BACKGROUND
-    if ACID_MODE is False:
+    if cfg.ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
     #   | | | | | |    MAIN DRAWING ACTIONS    | | | | | |
@@ -902,6 +899,12 @@ pygame.quit()
 # to instantiate surfaces, which will then be passed into the init of new entity instances. This is to prevent repeated
 # unnecessary source-loading of image data and is a core concept to efficiently instantiating sprites.
 # https://realpython.com/storing-images-in-python/
+
+# NICE REGEX SEARCH AND REPLACE USED IN PYCHARM TO put '.cfg' IN FRONT OF ALL CONFIG VAR NAMES (all caps or _ > 5 chars)
+# \b([_A-Z]{5,}?)\b
+# cfg.$1
+# THE REPLACE WITH THE MEMORY CAPTURE WORKS!!!! Outstanding capability to have inside PyCharm. Saved me a lot of time.
+
 
 ##
 #
