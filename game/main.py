@@ -26,6 +26,9 @@ PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to
 # 0 = green ball    1 = meatball
 PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
 MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
+MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
+MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
+# TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -789,10 +792,27 @@ clock = pygame.time.Clock()
 
 # CUSTOM EVENTS - Random meatballs
 meatball_event = pygame.event.custom_type()
-pygame.time.set_timer(meatball_event, 200)
+pygame.time.set_timer(meatball_event, MEATBALL_SPAWN_TIME_MIN + MEATBALL_SPAWN_TIME_RANGE)
+# TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
+# These additional variables are here just to make it clear that because of timing and the order of execution vs.
+# instantiation, this is why we do have to pass app_weapons into player and why we MIGHT need to pass in other groups,
+# such as all_sprites. This is just academic/theoretical about all_sprites, but it needs to be clear we have to pass
+# some things IN, EVEN if they seem like globally-accessible objects. We almost never should be globally accessing
+# like that anyhow, most would argue, but lets plan for everything and undertand everything and make the best choices
+# based of clarity of understanding. Having clarity requires some extra annotations, comments, testing, validation,
+# alternate code, experimentation, generating validation data (like our two kinds of resize validation images) and
+# also, adding seemingly unnecessary variables, if only to make a concept of factor really stand out. Espeically in
+# an evolving, educational and experimental, free-form project like this. Yes this is game code, but I am treating this
+# as being as important as production weapons guidance code or anything very commercially important. My ideas and
+# workflows come from all sizes and kinds of elite Silicon Valley software development teams and mix them all
+# together in projects like this, highlighting the appropriate doses of the best of everything I know about coding
+# independently as well as for a team of different sizes, for various kinds of systems. Gaming is great, because it
+# touches on a LOT of things and in an advanced way with performance, data size structure/compexity and so much more
+# to allow folks to get so much value out of such projects.
 all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to anything that instantiates weapons.
-
+all_sprites_group_ref=all_sprites  # Again, for clarity. TODO: There is a CHANGE I may need to pass this in IF I ever
+#                                                              need to use it. Currently not used and not passed in.
 
 #   * * * * * * *    MAIN LOOP    * * * * * * *
 while running:
