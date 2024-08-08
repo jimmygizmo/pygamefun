@@ -1,5 +1,6 @@
 # entity.py
 
+import sys
 import pygame.math  # For pygame.math.Vector2 only.
 from typing import TypedDict
 
@@ -290,6 +291,11 @@ PropSpec = TypedDict('PropSpec',
         'y': float,
     }
 )  # PropSpec
+
+
+if __name__ == '__main__':
+    print("WARNING: PyGameFun entity.py has been run directly, however it is only meant to be imported.")
+    sys.exit(1)
 
 
 ##

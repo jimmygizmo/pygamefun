@@ -89,6 +89,7 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
+    def
 
 class Player(Entity):
     instance_count: int = 0
@@ -540,18 +541,6 @@ pygame.quit()
 
 # PYGAME-CE DOCS:
 # https://pyga.me/docs/
-
-# Slightly-related and very interesting topic: Different methods of high-performance image storage and retrieval for
-# Python (like LMDB, HDF5, filesystem etc.) I'm considering this topic as I prepare to write an image-loading and
-# pre-processing function, so I was thinking what is the best way to store the image data. It will be used
-# to instantiate surfaces, which will then be passed into the init of new entity instances. This is to prevent repeated
-# unnecessary source-loading of image data and is a core concept to efficiently instantiating sprites.
-# https://realpython.com/storing-images-in-python/
-
-# NICE REGEX SEARCH AND REPLACE USED IN PYCHARM TO put '.cfg' IN FRONT OF ALL CONFIG VAR NAMES (all caps or _ > 5 chars)
-# \b([_A-Z]{5,}?)\b
-# cfg.$1
-# THE REPLACE WITH THE MEMORY CAPTURE WORKS!!!! Outstanding capability to have inside PyCharm. Saved me a lot of time.
 
 
 ##

@@ -1,0 +1,10 @@
+
+
+
+# Slightly-related and very interesting topic: Different methods of high-performance image storage and retrieval for
+# Python (like LMDB, HDF5, filesystem etc.) I'm considering this topic as I prepare to write an image-loading and
+# pre-processing function, so I was thinking what is the best way to store the image data. It will be used
+# to instantiate surfaces, which will then be passed into the init of new entity instances. This is to prevent repeated
+# unnecessary source-loading of image data and is a core concept to efficiently instantiating sprites.
+# https://realpython.com/storing-images-in-python/
+

@@ -1,5 +1,6 @@
  # config.py
 
+import sys
 import collections
 
 
@@ -12,7 +13,7 @@ TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on 
 GAME_TITLE: str = 'Goldfish Picnic'
 
 BGCOLOR: str = 'olivedrab'
-BGIMG: str = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
+BGIMG: str = 'grass-field-med-1920x1249.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
 ASSET_PATH: str = 'assets'  # Relative path with no trailing slash.
 DEBUG: bool = False
 ACID_MODE: bool = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
@@ -39,6 +40,11 @@ ENVIRO_PHASES: collections.deque = collections.deque([
      ('frozen', 110),
      ]
 )  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
+
+
+if __name__ == '__main__':
+    print("WARNING: PyGameFun config.py has been run directly, however it is only meant to be imported.")
+    sys.exit(1)
 
 
 ##
