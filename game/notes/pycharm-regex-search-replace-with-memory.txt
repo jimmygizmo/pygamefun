@@ -1,0 +1,22 @@
+
+
+
+# NICE REGEX SEARCH AND REPLACE USED IN PYCHARM TO put '.cfg' IN FRONT OF ALL CONFIG VAR NAMES (all caps or _ > 5 chars)
+# \b([_A-Z]{5,}?)\b
+# cfg.$1
+# THE REPLACE WITH THE MEMORY CAPTURE WORKS!!!! Outstanding capability to have inside PyCharm. Saved me a lot of time.
+
+
+This regex uses sub-pattern memory, quantifiers, word boundaries, greediness and a character class.
+I manually confirmed or skipped each replace. There were about 200 matches where was a pretty clean set.
+I needed about 60-80 changes made out of those.
+
+It saved me a lot of time and there were zero errors and zero misses.
+
+It was WELL worth crafting this REGEX and discovering that PyCharm search/replace supports all those REGEX features
+and does so very well. It has a nice highlight bubble to show you the replacement it proposes (with the
+memory-provided pattern there.)
+
+Very nice. PyCharm does continue to get better. All IntelliJ tools are fantastic and worth the money and this has been
+the case since at least 2016, I can personally attest to.
+

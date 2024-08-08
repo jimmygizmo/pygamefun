@@ -10,48 +10,7 @@ import random
 import resizer
 
 
-# ###############################################    CONFIGURATION    ##################################################
-
-# SCREEN_WIDTH: int = 1640
-# SCREEN_HEIGHT: int = 860
-SCREEN_WIDTH: int = cfg.SCREEN_WIDTH  # Just the beginnings of separating out module files
-SCREEN_HEIGHT: int = cfg.SCREEN_HEIGHT
-
-# TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
-# GAME_TITLE = 'Space Blasto'
-# BGCOLOR = 'olivedrab'
-TICKRATE: int = cfg.TICKRATE
-GAME_TITLE: str = cfg.GAME_TITLE
-BGCOLOR: str = cfg.BGCOLOR
-
-# BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
-# ASSET_PATH = 'assets'  # Relative path with no trailing slash.
-# DEBUG = False
-# ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
-BGIMG: str = cfg.BGIMG
-ASSET_PATH: str = cfg.ASSET_PATH
-DEBUG: bool = cfg.DEBUG
-ACID_MODE: bool = cfg.ACID_MODE
-
-# LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
-# PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
-# PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
-# # 0 = green ball    1 = meatball
-LASER_COOLDOWN_DURATION: int = cfg.LASER_COOLDOWN_DURATION
-PROJECTILE_MARGIN: int = cfg.PROJECTILE_MARGIN
-PLAYER_MAIN_WEAPON_INDEX: int = cfg.PLAYER_MAIN_WEAPON_INDEX
-# 0 = green ball    1 = meatball
-
-# PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
-# MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
-# MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
-# MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
-# # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
-PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = cfg.PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE
-MEATBALL_SPAWN_MARGIN: int = cfg.MEATBALL_SPAWN_MARGIN
-MEATBALL_SPAWN_TIME_MIN: int = cfg.MEATBALL_SPAWN_TIME_MIN
-MEATBALL_SPAWN_TIME_RANGE: int = cfg.MEATBALL_SPAWN_TIME_RANGE
-
+# ###########################################    GLOBAL INITIALIZATION    ##############################################
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -64,18 +23,8 @@ SurfCacheItem = TypedDict('SurfCacheItem',
 )  # SurfCacheitem
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
-# # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
-# # to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
-# ENVIRO_PHASES = collections.deque([
-#      ('peace', 800),
-#      ('rogue', 160),
-#      ('chaos', 400),
-#      ('frozen', 60),
-#      ('rogue', 50),
-#      ('frozen', 110),
-#      ]
-# )  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
-ENVIRO_PHASES: collections.deque = cfg.ENVIRO_PHASES
+
+# TODO: I want to move all entity data out into something like a config module, but question is, where to put type defs.
 
 PlayerSpec = TypedDict('PlayerSpec',
     {
@@ -365,7 +314,6 @@ PropSpec = TypedDict('PropSpec',
 
 # #############################################    CLASS DEFINITIONS    ################################################
 
-
 class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
@@ -643,12 +591,6 @@ def load_image(
 
 
 def event_meatball(group_ref: pygame.sprite.Group):
-    # NOTE: Pending a different design, we must pass the group INTO ANYTHING which instantiates sprites for that group.
-    #     This group does not exist yet, when func defined. We will have it when this func is called, however.
-    #     I use the suffix _ref here mostly for further clarity that it is a different variable and what we are doing
-    #     with it. It is the same thing as passing the group itself. They are the same reference, same memory address.
-    #     In Python, almost everyhting is passed by reference anyhow. Passing and copying is a other special set of scenarios.
-    #     I'm doing absolutely nothing special by calling this group_ref.
     meatball_spec = weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
@@ -808,21 +750,6 @@ meatball_event = pygame.event.custom_type()
 pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
-# These additional variables are here just to make it clear that because of timing and the order of execution vs.
-# instantiation, this is why we do have to pass app_weapons into player and why we MIGHT need to pass in other groups,
-# such as all_sprites. This is just academic/theoretical about all_sprites, but it needs to be clear we have to pass
-# some things IN, EVEN if they seem like globally-accessible objects. We almost never should be globally accessing
-# like that anyhow, most would argue, but lets plan for everything and undertand everything and make the best choices
-# based of clarity of understanding. Having clarity requires some extra annotations, comments, testing, validation,
-# alternate code, experimentation, generating validation data (like our two kinds of resize validation images) and
-# also, adding seemingly unnecessary variables, if only to make a concept of factor really stand out. Espeically in
-# an evolving, educational and experimental, free-form project like this. Yes this is game code, but I am treating this
-# as being as important as production weapons guidance code or anything very commercially important. My ideas and
-# workflows come from all sizes and kinds of elite Silicon Valley software development teams and mix them all
-# together in projects like this, highlighting the appropriate doses of the best of everything I know about coding
-# independently as well as for a team of different sizes, for various kinds of systems. Gaming is great, because it
-# touches on a LOT of things and in an advanced way with performance, data size structure/compexity and so much more
-# to allow folks to get so much value out of such projects.
 all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to anything that instantiates weapons.
 all_sprites_group_ref=all_sprites  # Again, for clarity. TODO: There is a CHANGE I may need to pass this in IF I ever
 #                                                              need to use it. Currently not used and not passed in.
@@ -890,12 +817,12 @@ pygame.quit()
 
 # ###################################################    NOTES    ######################################################
 
-# PYGMAE-CE DOCS:
+# PYGAME-CE DOCS:
 # https://pyga.me/docs/
 
 # Slightly-related and very interesting topic: Different methods of high-performance image storage and retrieval for
 # Python (like LMDB, HDF5, filesystem etc.) I'm considering this topic as I prepare to write an image-loading and
-# pre-processing function and so I was thinking what is the best way to store the image data. It will be used
+# pre-processing function, so I was thinking what is the best way to store the image data. It will be used
 # to instantiate surfaces, which will then be passed into the init of new entity instances. This is to prevent repeated
 # unnecessary source-loading of image data and is a core concept to efficiently instantiating sprites.
 # https://realpython.com/storing-images-in-python/
