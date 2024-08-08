@@ -1,6 +1,7 @@
 #! /usr/bin/env -vS python
 
 import config as cfg
+import entity as ent
 import sys
 import os.path
 from typing import TypedDict
@@ -21,296 +22,6 @@ SurfCacheItem = TypedDict('SurfCacheItem',
     }
 )  # SurfCacheitem
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
-
-
-# ###########################################    ENTITY SPECIFICATIONS    ##############################################
-
-# TODO: I want to move all entity data out into something like a config module, but question is, where to put type defs.
-
-PlayerSpec = TypedDict('PlayerSpec',
-    {
-        'name': str,  # Player short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img_filename': str,  # Filename of PNG (with transparency)
-        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
-        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
-        'w': int,  # PNG pixel width
-        'h': int,  # PNG pixel height
-        'color': str,  # Debug mode color of rectangle
-        'x': float,  # Initial position X value
-        'y': float,  # Initial position Y value
-        'd': pygame.math.Vector2,  # Direction
-        's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
-    }
-)  # PlayerSpec
-
-# PLAYER DATA - Initial state for a single player (usually) or possibly multiple players.
-player_specs: list[PlayerSpec] = [
-    {
-        'name': 'buck',
-        'instance_id': -1,
-        'img_filename':  'rocket-200x252.png',
-        'flip': False,
-        'resize': True,
-        'w': 100,
-        'h': 126,
-        'color': 'aqua',
-        'x': 890.0,
-        'y': 540.0,
-        'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-        's': 480.0,
-        'p': 590.0,
-        'r': 1100.0,
-        'c': 1700.0,
-        'f': 2650.0,
-    },
-]  # player_specs: list[PlayerSpec]
-
-
-WeaponSpec = TypedDict('WeaponSpec',
-    {
-        'name': str,  # Weapon/projectile short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img_filename': str,  # Filename of PNG (with transparency)
-        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
-        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
-        'w': int,  # PNG pixel width
-        'h': int,  # PNG pixel height
-        'color': str,  # Debug mode color of rectangle
-        'x': float,  # Initial position X value
-        'y': float,  # Initial position Y value
-        'd': pygame.math.Vector2,  # Direction
-        's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
-    }
-)  # WeaponSpec
-
-# WEAPON/PROJECTILE DATA - Initial state for a weapon/projectile
-weapon_specs: list[WeaponSpec] = [
-    {
-        'name': 'orb',
-        'instance_id': -1,
-        'img_filename':  'green-ball-140x140.png',
-        'flip': False,
-        'resize': True,
-        'w': 70,
-        'h': 70,
-        'color': 'green3',
-        'x': 890.0,
-        'y': 260.0,
-        'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
-        's': 334.0,
-        'p': 98.0,
-        'r': 122.0,
-        'c': 840.0,
-        'f': 2350.0,
-    },
-    {
-        'name': 'meatball',
-        'instance_id': -1,
-        'img_filename':  'meatball-204x220.png',
-        'flip': False,
-        'resize': True,
-        'w': 102,
-        'h': 110,
-        'color': 'brown',
-        'x': 890.0,
-        'y': 260.0,
-        'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
-        's': 734.0,
-        'p': 698.0,
-        'r': 822.0,
-        'c': 1640.0,
-        'f': 3350.0,
-    },
-]  # weapon_specs: list[WeaponSpec]
-
-
-NpcSpec = TypedDict('NpcSpec',
-    {
-        'name': str,  # NPC short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img_filename': str,  # Filename of PNG (with transparency)
-        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
-        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
-        'w': int,  # PNG pixel width
-        'h': int,  # PNG pixel height
-        'color': str,  # Debug mode color of rectangle
-        'x': float,  # Initial position X value
-        'y': float,  # Initial position Y value
-        'd': pygame.math.Vector2,  # Direction
-        's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
-    }
-)  # NpcSpec
-
-# NPC DATA - Initial state for a handful of NPCs that move, experience physics and interact. W/initial motion.
-npc_specs: list[NpcSpec] = [
-    {
-        'name': 'red-flower-floaty',
-        'instance_id': -1,
-        'img_filename':  'red-flower-66x64.png',
-        'flip': False,
-        'resize': False,
-        'w': 66,
-        'h': 64,
-        'color': 'red1',
-        'x': 240.0,
-        'y': 300.0,
-        'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
-        's': 100.0,
-        'p': 100.0,
-        'r': 100.0,
-        'c': 350.0,
-        'f': 2.0,
-    },
-    {
-        'name': 'red-flower-drifty',
-        'instance_id': -1,
-        'img_filename':  'red-flower-66x64.png',
-        'flip': True,
-        'resize': False,
-        'w': 66,
-        'h': 64,
-        'color': 'orangered',
-        'x': 240.0,
-        'y': 300.0,
-        'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
-        's': 100.0,
-        'p': 100.0,
-        'r': 100.0,
-        'c': 420.0,
-        'f': 3.0,
-    },
-    {
-        'name': 'goldie',
-        'instance_id': -1,
-        'img_filename': 'gold-retriever-160x142.png',
-        'flip': True,
-        'resize': False,
-        'w': 160,
-        'h': 142,
-        'color': 'gold',
-        'x': 500.0,
-        'y': 300.0,
-        'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
-        's': 141.0,
-        'p': 160.0,
-        'r': 880.0,
-        'c': 1290.0,
-        'f': 10.0,
-    },
-    {
-        'name': 'grumpy',
-        'instance_id': -1,
-        'img_filename':  'grumpy-cat-110x120.png',
-        'flip': True,
-        'resize': True,
-        'w': 220,
-        'h': 240,
-        'color': 'blanchedalmond',
-        'x': 780.0,
-        'y': 300.0,
-        'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
-        's': 90.0,
-        'p': 80.0,
-        'r': 50.0,
-        'c': 2170.0,
-        'f': 40.0,
-    },
-    {
-        'name': 'fishy',
-        'instance_id': -1,
-        'img_filename':  'goldfish-280x220.png',
-        'flip': False,
-        'resize': False,
-        'w': 280,
-        'h': 220,
-        'color': 'darkgoldenrod1',
-        'x': 840.0,
-        'y': 300.0,
-        'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-        's': 80.0,
-        'p': 90.0,
-        'r': 100.0,
-        'c': 700.0,
-        'f': 2850.0,
-    },
-]  # npc_specs: list[NpcSpec]
-
-
-# TypedDict for PROP_TEMPLATE
-PropTemplate = TypedDict('PropTemplate',
-    {
-        'name': str,
-        'img_filename': str,
-        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
-        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
-        'w': int,
-        'h': int,
-        'color': str,
-        'x': float,
-        'y': float,
-        'spray_count': int,
-        'spray_radius': float,
-    }
-)  # PropTemplate
-
-# PROP DATA - Initial state for a handful of non-moving props. Includes specs for random instantiation (spraying).
-prop_templates: list[PropTemplate] = [
-    {
-        'name': 'red-flower',
-        'img_filename':  'red-flower-66x64.png',
-        'flip': False,
-        'resize': False,
-        'w': 66,
-        'h': 64,
-        'color': 'crimson',
-        'x': 804.0,
-        'y': 440.0,
-        'spray_count': 60,
-        'spray_radius': 780.0,
-    },
-    {
-        'name': 'blue-flower',
-        'img_filename':  'blue-flower-160x158.png',
-        'flip': False,
-        'resize': False,
-        'w': 160,
-        'h': 158,
-        'color': 'darkturquoise',
-        'x': 880.0,
-        'y': 360.0,
-        'spray_count': 18,
-        'spray_radius': 680.0,
-    },
-]  # prop_templates: list[PropTemplate]
-
-# TypedDict for PROP. Props are generated dynamically, when we "spray" props from their template.
-PropSpec = TypedDict('PropSpec',
-    {
-        'name': str,
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
-        'img_filename': str,
-        'flip': bool,  # If True, image will be flipped horizontally at the time of loading
-        'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
-        'w': int,
-        'h': int,
-        'color': str,
-        'x': float,
-        'y': float,
-    }
-)  # PropSpec
 
 
 # #############################################    CLASS DEFINITIONS    ################################################
@@ -384,7 +95,7 @@ class Player(Entity):
     def __init__(self,
                 groups,
                 img_filename: str,
-                weapon_spec: WeaponSpec,
+                weapon_spec: ent.WeaponSpec,
                 all_weapons_group_ref: pygame.sprite.Group,
                 x: float,
                 y: float,
@@ -546,13 +257,12 @@ def load_image(
                     width=width,
                     height=height,
                 )
-            # DEV HACK (pygame.image.frombytes is not working yet) - output data to a file. Check valid PNG. Hack load it?
-            # TODO: If desperate, we could load the image from disk. Horribly bad but could work until a proper fix.
+            # Output of this file was originally for validation, and now it is a workaround until frombytes() works.
             with open('load-image-temp-out-png.png', 'wb') as fh:
                 fh.write(resized_png_bytes)
-            # END DEV HACK - Proves the image data is good. Helps prove out problem is with pygame.image.frombytes()
+            # This image data is good! Proves problem is with pygame.image.frombytes()  (And then workaround was done.)
             new_size = (width, height)  # NOTE: This is the size of the already-resized image. No resizing occurs here.
-            if cfg.PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE:  # A terrible and VERY TEMPORARY HACK (which works great)
+            if cfg.PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE:  # A BAD BUT VERY TEMPORARY HACK (which works great)
                 # Obviously the following can have race conditions and is a very hackish hack and NOT a solution.
                 filesystem_loaded_resized_surface_hack = pygame.image.load(
                     'load-image-temp-out-png.png'
@@ -580,9 +290,9 @@ def load_image(
     # Create RIGHT-facing surface:
     surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
 
-    print(filename)
-    print(surface_l)
-    print(surface_r)
+    # print(filename)
+    # print(surface_l)
+    # print(surface_r)
     # ADD CACHE ITEM:
     c_item: SurfCacheItem = {
             'surface_l': surface_l,
@@ -592,7 +302,7 @@ def load_image(
 
 
 def event_meatball(group_ref: pygame.sprite.Group):
-    meatball_spec = weapon_specs[1]
+    meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
     # print(f"Meatball spawning at : {spawn_x}, {spawn_y}")
@@ -622,10 +332,20 @@ all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
 
 # GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
+# TODO: Rename this/related to generated_prop_specs or similar to make it clear that 1. it is generated and different
+#     from other such things. And 2. It is distinctly different from anything else named _specs (in this sense.)
+#     I think these are important clarifications. If it is called just prop_specs it looks like something from entity.py
+#     While it is related to entity.py most certainly, it is something different.
+#     These are the props we dynamically 'spray'. Likely there will be other modes of dynamic generation where we use
+#     templates (template specs) from entity.py to create spec objects, but which we will name by this convention.
+#     ADVICE: You should not change to many different things in a single cycle of change-test-commit-push etc.
+#     This is why I put the TO-DO here, because I am in the middle of many other changes. You need to isolate change
+#     strategically. It does not slow you down. It speeds you up, because one mistake can set you back that much
+#     and you also need the clarity of focus and thought to not carry too many tasks at once, lest the quality suffer.
 prop_specs = []
-for prop_t in prop_templates:
+for prop_t in ent.prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        prop_spec: PropSpec = {
+        prop_spec: ent.PropSpec = {
                 'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
@@ -654,7 +374,7 @@ for prop_t in prop_templates:
 # NOTE: When using load_image(): To keep image size original, specify None for width and height.
 
 # INSTANITATE PLAYER SPRITE(S)
-for i, player_spec in enumerate(player_specs):
+for i, player_spec in enumerate(ent.player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
     load_image(
@@ -667,7 +387,7 @@ for i, player_spec in enumerate(player_specs):
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
+            weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
             x=player_spec['x'],
             y=player_spec['y'],
@@ -676,7 +396,7 @@ for i, player_spec in enumerate(player_specs):
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 # INSTANITATE NPC SPRITES
-for i, npc_spec in enumerate(npc_specs):
+for i, npc_spec in enumerate(ent.npc_specs):
     npc_spec['instance_id'] = i
     load_image(
             filename=npc_spec['img_filename'],
@@ -713,7 +433,7 @@ for i, prop_spec in enumerate(prop_specs):
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
-for i, weapon_spec in enumerate(weapon_specs):
+for i, weapon_spec in enumerate(ent.weapon_specs):
     weapon_spec['instance_id'] = i
     load_image(
             filename=weapon_spec['img_filename'],
