@@ -16,7 +16,8 @@ def alphonic_resize(img_data: bytes, width: int, height: int) -> bytes:
     # alpha = cv2.resize(img_numpy[:,:,3], new_size, interpolation=cv2.INTER_NEAREST)  # ORIGINAL
     alpha = cv2.resize(img_numpy[:,:,3], new_size, interpolation=cv2.INTER_LINEAR)
 
-    # For resizing larger (grumpy cat test) INTER_LINEAR works well.
+    # For resizing larger (grumpy cat test) INTER_LINEAR works well. INTER_CUBIC works similarly.
+    # TODO: Add a sharpen (unsharp mask) step if possible. Ususally an improvement after resizing which tends to add fuzziness.
 
     # # Merge the layers back together again.
     rgba = cv2.cvtColor(rgb, cv2.COLOR_RGB2RGBA)

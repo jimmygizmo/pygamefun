@@ -1,5 +1,6 @@
 #! /usr/bin/env -vS python
 
+import config as cfg
 import sys
 import os.path
 from typing import TypedDict
@@ -11,24 +12,46 @@ import resizer
 
 # ###############################################    CONFIGURATION    ##################################################
 
-SCREEN_WIDTH: int = 1640
-SCREEN_HEIGHT: int = 860
-TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
-GAME_TITLE = 'Space Blasto'
-BGCOLOR = 'olivedrab'
-BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
-ASSET_PATH = 'assets'  # Relative path with no trailing slash.
-DEBUG = False
-ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
-LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
-PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
-PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
+# SCREEN_WIDTH: int = 1640
+# SCREEN_HEIGHT: int = 860
+SCREEN_WIDTH: int = cfg.SCREEN_WIDTH  # Just the beginnings of separating out module files
+SCREEN_HEIGHT: int = cfg.SCREEN_HEIGHT
+
+# TICKRATE = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
+# GAME_TITLE = 'Space Blasto'
+# BGCOLOR = 'olivedrab'
+TICKRATE: int = cfg.TICKRATE
+GAME_TITLE: str = cfg.GAME_TITLE
+BGCOLOR: str = cfg.BGCOLOR
+
+# BGIMG = 'lawn-bg-dark-2560x1440.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
+# ASSET_PATH = 'assets'  # Relative path with no trailing slash.
+# DEBUG = False
+# ACID_MODE = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
+BGIMG: str = cfg.BGIMG
+ASSET_PATH: str = cfg.ASSET_PATH
+DEBUG: bool = cfg.DEBUG
+ACID_MODE: bool = cfg.ACID_MODE
+
+# LASER_COOLDOWN_DURATION = 100  # Milliseconds - minimum time between laser firing
+# PROJECTILE_MARGIN = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
+# PLAYER_MAIN_WEAPON_INDEX = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
+# # 0 = green ball    1 = meatball
+LASER_COOLDOWN_DURATION: int = cfg.LASER_COOLDOWN_DURATION
+PROJECTILE_MARGIN: int = cfg.PROJECTILE_MARGIN
+PLAYER_MAIN_WEAPON_INDEX: int = cfg.PLAYER_MAIN_WEAPON_INDEX
 # 0 = green ball    1 = meatball
-PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
-MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
-MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
-MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
-# TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
+
+# PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
+# MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
+# MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
+# MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
+# # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
+PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = cfg.PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE
+MEATBALL_SPAWN_MARGIN: int = cfg.MEATBALL_SPAWN_MARGIN
+MEATBALL_SPAWN_TIME_MIN: int = cfg.MEATBALL_SPAWN_TIME_MIN
+MEATBALL_SPAWN_TIME_RANGE: int = cfg.MEATBALL_SPAWN_TIME_RANGE
+
 
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
@@ -41,25 +64,18 @@ SurfCacheItem = TypedDict('SurfCacheItem',
 )  # SurfCacheitem
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
-
-# TODO: This looks like a cool way to apply type-hinting to literal enums like this (constant lists, dicts etc):
-# PygameSurfaceFormatType = Union[
-#     Literal["P"], Literal["RGB"], Literal["RGBX"], Literal["RGBA"], Literal["ARGB"]
-# ]
-# USAGE: format: PygameSurfaceFormatType = "RGBA"
-
-# List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
-# to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
-ENVIRO_PHASES = collections.deque([
-     ('peace', 800),
-     ('rogue', 160),
-     ('chaos', 400),
-     ('frozen', 60),
-     ('rogue', 50),
-     ('frozen', 110),
-     ]
-)  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
-
+# # List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
+# # to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
+# ENVIRO_PHASES = collections.deque([
+#      ('peace', 800),
+#      ('rogue', 160),
+#      ('chaos', 400),
+#      ('frozen', 60),
+#      ('rogue', 50),
+#      ('frozen', 110),
+#      ]
+# )  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
+ENVIRO_PHASES: collections.deque = cfg.ENVIRO_PHASES
 
 PlayerSpec = TypedDict('PlayerSpec',
     {
