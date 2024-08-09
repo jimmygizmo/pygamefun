@@ -60,6 +60,7 @@ class Entity(pygame.sprite.Sprite):
         self.rect.center += delta_vector
         # ***************************
 
+        self.check_collisions()
         self.physics_outer_walls()  # Handle bouncing off walls. NOTE: Props override this and pass. Props ignore walls.
 
         # Activate the correctly-facing image, based on X direction.
@@ -89,7 +90,10 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
-    def
+    def check_collisions(self):
+        # if self.rect.colliderect()
+        pass
+
 
 class Player(Entity):
     instance_count: int = 0
@@ -333,21 +337,11 @@ all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
 
 # GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
-# TODO: Rename this/related to generated_prop_specs or similar to make it clear that 1. it is generated and different
-#     from other such things. And 2. It is distinctly different from anything else named _specs (in this sense.)
-#     I think these are important clarifications. If it is called just prop_specs it looks like something from entity.py
-#     While it is related to entity.py most certainly, it is something different.
-#     These are the props we dynamically 'spray'. Likely there will be other modes of dynamic generation where we use
-#     templates (template specs) from entity.py to create spec objects, but which we will name by this convention.
-#     ADVICE: You should not change to many different things in a single cycle of change-test-commit-push etc.
-#     This is why I put the TO-DO here, because I am in the middle of many other changes. You need to isolate change
-#     strategically. It does not slow you down. It speeds you up, because one mistake can set you back that much
-#     and you also need the clarity of focus and thought to not carry too many tasks at once, lest the quality suffer.
-prop_specs = []
+generated_prop_specs = []
 for prop_t in ent.prop_templates:
     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        prop_spec: ent.PropSpec = {
-                'name': prop_t['name'] + str(index),  # Unique name of generated (sprayed) prop_spec. (Compared to npc_spec which are hardcoded.)
+        generated_prop_spec: ent.PropSpec = {
+                'name': prop_t['name'] + str(index),  # Unique name of (sprayed) generated_prop_spec. (Compared to npc_spec which are hardcoded.)
                 'instance_id': -1,  # -1 means instance not instantiated yet.
                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
                 'flip': False,
@@ -360,13 +354,13 @@ for prop_t in ent.prop_templates:
                 }
 
         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
-        prop_spec['name'] = prop_t['name'] + "-" + str(index)
+        generated_prop_spec['name'] = prop_t['name'] + "-" + str(index)
         x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
         y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
-        prop_spec['x'] = prop_t['x'] + x_offset
-        prop_spec['y'] = prop_t['y'] + y_offset
+        generated_prop_spec['x'] = prop_t['x'] + x_offset
+        generated_prop_spec['y'] = prop_t['y'] + y_offset
 
-        prop_specs.append(prop_spec)
+        generated_prop_specs.append(generated_prop_spec)
 
 
 # ################################################    INSTANTIATION    #################################################
@@ -375,6 +369,7 @@ for prop_t in ent.prop_templates:
 # NOTE: When using load_image(): To keep image size original, specify None for width and height.
 
 # INSTANITATE PLAYER SPRITE(S)
+players: dict[str, Player] = {}
 for i, player_spec in enumerate(ent.player_specs):
     player_spec['name'] = player_spec['name'] + str(i)
     player_spec['instance_id'] = i
@@ -395,8 +390,10 @@ for i, player_spec in enumerate(ent.player_specs):
             direction=player_spec['d'],
             speed=player_spec['s'],
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+    players[player_spec['name']] = player  # Key off name or instance id. name should be unique
 
 # INSTANITATE NPC SPRITES
+npcs: dict[str, Npc] = {}
 for i, npc_spec in enumerate(ent.npc_specs):
     npc_spec['instance_id'] = i
     load_image(
@@ -414,23 +411,26 @@ for i, npc_spec in enumerate(ent.npc_specs):
             direction=npc_spec['d'],
             speed=npc_spec['s'],
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+    npcs[npc_spec['name']] = npc  # Key off name or instance id. name should be unique
 
 # INSTANITATE PROP SPRITES
-for i, prop_spec in enumerate(prop_specs):
-    prop_spec['instance_id'] = i
+props: dict[str, Prop] = {}
+for i, generated_prop_spec in enumerate(generated_prop_specs):
+    generated_prop_spec['instance_id'] = i
     load_image(
-            filename=prop_spec['img_filename'],
-            flip=prop_spec['flip'],
-            resize=prop_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
-            width=prop_spec['w'],
-            height=prop_spec['h'],
+            filename=generated_prop_spec['img_filename'],
+            flip=generated_prop_spec['flip'],
+            resize=generated_prop_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            width=generated_prop_spec['w'],
+            height=generated_prop_spec['h'],
         )
     prop: Prop = Prop(
             groups=[all_sprites, all_props],
-            img_filename=prop_spec['img_filename'],
-            x=prop_spec['x'],
-            y=prop_spec['y'],
+            img_filename=generated_prop_spec['img_filename'],
+            x=generated_prop_spec['x'],
+            y=generated_prop_spec['y'],
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+    props[generated_prop_spec['name']] = prop  # Key off name or instance id. name should be unique
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
@@ -449,7 +449,7 @@ for i, weapon_spec in enumerate(ent.weapon_specs):
 
 if not __name__ == '__main__':
     print("PyGameFun main.py has been imported. Some initialization has been performed. "
-        "Main execution will not be started.")
+        "Main execution will not be started. Normally this file is executed as the app entry point and not imported.")
     sys.exit(0)
 
 bgpath = os.path.join(cfg.ASSET_PATH, cfg.BGIMG)
