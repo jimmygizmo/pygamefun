@@ -1,0 +1,25 @@
+
+Some (not all) lingering/challenging false/inaccurate PyCharm (and possibly also MyPy) WARNINGS can sometimes be
+related to Numpy Broadcasting, which is allows multiple types to work in certain cases.
+PyCharm type inspection and possibly also MyPy may not always be able to figure this out.
+
+I know of other similar problems in which NumPy is not involved, but I have dealt with with the NumPy example.
+
+This is a good doc on that topic:
+
+https://numpy.org/doc/stable/user/basics.broadcasting.html
+
+
+When I was working on early version of resizer, I may have had this problem. (Can't recall all the details.) It might
+have been when trying to get formats to work with pygame.image.frombytes.
+I don't see any lingering warnings, so it might have been in some code that is now gone or disabled.
+
+Regarding the other false type wanings, I'll document those elsewhere but they are where I pass groups to Sprite
+creation and it wants Tuple[AbstractGroup... someething...  Unrelate to Numpy.
+
+
+So, when dealing with this NumPy issue I had cases where things just worked fine even though I was getting the error,
+so it was confusing. This link will shed light on the issue. I'll update here when I deal with it again and comment
+on some best practices on how to address it.
+
+

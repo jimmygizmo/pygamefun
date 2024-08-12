@@ -60,7 +60,6 @@ class Entity(pygame.sprite.Sprite):
         self.rect.center += delta_vector
         # ***************************
 
-        self.check_collisions()
         self.physics_outer_walls()  # Handle bouncing off walls. NOTE: Props override this and pass. Props ignore walls.
 
         # Activate the correctly-facing image, based on X direction.
@@ -89,10 +88,6 @@ class Entity(pygame.sprite.Sprite):
         if self.rect.bottom >= cfg.SCREEN_HEIGHT:
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
-
-    def check_collisions(self):
-        # if self.rect.colliderect()
-        pass
 
 
 class Player(Entity):
@@ -335,6 +330,7 @@ all_players: pygame.sprite.Group = pygame.sprite.Group()
 all_weapons: pygame.sprite.Group = pygame.sprite.Group()
 all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
+all_colliders: pygame.sprite.Group = pygame.sprite.Group()
 
 # GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
 generated_prop_specs = []
@@ -368,6 +364,23 @@ for prop_t in ent.prop_templates:
 # TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
 # NOTE: When using load_image(): To keep image size original, specify None for width and height.
 
+
+# NOTE: The dictionaries for each Entity subclass holding unique-name-keyed references to the instances was just put
+# back in place. This had been there in the earliest version in the form of lists but were tentatively removed while
+# sprite groups were implemented. This is one of many ways to access sprite or other instances and one can think of
+# these as the "easy", "global" way to access instances. If one is originating things from just inside the classes
+# through update() or some other method triggered through sprite groups, then some things can be more akward than
+# necessary, possibly collision-handling for example. For collisions, it is possible that handling them from the
+# global level (directly within the main loop and not triggered/handled from within Entity-sub-classed insstances)
+# is easier and at the moment that is the approach I am taking to collisions. The golbal instance dictionaries were
+# put (back) in place for this purpose, but I knew I would but them in place for multiple reasons. Some things are best
+# done from within instances and some things are best done from the global/main-loop level, even if some of the
+# code may also live inside instance or class methods. Things that involve sprite-interactions and custom interactions
+# will tend to originate from the main loop. Things that are more between the sprite and itself, the environment, time
+# etc. may tend to originate from within the class, triggered via sprite-groups. Each use-case or feature will
+# determine which strategy to use or even a mixture of the two with additional facilities involved, no doubt.
+
+
 # INSTANITATE PLAYER SPRITE(S)
 players: dict[str, Player] = {}
 for i, player_spec in enumerate(ent.player_specs):
@@ -376,15 +389,16 @@ for i, player_spec in enumerate(ent.player_specs):
     load_image(
             filename=player_spec['img_filename'],
             flip=player_spec['flip'],
-            resize=player_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=player_spec['resize'],
             width=player_spec['w'],
             height=player_spec['h'],
         )
     player: Player = Player(
-            groups=[all_sprites, all_players],
+            groups=[all_sprites, all_players, all_colliders],
             img_filename=player_spec['img_filename'],
             weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
+            # TODO: Will starting passing a list of groups in .._ref because we will add all_colliders and maybe others.
             x=player_spec['x'],
             y=player_spec['y'],
             direction=player_spec['d'],
@@ -399,12 +413,12 @@ for i, npc_spec in enumerate(ent.npc_specs):
     load_image(
             filename=npc_spec['img_filename'],
             flip=npc_spec['flip'],
-            resize=npc_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=npc_spec['resize'],
             width=npc_spec['w'],
             height=npc_spec['h'],
         )
     npc: Npc = Npc(
-            groups=[all_sprites, all_npcs],
+            groups=[all_sprites, all_npcs, all_colliders],
             img_filename=npc_spec['img_filename'],
             x=npc_spec['x'],
             y=npc_spec['y'],
@@ -420,7 +434,7 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
     load_image(
             filename=generated_prop_spec['img_filename'],
             flip=generated_prop_spec['flip'],
-            resize=generated_prop_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=generated_prop_spec['resize'],
             width=generated_prop_spec['w'],
             height=generated_prop_spec['h'],
         )
@@ -433,13 +447,13 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
     props[generated_prop_spec['name']] = prop  # Key off name or instance id. name should be unique
 
 
-# LOAD SURFACE CACHE WITH WEAPON DATA. (Weapons not instantiated at this point.)
+# LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point.)
 for i, weapon_spec in enumerate(ent.weapon_specs):
     weapon_spec['instance_id'] = i
     load_image(
             filename=weapon_spec['img_filename'],
             flip=weapon_spec['flip'],
-            resize=weapon_spec['resize'],  # Resizing upon load (with correct alpha) is 90% working. Disabled until ready.
+            resize=weapon_spec['resize'],
             width=weapon_spec['w'],
             height=weapon_spec['h'],
         )
@@ -476,7 +490,10 @@ all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to a
 all_sprites_group_ref=all_sprites  # Again, for clarity. TODO: There is a CHANGE I may need to pass this in IF I ever
 #                                                              need to use it. Currently not used and not passed in.
 
-#   * * * * * * *    MAIN LOOP    * * * * * * *
+
+#   * * * * * * * * * * * * * * * * * * * * * * * *
+#   * * * * * * * *    MAIN LOOP    * * * * * * * *
+#   * * * * * * * * * * * * * * * * * * * * * * * *
 while running:
     g_delta_time = clock.tick(cfg.TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
 
@@ -506,28 +523,43 @@ while running:
             ephase = None
 
 
-    # ##################################################    DRAW    ####################################################
+    # #################################################    UPDATE    ###################################################
 
-
-    #   ^ ^ ^ ^ ^ ^    MAIN UPDATE ACTIONS    ^ ^ ^ ^ ^ ^
     all_props.update(g_delta_time, g_ephase_name)
     all_npcs.update(g_delta_time, g_ephase_name)
     all_players.update(g_delta_time, g_ephase_name)
     all_weapons.update(g_delta_time, g_ephase_name)  # Must update Weapons AFTER Player since Player creates Weapons during Player update.
 
+
+    # ###############################################    COLLISIONS    #################################################
+
+    if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Soon will likely use sprite collisions, not rect.
+        print("BOINGGGGGGG!!")
+
+    player_cols = None
+    pygame.sprite.spritecollide(players['buck0'], all_colliders, False, collided=player_cols)
+
+    if player_cols:
+        print(player_cols)
+
+    # ##################################################    DRAW    ####################################################
+
     # REDRAW THE BACKGROUND
     if cfg.ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
-    #   | | | | | |    MAIN DRAWING ACTIONS    | | | | | |
     all_props.draw(display_surface)
     all_npcs.draw(display_surface)
     all_weapons.draw(display_surface)
     all_players.draw(display_surface)
 
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
+    # TODO: The tutorial has now gone back to using .update() at some point. Again, need to clarify and -> use best one.
 
-#   * _ * _ * _ *    END MAIN LOOP    * _ * _ * _ *
+
+#   - * - * - * - * - * - * - * - * - * - * - * - * -
+#   - * - * - * -     END MAIN LOOP     - * - * - * -
+#   - * - * - * - * - * - * - * - * - * - * - * - * -
 
 
 pygame.quit()

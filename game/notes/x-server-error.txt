@@ -23,9 +23,12 @@ XDG_RUNTIME_DIR=/home/bilbo/test-xdg-runtime-dir
 This made the error go away, but I see nothing, so I think I need to be pointing to a directory
 with the XDG runtime in it.
 
+
+******* SOLVED ********
 I re-launched my WSL Ubuntu consoles after doing a WSL update and now I have X and the issues are solved.
 Possibly I was on WSL 1 before the update and got capabilities added, but I did not update/upgrade Ubuntu/apt ..
 I only did wsl --update.
+******* SOLVED ********
 
 Normally I develop on Mac but now with WSL and for many reasons, I will be doing Python and other dev just as
 much on Windows as on Mac, possibly more on Windows because all my good GPUs are on Windows.
