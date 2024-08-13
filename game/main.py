@@ -301,13 +301,13 @@ def load_image(
     SCACHE[filename] = c_item
 
 
-def event_meatball(group_ref: pygame.sprite.Group):
+def event_meatball(groups: list[pygame.sprite.Group]):
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
     # print(f"Meatball spawning at : {spawn_x}, {spawn_y}")
     projectile: Weapon = Weapon(
-            groups=[all_sprites, group_ref],
+            groups=groups,
             img_filename=meatball_spec['img_filename'],
             x=spawn_x,
             y=spawn_y,
@@ -394,7 +394,7 @@ for i, player_spec in enumerate(ent.player_specs):
             height=player_spec['h'],
         )
     player: Player = Player(
-            groups=[all_sprites, all_players, all_colliders],
+            groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
             weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
             all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
@@ -486,9 +486,8 @@ meatball_event = pygame.event.custom_type()
 pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
-all_weapons_group_ref=all_weapons  # Here for clarity. We need to pass this to anything that instantiates weapons.
-all_sprites_group_ref=all_sprites  # Again, for clarity. TODO: There is a CHANGE I may need to pass this in IF I ever
-#                                                              need to use it. Currently not used and not passed in.
+new_meatball_groups = [all_weapons, all_colliders]  # Must pass groups in from this global scope.
+# NOTE: I'm not currently using the all_sprites group and may never use it. I draw/update more specific groups separately.
 
 
 #   * * * * * * * * * * * * * * * * * * * * * * * *
@@ -504,7 +503,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == meatball_event:
-            event_meatball(all_weapons_group_ref)
+            event_meatball(groups=new_meatball_groups)
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
@@ -536,9 +535,7 @@ while running:
     if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Soon will likely use sprite collisions, not rect.
         print("BOINGGGGGGG!!")
 
-    player_cols = None
-    pygame.sprite.spritecollide(players['buck0'], all_colliders, False, collided=player_cols)
-
+    player_cols = pygame.sprite.spritecollide(players['buck0'], all_colliders, True)
     if player_cols:
         print(player_cols)
 
