@@ -1,0 +1,127 @@
+
+
+# CREATE SPRITE GROUPS
+all_sprites: pygame.sprite.Group = pygame.sprite.Group()
+all_players: pygame.sprite.Group = pygame.sprite.Group()
+all_weapons: pygame.sprite.Group = pygame.sprite.Group()  # TODO: Might go away. Need more specific groups.
+all_meatballs: pygame.sprite.Group = pygame.sprite.Group()
+all_greenballs: pygame.sprite.Group = pygame.sprite.Group()
+all_npcs: pygame.sprite.Group = pygame.sprite.Group()
+all_props: pygame.sprite.Group = pygame.sprite.Group()
+all_colliders: pygame.sprite.Group = pygame.sprite.Group()
+
+# GROUPS FOR DYNAMIC ENTITIES
+new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs, all_colliders]
+new_meatballs_groups: list[pygame.sprite.Group] = [all_sprites, all_meatballs, all_colliders]
+# TODO: JUST NOTING HERE AGAIN AS IN OTHER PLACES. WE REALLY DON'T NEED all_sprites. And probably neither all_colliders
+
+
+
+
+
+
+# ################################################    INSTANTIATION    #################################################
+
+# TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
+# NOTE: When using load_image(): To keep image size original, specify None for width and height.
+
+
+# NOTE: The dictionaries for each Entity subclass holding unique-name-keyed references to the instances was just put
+# back in place. This had been there in the earliest version in the form of lists but were tentatively removed while
+# sprite groups were implemented. This is one of many ways to access sprite or other instances and one can think of
+# these as the "easy", "global" way to access instances. If one is originating things from just inside the classes
+# through update() or some other method triggered through sprite groups, then some things can be more akward than
+# necessary, possibly collision-handling for example. For collisions, it is possible that handling them from the
+# global level (directly within the main loop and not triggered/handled from within Entity-sub-classed insstances)
+# is easier and at the moment that is the approach I am taking to collisions. The golbal instance dictionaries were
+# put (back) in place for this purpose, but I knew I would but them in place for multiple reasons. Some things are best
+# done from within instances and some things are best done from the global/main-loop level, even if some of the
+# code may also live inside instance or class methods. Things that involve sprite-interactions and custom interactions
+# will tend to originate from the main loop. Things that are more between the sprite and itself, the environment, time
+# etc. may tend to originate from within the class, triggered via sprite-groups. Each use-case or feature will
+# determine which strategy to use or even a mixture of the two with additional facilities involved, no doubt.
+
+
+
+
+
+
+        )
+    player: Player = Player(
+            groups=[all_sprites, all_players],
+            img_filename=player_spec['img_filename'],
+            weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],
+            weapons_groups=new_greenballs_groups,
+            x=player_spec['x'],
+
+
+
+
+
+
+
+# UPDATE: I had to move this higher before instantiation code for player that uses it for weapons. Disabling here.
+# MOVED HIGHER. DISABLED HERE. -AND- CHANGED NAME TO: new_weapons_groups. (new_meatballs_groups is more correct)
+# new_meatball_groups = [all_meatballs, all_colliders]  # Must pass groups in from this global scope.
+# NOTE: I'm not currently using the all_sprites group and may never use it. I draw/update more specific groups separately.
+# TODO: Next steps now, using more specific weapons groups as meatballs and greenballs are first obvious mutual colliders
+#    to work with. Fact is, we have to do a bit of a custom loop to do very common MUTUAL-COLLISION checking between
+#    key types like in Asteroids, most common collision to detect was between asteroids and lazer beams. We could not
+#    do this with just a weapons group which is what we started with for anything that instantiated dynamically.
+#    Of course, there will be many things which instantiate/spawn dynamically and there will also be many inter-relationships
+#    between things (entities) in the game which involve special-case mutual-collision detection between two types
+#    of things/entities. (Literally in these cases almost everything will in fact be a sub-class of Entity, but
+#    sometimes I do use the word entity in the general sense. I'll almost always capitalize when I am talking about
+#    the Entity class and I will likely make the context clear in other ways. It is important to be consistent and
+#    clear in one's use of terminology in software engineering where there are a lot of moving parts to keep track of.
+#    Far too many software enginners have very poor language and communication skills, or even software engineering
+#    skills, for that matter lol.) Anyhow, part of this push is implementing what will be a common pattern of looping
+#    over group members and checking group collisions. Sort of like a Matrix operation in which we do half the iterations
+#    and PyGame does the other half. We'll be getting a list as the results usually and then act on that list sometimes.
+
+
+
+
+
+
+    # ###############################################    COLLISIONS    #################################################
+
+    if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Soon will likely use sprite collisions, not rect.
+        print("BOINGGGGGGG!!")
+
+    # This was just an early example. Doing things differently now.
+    # player_cols = pygame.sprite.spritecollide(players['buck0'], all_colliders, True)
+    # if player_cols:
+    #     print(player_cols)
+    # TODO: Figure out how we are really going to use all_colliders. It would need to be like a default physics group
+    #    for objects bouncing off each other I thing. Something like that. We could call it: baseline_physics
+    #    For now, will probably stop adding things to all_colliders util we figure out what we might call a hierarchy
+    #    of collision detection. Maybe we will end up building this into the classes after all, since we already want
+    #    the hierarchy, inheritance, overriding, etc. of classes for the different types of collision detection we
+    #    need to do. It's nice when design patterns become very obvious like this. The question then becomes, how to
+    #    interface this main-loop/global-level control and dispatching (so-to-speak) into class/sub-class-resident
+    #    features.
+
+    # IDEAS:
+    # Baseline collision-detection:
+    #    Physics. Objects elastically bounce off of each other and change direction and velocity appropriately.
+    #        (Mass. This requires a mass value. TODO: Add an attribute for mass. Float.)
+    #    Weapon. Consider weapons or projectiles or dangerous objects, when will destroy many other kinds of things.
+    #    Walls. Walls are sort of props which are not background, but almost are. These are props things will bounce
+    #         off of.
+    #    Other special-case collisions. Power-ups. Special Player-Monster relationship. Vehicles and getting in them
+    #        and driving them, then following on that, collisions for that vehicle and effect on the player.. etc.
+    # So we can clearly justify a hierarchy and thus I will immediately look for ways to build this new code
+    # into the classes, with some of it in Entity as a baseline for common collision-detection needs.
+
+    for greenball in all_greenballs:
+        greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True)
+        if greenball_col_sprites:
+            for col in greenball_col_sprites:
+                print("                   *  *  *  BOOM!  *  *  *")
+                greenball.kill()  # Meatball(s) was/were killed above in spritecollide(). Now greenball is killed too.
+                # We can theoretically collide with multiple meatballs, but it will be very rare for multiple reasons.
+
+
+    # ##################################################    DRAW    ####################################################
+
