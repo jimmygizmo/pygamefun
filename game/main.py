@@ -29,7 +29,7 @@ SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Valu
 class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
-                groups,
+                groups: list[pygame.sprite.Group],
                 img_filename: str,
                 x: float,
                 y: float,
@@ -93,10 +93,10 @@ class Entity(pygame.sprite.Sprite):
 class Player(Entity):
     instance_count: int = 0
     def __init__(self,
-                groups,
+                groups: list[pygame.sprite.Group],
                 img_filename: str,
                 weapon_spec: ent.WeaponSpec,
-                all_weapons_group_ref: pygame.sprite.Group,
+                weapons_groups: list[pygame.sprite.Group],
                 x: float,
                 y: float,
                 direction: pygame.math.Vector2,
@@ -104,7 +104,7 @@ class Player(Entity):
             ):
         self.instance_id: int = Player.instance_count
         self.weapon_spec = weapon_spec
-        self.all_weapons_group_ref = all_weapons_group_ref  # TODO: On the fence about keeping this. Should minimize global usage though, so this might be good.
+        self.weapons_groups = weapons_groups
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = cfg.LASER_COOLDOWN_DURATION  # milliseconds
@@ -133,7 +133,7 @@ class Player(Entity):
             self.laser_shoot_time = pygame.time.get_ticks()
             weapon_img_filename = self.weapon_spec['img_filename']
             projectile: Weapon = Weapon(
-                    groups=[all_sprites, self.all_weapons_group_ref],
+                    groups=self.weapons_groups,
                     img_filename=weapon_img_filename,
                     x=self.rect.midtop[0],
                     y=self.rect.midtop[1],
@@ -148,7 +148,7 @@ class Player(Entity):
 class Weapon(Entity):
     instance_count: int = 0
     def __init__(self,
-                groups,
+                groups: list[pygame.sprite.Group],
                 img_filename: str,
                 x: float,
                 y: float,
@@ -178,7 +178,7 @@ class Weapon(Entity):
 class Npc(Entity):
     instance_count: int = 0
     def __init__(self,
-                groups,
+                groups: list[pygame.sprite.Group],
                 img_filename: str,
                 x: float,
                 y: float,
@@ -197,7 +197,7 @@ class Npc(Entity):
 class Prop(Entity):
     instance_count: int = 0
     def __init__(self,
-                groups,
+                groups: list[pygame.sprite.Group],
                 img_filename: str,
                 x: float,
                 y: float,
@@ -327,10 +327,18 @@ pygame.display.set_caption(cfg.GAME_TITLE)
 # CREATE SPRITE GROUPS
 all_sprites: pygame.sprite.Group = pygame.sprite.Group()
 all_players: pygame.sprite.Group = pygame.sprite.Group()
-all_weapons: pygame.sprite.Group = pygame.sprite.Group()
+all_weapons: pygame.sprite.Group = pygame.sprite.Group()  # TODO: Might go away. Need more specific groups.
+all_meatballs: pygame.sprite.Group = pygame.sprite.Group()
+all_greenballs: pygame.sprite.Group = pygame.sprite.Group()
 all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
 all_colliders: pygame.sprite.Group = pygame.sprite.Group()
+
+# GROUPS FOR DYNAMIC ENTITIES
+new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs, all_colliders]
+new_meatballs_groups: list[pygame.sprite.Group] = [all_sprites, all_meatballs, all_colliders]
+# TODO: JUST NOTING HERE AGAIN AS IN OTHER PLACES. WE REALLY DON'T NEED all_sprites. And probably neither all_colliders
+
 
 # GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
 generated_prop_specs = []
@@ -396,9 +404,8 @@ for i, player_spec in enumerate(ent.player_specs):
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],  # TODO: Felt hackish initially. Keep like this?
-            all_weapons_group_ref=all_weapons,  # TODO: Felt hackish initially. Keep like this?
-            # TODO: Will starting passing a list of groups in .._ref because we will add all_colliders and maybe others.
+            weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],
+            weapons_groups=new_greenballs_groups,
             x=player_spec['x'],
             y=player_spec['y'],
             direction=player_spec['d'],
@@ -486,8 +493,24 @@ meatball_event = pygame.event.custom_type()
 pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
-new_meatball_groups = [all_weapons, all_colliders]  # Must pass groups in from this global scope.
+# UPDATE: I had to move this higher before instantiation code for player that uses it for weapons. Disabling here.
+# MOVED HIGHER. DISABLED HERE. -AND- CHANGED NAME TO: new_weapons_groups. (new_meatballs_groups is more correct)
+# new_meatball_groups = [all_meatballs, all_colliders]  # Must pass groups in from this global scope.
 # NOTE: I'm not currently using the all_sprites group and may never use it. I draw/update more specific groups separately.
+# TODO: Next steps now, using more specific weapons groups as meatballs and greenballs are first obvious mutual colliders
+#    to work with. Fact is, we have to do a bit of a custom loop to do very common MUTUAL-COLLISION checking between
+#    key types like in Asteroids, most common collision to detect was between asteroids and lazer beams. We could not
+#    do this with just a weapons group which is what we started with for anything that instantiated dynamically.
+#    Of course, there will be many things which instantiate/spawn dynamically and there will also be many inter-relationships
+#    between things (entities) in the game which involve special-case mutual-collision detection between two types
+#    of things/entities. (Literally in these cases almost everything will in fact be a sub-class of Entity, but
+#    sometimes I do use the word entity in the general sense. I'll almost always capitalize when I am talking about
+#    the Entity class and I will likely make the context clear in other ways. It is important to be consistent and
+#    clear in one's use of terminology in software engineering where there are a lot of moving parts to keep track of.
+#    Far too many software enginners have very poor language and communication skills, or even software engineering
+#    skills, for that matter lol.) Anyhow, part of this push is implementing what will be a common pattern of looping
+#    over group members and checking group collisions. Sort of like a Matrix operation in which we do half the iterations
+#    and PyGame does the other half. We'll be getting a list as the results usually and then act on that list sometimes.
 
 
 #   * * * * * * * * * * * * * * * * * * * * * * * *
@@ -503,7 +526,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == meatball_event:
-            event_meatball(groups=new_meatball_groups)
+            event_meatball(groups=new_meatballs_groups)  # TODO: Considering changing to: new_meatballs_groups
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
@@ -527,7 +550,8 @@ while running:
     all_props.update(g_delta_time, g_ephase_name)
     all_npcs.update(g_delta_time, g_ephase_name)
     all_players.update(g_delta_time, g_ephase_name)
-    all_weapons.update(g_delta_time, g_ephase_name)  # Must update Weapons AFTER Player since Player creates Weapons during Player update.
+    all_greenballs.update(g_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
+    all_meatballs.update(g_delta_time, g_ephase_name)
 
 
     # ###############################################    COLLISIONS    #################################################
@@ -535,9 +559,41 @@ while running:
     if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Soon will likely use sprite collisions, not rect.
         print("BOINGGGGGGG!!")
 
-    player_cols = pygame.sprite.spritecollide(players['buck0'], all_colliders, True)
-    if player_cols:
-        print(player_cols)
+    # This was just an early example. Doing things differently now.
+    # player_cols = pygame.sprite.spritecollide(players['buck0'], all_colliders, True)
+    # if player_cols:
+    #     print(player_cols)
+    # TODO: Figure out how we are really going to use all_colliders. It would need to be like a default physics group
+    #    for objects bouncing off each other I thing. Something like that. We could call it: baseline_physics
+    #    For now, will probably stop adding things to all_colliders util we figure out what we might call a hierarchy
+    #    of collision detection. Maybe we will end up building this into the classes after all, since we already want
+    #    the hierarchy, inheritance, overriding, etc. of classes for the different types of collision detection we
+    #    need to do. It's nice when design patterns become very obvious like this. The question then becomes, how to
+    #    interface this main-loop/global-level control and dispatching (so-to-speak) into class/sub-class-resident
+    #    features.
+
+    # IDEAS:
+    # Baseline collision-detection:
+    #    Physics. Objects elastically bounce off of each other and change direction and velocity appropriately.
+    #        (Mass. This requires a mass value. TODO: Add an attribute for mass. Float.)
+    #    Weapon. Consider weapons or projectiles or dangerous objects, when will destroy many other kinds of things.
+    #    Walls. Walls are sort of props which are not background, but almost are. These are props things will bounce
+    #         off of.
+    #    Other special-case collisions. Power-ups. Special Player-Monster relationship. Vehicles and getting in them
+    #        and driving them, then following on that, collisions for that vehicle and effect on the player.. etc.
+    # So we can clearly justify a hierarchy and thus I will immediately look for ways to build this new code
+    # into the classes, with some of it in Entity as a baseline for common collision-detection needs.
+
+    print(all_greenballs)
+
+    for greenball in all_greenballs:
+        greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True)
+        if greenball_col_sprites:
+            for col in greenball_col_sprites:
+                print("                   *  *  *  BOOM!  *  *  *")
+                greenball.kill()
+
+
 
     # ##################################################    DRAW    ####################################################
 
@@ -547,7 +603,8 @@ while running:
 
     all_props.draw(display_surface)
     all_npcs.draw(display_surface)
-    all_weapons.draw(display_surface)
+    all_meatballs.draw(display_surface)
+    all_greenballs.draw(display_surface)
     all_players.draw(display_surface)
 
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
