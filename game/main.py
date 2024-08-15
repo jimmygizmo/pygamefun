@@ -320,11 +320,11 @@ def event_meatball(groups: list[pygame.sprite.Group]):
 
 pygame.init()
 
-# print(pygame.font.get_fonts())
+print(pygame.font.get_fonts())
 
 # INIT SCOREBOARD
-score = pygame.font.Font('assets/RabbidHighwaySignII.otf', cfg.SCORE_FONT_SIZE)
-# score = pygame.font.SysFont('freesansbold', cfg.SCORE_FONT_SIZE)
+score = pygame.font.Font(cfg.SCORE_FONT_PATH, cfg.SCORE_FONT_SIZE)
+# score = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
 score_surf: pygame.Surface = score.render(
         text='1,000',
         antialias=True,
