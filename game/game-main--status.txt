@@ -1,0 +1,43 @@
+
+
+Status of:
+game/main.py
+
+I'm doing much more advanced code with a lot more features but following most of the basic features and guidance of
+the tutorial and where I am pausing on this 'game' (galazian/space-invaders style with the fish and grumpy cat etc)
+at the same place as the tutorial does.
+
+This point is where the scoreboard is loading and starting to use fonts. The basics are there and good.
+Everything else in the 'game' is really good and working well.
+
+The enviro phase feature was really great and I disabled it during a major class refactor, BUT it is a good thing I
+plan to add back in. Simple plan:
+Start all keys in the specs related to enviro phases with "e_" then near instantiation phase, collect all these into
+a smaller stripped-down enviro phase specs dict which is then passed into the instances like the full original spec
+dict used to be.  Use it like spec dict was used and grab the code from before. It all works great.
+And now the spec dict (subset) to support it is nice and small and automatically populated. Clean.
+That was really always the plan to put it back in that form so that is one of the next TODOs.
+
+Also, Our font handling might be getting fancier than it needs to be, but for smoothing out ALL cross-platform issues,
+maybe we will have to have some font-loading/setup logic, so that is there already and could evolve a little, since
+the next phases of this 'game' will start using some text info a lot more.
+
+We could add an opening and ending screen soon.
+
+Soon will add sounds and a simple animation for the player, orb shots (green balls) and meatballs exploding.
+
+That is the short list of basic stuff for this 'gamn'.
+
+What I think will happen is the tutorial will move into really cool areas and I will also continue to lead the tutorial
+code with many best practices and advanced features and more formal OOP.
+I expect to probably USE code here in "game/main.py" and evolve it further, rather than evolve the fish/grumpy cat,
+meatball concept .. rather just leverage the code.
+
+The code and structure in here, for where it is at, is outstanding, so that is the idea, RE-USE THIS CODE.
+Build on it.
+
+It is a clean start.
+
+.. and of course this section of the project COULD evolve into a cool game. I was thinking of taking it in a much
+sillyer direction and incorporating my own charater drawings. We'll see if there is time for that.
+

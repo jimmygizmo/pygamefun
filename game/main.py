@@ -320,17 +320,31 @@ def event_meatball(groups: list[pygame.sprite.Group]):
 
 pygame.init()
 
-print(pygame.font.get_fonts())
+# # DEBUG/INFO_GATHER CODE
+# system_fonts = pygame.font.get_fonts()
+# for fontitem in system_fonts:
+#     print(fontitem)
 
 # INIT SCOREBOARD
-score = pygame.font.Font(cfg.SCORE_FONT_PATH, cfg.SCORE_FONT_SIZE)
-# score = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
+if cfg.SCORE_FONT_FORCE_SYSTEM:
+    # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
+    # Each OS is going to have different fonts and issues with them, I am sure. Currently tested on Windows only.
+    score = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
+else:
+    # Or we just use our included font. Probably a good default policy. This entire project is experimental, so we explore!
+    score = pygame.font.Font(cfg.SCORE_FONT_PATH, cfg.SCORE_FONT_SIZE)
+
 score_surf: pygame.Surface = score.render(
         text='1,000',
         antialias=True,
         color='black',
         bgcolor='white',
     )
+
+# NOTE: If you request a bad System Font name, you get a warning and the PyGame still works. (some default font. cool.)
+# "UserWarning: The system font 'notosansbold' couldn't be found. Did you mean: 'notosansmodi', 'notosanssymbols', 'notosansbuhid'?"
+#     " ... Using the default font instead."
+
 
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)

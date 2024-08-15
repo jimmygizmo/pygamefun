@@ -14,7 +14,9 @@ SCORE_Y: int = math.floor(0.92 * SCREEN_HEIGHT)
 SCORE_HEIGHT: int = 20
 SCORE_WIDTH: int = 100
 SCORE_FONT_PATH = 'assets/RabbidHighwaySignII-TTF.ttf'
-SCORE_SYSTEM_FONT = 'freesansbold'
+SCORE_SYSTEM_FONT = 'notosansbold'
+SCORE_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windows)
+# TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
 SCORE_FONT_SIZE: int = 40
 
 TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
