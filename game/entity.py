@@ -42,7 +42,7 @@ player_specs: list[PlayerSpec] = [
         'x': 890.0,
         'y': 540.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
-        's': 480.0,
+        's': 780.0,
         'p': 590.0,
         'r': 1100.0,
         'c': 1700.0,
@@ -79,7 +79,7 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
         'flip': False,
-        'resize': True,
+        'resize': False,
         'w': 70,
         'h': 70,
         'color': 'green3',
@@ -104,7 +104,7 @@ weapon_specs: list[WeaponSpec] = [
         'x': 890.0,
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
-        's': 734.0,
+        's': 334.0,
         'p': 698.0,
         'r': 822.0,
         'c': 1640.0,

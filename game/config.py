@@ -1,4 +1,4 @@
- # config.py
+import math  # config.py
 
 import sys
 import collections
@@ -8,6 +8,13 @@ import collections
 
 SCREEN_WIDTH: int = 1640
 SCREEN_HEIGHT: int = 860
+SCOREBOARD: bool = True
+SCORE_X: int = math.floor(SCREEN_WIDTH / 2)
+SCORE_Y: int = math.floor(0.92 * SCREEN_HEIGHT)
+SCORE_HEIGHT: int = 20
+SCORE_WIDTH: int = 100
+SCORE_FONT = 'Helvetica'
+SCORE_FONT_SIZE: int = 40
 
 TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE: str = 'Goldfish Picnic'

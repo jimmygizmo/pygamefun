@@ -53,7 +53,7 @@ class Entity(pygame.sprite.Sprite):
     def update(self, delta_time: float, ephase_name: str):
         # NOTE: ephase_name ARG had to be added to places it is not actually used. (* PyCharm static analysis warning *)
 
-        delta_vector = self.dir * self.speed * delta_time
+        delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
         #     variable has type "tuple[float, float]")  [assignment]
@@ -282,7 +282,7 @@ def load_image(
                 # ******************************************************************
                 surface_l = alphonically_resized_surface
     else:
-        surface_l: pygame.Surface = pygame.image.load(image_path).convert_alpha()
+        surface_l = pygame.image.load(image_path).convert_alpha()
 
     if flip:
         surface_l = pygame.transform.flip(surface_l, True, False)
@@ -319,6 +319,19 @@ def event_meatball(groups: list[pygame.sprite.Group]):
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
+
+# print(pygame.font.get_fonts())
+
+# INIT SCOREBOARD
+score = pygame.font.Font('assets/RabbidHighwaySignII.otf', cfg.SCORE_FONT_SIZE)
+# score = pygame.font.SysFont('freesansbold', cfg.SCORE_FONT_SIZE)
+score_surf: pygame.Surface = score.render(
+        text='1,000',
+        antialias=True,
+        color='black',
+        bgcolor='white',
+    )
+
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
 display_surface = pygame.display.set_mode((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
@@ -537,10 +550,17 @@ while running:
     if cfg.ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
+    # IN ORDER OF DESIRED VISIBILITY-PRECEDENCE:
     all_props.draw(display_surface)
     all_npcs.draw(display_surface)
     all_meatballs.draw(display_surface)
     all_greenballs.draw(display_surface)
+
+    # SCOREBOARD
+    if cfg.SCOREBOARD:
+        display_surface.blit(score_surf, (cfg.SCORE_X, cfg.SCORE_Y))
+
+    # PLAYER(s)
     all_players.draw(display_surface)
 
     pygame.display.flip()  # Similar to update but not entire screen. TODO: Clarify
