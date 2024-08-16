@@ -1,3 +1,10 @@
+NOTE: Free font I included in /assets/   See link for license and other info:
+https://fontlibrary.org/en/font/rabbid-highway-sign-ii
+
+Below info is about cross-platform fort issues and I am still experimenting so I will learn if we should
+always include fonts ourselves (very likely) or have some semi-complex logic to deal with all cross=platform
+system font issues (not very likely.)
+
 
 Bit of code near before the scoreboard code shows me on my Windows machine what system fonts I can use with SysFont:
 

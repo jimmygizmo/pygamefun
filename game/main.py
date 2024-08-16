@@ -52,6 +52,8 @@ class Entity(pygame.sprite.Sprite):
 
     def update(self, delta_time: float, ephase_name: str):
         # NOTE: ephase_name ARG had to be added to places it is not actually used. (* PyCharm static analysis warning *)
+        # Have not looked at this in weeks but I wanted to comment: This is related to the need to override update()
+        # sometimes.
 
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
@@ -203,13 +205,31 @@ class Prop(Entity):
                 y: float,
             ):
         self.instance_id: int = Prop.instance_count
+        # TODO: THINKING about the design pattern here. We are still calling update after forcing in specs to
+        # stay stationary. update() is meant to update position, hence motion. Props by definition don't move. Is it
+        # not MORE correct for a thing that does not move to SIMPLY not call update at all? Since Entity will
+        # In this case, we would not want the parent Entity method (inherited by the Prop instance) to get called.
+        # So this means we would just override update() here and then pass. This seems more correct than setting
+        # special 'motionless' speed and direction and then calling the code to update for movement. It is simpler
+        # and more efficient to do as I have described. I'll leave these comments here and address this in a later
+        # push.
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
-    def update(self, delta_time: float, ephase_name: str):
-        super().update(delta_time, ephase_name)
+    # def update(self, delta_time: float, ephase_name: str):
+    #     super().update(delta_time, ephase_name)
+    # # TODO: Wait a minute ?!?!    Shouldn't I just delete all of this update() then it will use super.update() anyhow.
+    # # Kind of a DUH! thing but I just noticed this. In Props. UPDATE: What I just did here is correct, BUT this is
+    # before I reconsidered things furthere as I wrote about at 'THINKING'. In a following push I will be removing the
+    # special no motion variables for speed and direction and then I will override update() here and simply pass.
+    # This is the simplest, most efficient and most correct thing to for 'Entities' which do not move, such as Props.
+    # Honestly, Entities are meant for things that move .. so perhaps we are moving towards making a Prop something
+    # else, that does not inherit from Entity at all. We will see. This is also just a new idea to consider over a
+    # few more commits. As I usually do, when I implement this in the next push or so, I will move these comments and
+    # some related code context into a notes file. I may use all this content to generate further educational material.
+
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
         pass
@@ -217,24 +237,29 @@ class Prop(Entity):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-# NOTE: Disabling enviro_influence temporarily for many reasons:
+# NOTE: Disabling enviro_influence temporarily for many reasons:    #### UPDATE: Now re-implementing. See UPDATE below.
 # 1. I have removed spec from instances and this was where new enviro speeds are stored. I need to pass another way now.
 # 2. I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
 # 3. This macro system needs to be super simple and process efficiently OR just pass a simpler dict than spec.
 # 4. Or use callbacks to little functions which implement the enviro responses.
 # 5. When this is figured out I will re-enable the new form. None of this is in the tutorial anyhow.
 # *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
+# (UPDATE: I assume this error will return in a new form, complaining about e_p, e_r, e_c, e_f instead.)
+
+#### UPDATE: Starting to re-implement with the enviro-phase-only stripped dict going back into the instances.
+#            All enviro phase keys will not be prefixed with "e_"
+
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     pass  # TEMPORARILY DISABLED PER THE ABOVE REASONS.
     # # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     # if ephase_name == 'peace':
-    #     xself.speed = xself.spec['p']
+    #     xself.speed = xself.spec['e_p']
     # elif ephase_name == 'rogue':
-    #     xself.speed = xself.spec['r']
+    #     xself.speed = xself.spec['e_r']
     # elif ephase_name == 'chaos':
-    #     xself.speed = xself.spec['c']
+    #     xself.speed = xself.spec['e_c']
     # elif ephase_name == 'frozen':
-    #     xself.speed = xself.spec['f']
+    #     xself.speed = xself.spec['e_f']
     # else:
     #     raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
     #                      "Check values in ENVIRO_PHASES config.")
@@ -316,6 +341,17 @@ def event_meatball(groups: list[pygame.sprite.Group]):
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 
+def refresh_scoreboard(sboard: pygame.font.Font, score: int):
+    score_text = str(score)
+    scoreboard_surf: pygame.Surface = sboard.render(
+        text=score_text,
+        antialias=True,
+        color='black',
+        bgcolor='white',
+    )
+    return scoreboard_surf
+
+
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
@@ -329,22 +365,14 @@ pygame.init()
 if cfg.SCORE_FONT_FORCE_SYSTEM:
     # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
     # Each OS is going to have different fonts and issues with them, I am sure. Currently tested on Windows only.
-    score = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
+    scoreboard_font = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
 else:
     # Or we just use our included font. Probably a good default policy. This entire project is experimental, so we explore!
-    score = pygame.font.Font(cfg.SCORE_FONT_PATH, cfg.SCORE_FONT_SIZE)
-
-score_surf: pygame.Surface = score.render(
-        text='1,000',
-        antialias=True,
-        color='black',
-        bgcolor='white',
-    )
+    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCORE_FONT_FILENAME), cfg.SCORE_FONT_SIZE)
 
 # NOTE: If you request a bad System Font name, you get a warning and the PyGame still works. (some default font. cool.)
 # "UserWarning: The system font 'notosansbold' couldn't be found. Did you mean: 'notosansmodi', 'notosanssymbols', 'notosansbuhid'?"
 #     " ... Using the default font instead."
-
 
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
@@ -491,11 +519,12 @@ if cfg.DEBUG:
 else:
     bg_surface = pygame.image.load(bgpath)
 
-running = True
-ephase = None
-g_ephase_name = None
+running: bool = True
+ephase = None  # TODO: Hint type here.
+g_ephase_name: str | None = None
+g_score: int = 0
 
-ephase_count = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
+ephase_count: int = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
 
 # CUSTOM EVENTS - Random meatballs
@@ -509,6 +538,15 @@ pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL
 #   * * * * * * * * * * * * * * * * * * * * * * * *
 while running:
     g_delta_time = clock.tick(cfg.TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
+    # TODO: I think I made this g_ early on because of shadowing warning that may no longer be an issue.
+    #    Look into this again and maybe clarify further when/where/how I use g_ for either 1. limited and fully
+    #    intentional use of a global variable or 2. to solve some shadowing issue usually with arguments or interior
+    #    temp working vars. Seems like both issues can be solved in multiple ways so although I make VERY limited use
+    #    of any global variables (almost always only constants, which is honestly a little different) .. but int fact
+    #    alsmost NEVER --UPDATE-- a global variable from any interior namespace .. except now. In this case since we
+    #    only have one score and one player possibly initiating changes to the score, we do not have any race condition
+    #    concern. So in this case, updating the score (g_score) as a global variable feels just fine. No concerns.
+    #    This is likely to change as I get more values I need to update centrally.
 
 
     # ##################################################    INPUT    ###################################################
@@ -544,6 +582,8 @@ while running:
     all_greenballs.update(g_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
     all_meatballs.update(g_delta_time, g_ephase_name)
 
+    # Re-render the new scoreboard surface. We will soon draw it below.
+    sboard_surf = refresh_scoreboard(scoreboard_font, g_score)
 
     # ###############################################    COLLISIONS    #################################################
 
@@ -554,6 +594,7 @@ while running:
         greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True)
         if greenball_col_sprites:
             for col in greenball_col_sprites:
+                g_score += 1  # g_ variable from outer scope. We do not need 'global' keyword. Limited use of these.
                 print("                   *  *  *  BOOM!  *  *  *")
                 greenball.kill()  # Meatball(s) was/were killed above in spritecollide(). Now greenball is killed too.
 
@@ -572,7 +613,7 @@ while running:
 
     # SCOREBOARD
     if cfg.SCOREBOARD:
-        display_surface.blit(score_surf, (cfg.SCORE_X, cfg.SCORE_Y))
+        display_surface.blit(sboard_surf, (cfg.SCORE_X, cfg.SCORE_Y))
 
     # PLAYER(s)
     all_players.draw(display_surface)

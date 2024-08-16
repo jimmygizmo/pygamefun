@@ -21,10 +21,10 @@ PlayerSpec = TypedDict('PlayerSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
+        'e_p': float,  # Enviro: Peace (speed)
+        'e_r': float,  # Enviro: Rogue (speed)
+        'e_c': float,  # Enviro: Chaos (speed)
+        'e_f': float,  # Enviro: Frozen (speed)
     }
 )  # PlayerSpec
 
@@ -43,10 +43,10 @@ player_specs: list[PlayerSpec] = [
         'y': 540.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 780.0,
-        'p': 590.0,
-        'r': 1100.0,
-        'c': 1700.0,
-        'f': 2650.0,
+        'e_p': 590.0,
+        'e_r': 1100.0,
+        'e_c': 1700.0,
+        'e_f': 2650.0,
     },
 ]  # player_specs: list[PlayerSpec]
 
@@ -65,10 +65,10 @@ WeaponSpec = TypedDict('WeaponSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
+        'e_p': float,  # Enviro: Peace (speed)
+        'e_r': float,  # Enviro: Rogue (speed)
+        'e_c': float,  # Enviro: Chaos (speed)
+        'e_f': float,  # Enviro: Frozen (speed)
     }
 )  # WeaponSpec
 
@@ -79,7 +79,7 @@ weapon_specs: list[WeaponSpec] = [
         'instance_id': -1,
         'img_filename':  'green-ball-140x140.png',
         'flip': False,
-        'resize': False,
+        'resize': True,
         'w': 70,
         'h': 70,
         'color': 'green3',
@@ -87,10 +87,10 @@ weapon_specs: list[WeaponSpec] = [
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 334.0,
-        'p': 98.0,
-        'r': 122.0,
-        'c': 840.0,
-        'f': 2350.0,
+        'e_p': 98.0,
+        'e_r': 122.0,
+        'e_c': 840.0,
+        'e_f': 2350.0,
     },
     {
         'name': 'meatball',
@@ -105,10 +105,10 @@ weapon_specs: list[WeaponSpec] = [
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 334.0,
-        'p': 698.0,
-        'r': 822.0,
-        'c': 1640.0,
-        'f': 3350.0,
+        'e_p': 698.0,
+        'e_r': 822.0,
+        'e_c': 1640.0,
+        'e_f': 3350.0,
     },
 ]  # weapon_specs: list[WeaponSpec]
 
@@ -127,10 +127,10 @@ NpcSpec = TypedDict('NpcSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
-        'p': float,  # Enviro: Peace (speed)
-        'r': float,  # Enviro: Rogue (speed)
-        'c': float,  # Enviro: Chaos (speed)
-        'f': float,  # Enviro: Frozen (speed)
+        'e_p': float,  # Enviro: Peace (speed)
+        'e_r': float,  # Enviro: Rogue (speed)
+        'e_c': float,  # Enviro: Chaos (speed)
+        'e_f': float,  # Enviro: Frozen (speed)
     }
 )  # NpcSpec
 
@@ -149,10 +149,10 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
         's': 100.0,
-        'p': 100.0,
-        'r': 100.0,
-        'c': 350.0,
-        'f': 2.0,
+        'e_p': 100.0,
+        'e_r': 100.0,
+        'e_c': 350.0,
+        'e_f': 2.0,
     },
     {
         'name': 'red-flower-drifty',
@@ -167,10 +167,10 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
         's': 100.0,
-        'p': 100.0,
-        'r': 100.0,
-        'c': 420.0,
-        'f': 3.0,
+        'e_p': 100.0,
+        'e_r': 100.0,
+        'e_c': 420.0,
+        'e_f': 3.0,
     },
     {
         'name': 'goldie',
@@ -185,17 +185,17 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
         's': 141.0,
-        'p': 160.0,
-        'r': 880.0,
-        'c': 1290.0,
-        'f': 10.0,
+        'e_p': 160.0,
+        'e_r': 880.0,
+        'e_c': 1290.0,
+        'e_f': 10.0,
     },
     {
         'name': 'grumpy',
         'instance_id': -1,
         'img_filename':  'grumpy-cat-110x120.png',
         'flip': True,
-        'resize': True,
+        'resize': False,
         'w': 220,
         'h': 240,
         'color': 'blanchedalmond',
@@ -203,10 +203,10 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
         's': 90.0,
-        'p': 80.0,
-        'r': 50.0,
-        'c': 2170.0,
-        'f': 40.0,
+        'e_p': 80.0,
+        'e_r': 50.0,
+        'e_c': 2170.0,
+        'e_f': 40.0,
     },
     {
         'name': 'fishy',
@@ -221,10 +221,10 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 80.0,
-        'p': 90.0,
-        'r': 100.0,
-        'c': 700.0,
-        'f': 2850.0,
+        'e_p': 90.0,
+        'e_r': 100.0,
+        'e_c': 700.0,
+        'e_f': 2850.0,
     },
 ]  # npc_specs: list[NpcSpec]
 
