@@ -331,78 +331,64 @@ def event_meatball(groups: list[pygame.sprite.Group]):
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 
-# TODO: using arg_ here in front because WARN: shadows name 'display_surface' from outer scope. TODO: Find the Best
-# Practice Pattern to solve this issue. So, this implies (and I know) we have access to the global/outer-scope
-# display_surface FROM HERE, so it would seem we are replacing that global display_surface with this local one.
-# So the arg_ prefix (meaning argument) is a good idea, but I want to understand better the very best design pattern
-# I should use. Is it that I should NEVER declare anything like this at global scope and put it in some class?
-# Perhaps. But I like global scope for some things and it is convenient and justifiably CORRECT for certain size and
-# complexity and type of applications. Also remember that inlineing is a performance strategy and this is a game, so
-# one might justify using global objects a lot and having a rather procedural main program. It also depends on the
-# team developing the app. The more people, the more need for controls over variable access and more formal patterns,
-# generally speaking.
-# I have this issue in a few other places, (delta_time) for example. I've sort of been using the g_ prefix in a
-# related context, which is just labeling the other side of the same issue I think. Again, We could choose to solve
-# this (or clarify and formalize the correct pattern to use) in a number of ways. This function here is just one
-# try at part of the solution, so I can see how it looks, feels and works, both in the app but also in the PyCharm
-# and the MyPy linting (and PEP8 and all the other good best practices, not the least of which is my own sensibility
-# and experience.)
-# UPDATE: Same for arg_scoreboard_font. I'm leaning towards a new concept here.
-# How about prefix these at the point of the global definition and use two prefix naming conventions:
-# gw_ Means globally defined/located and possible/allowed to be written to/changed from somewhere else (inner scope).
-# gr_ Means globally defined/located and not allowed to be written to, only read from.
-# This applies to methods as well, If a method will be used from an inner scope which can change the state of the g_
-# object/variable, then use gw_. Only use gr_ if no inner scope reference to it will ever do anything which changes
-# its state/value(s). This seems like an improvement on all my other ideas so far for this issue.
-# This is my own convention and idea and I think most folks simply just access stuff as they choose up until it
-# becomes a problem for themselves or their team. Perhaps a common solution is some naming convention (which really
-# is just a visual reminder, but those are valuable). Lets also remember that another possible solution is to never
-# declare hardly anything at the global/main level and always create some other class or object to 'contain' it and
-# reference it through. Makes it cleaner and probably also easier to use separate files and import as well if you
-# eventually also need to do that as your sheer code volume increases at all levels (especially main/global though.)
-#
 def update_and_draw_scoreboard(
             arg_display_surface: pygame.display,
             arg_scoreboard_font: pygame.font.Font,
             score: int,
         ) -> None:
-    # -------- SCOREBOARD TEXT:
+    # -------- SCOREBOARD TEXT - (CREATE ONLY FOR NOW, DRAW AFTER DEALING WITH BORDER. WE NEED THE RECT.):
     score_text = str(score)
     scoreboard_surf: pygame.Surface = arg_scoreboard_font.render(
-        text=score_text,
-        antialias=True,
-        color=cfg.SCR_FONT_COLOR,  # TODO: Take this arg out and use cfg OR make other cfgs into args !?? Consistency.
-        bgcolor=None,
-    )
+            text=score_text,
+            antialias=True,
+            color=cfg.SCR_FONT_COLOR,  # TODO: Take this arg out and use cfg OR make other cfgs into args !?? Consistency.
+            bgcolor=None,
+        )
     scoreboard_rect: pygame.FRect = scoreboard_surf.get_frect(center=(cfg.SCR_X, cfg.SCR_Y))
 
-    # -------- SCORBOARD BORDER:
+    # -------- SCORBOARD BORDER - (DRAW DIRECTLY TO DISPLAY OR USE AN INTERMEDIATE SURFACE - !under development!):
+
+    # Although we may not use the surface here, (depends on cfg and how we draw.) We ALWAYS use the rect:
     scoreboard_bord_surf = pygame.Surface((cfg.SCR_WIDTH, cfg.SCR_HEIGHT), pygame.SRCALPHA)
+    # TODO: We could improve this IF we could compose this rect by itself and get the same set of values in another way.
     scoreboard_bord_rect: pygame.FRect = scoreboard_bord_surf.get_frect(
             center=(cfg.SCR_X, cfg.SCR_Y + cfg.SCR_FONT_ADJUST_Y)
         )
 
-    # DRAW BORDER ONTO THE SURFACE I MADE FOR THAT PURPOSE AND THEN BLIT THAT BORDER SURFACE ONTO DISPLAY SURFACE.
-    # pygame.draw.rect(scoreboard_bord_surf, cfg.SCR_BORDER_COLOR, scoreboard_bord_rect, width=8, border_radius=8)
+    if cfg.SCR_BORDER_DRAW_COMPROMISE:
+        # DRAW BORDER DIRECTLY ONTO THE DISPLAY SURFACE (Thus, scoreboard_bord_surf is not ever used.)
+        # *** This is here because I have not yet been able to get the below working to use an intermediate surface. ***
+        pygame.draw.rect(
+                arg_display_surface,
+                cfg.SCR_BORDER_COLOR,
+                scoreboard_bord_rect,
+                width=cfg.SCR_BORDER_THICKNESS,
+                border_radius=cfg.SCR_BORDER_RADIUS,
+            )
 
-    # DRAW BORDER DIRECTLY ONTO THE DISPLAY SURFACE
-    pygame.draw.rect(
-            arg_display_surface,
+        arg_display_surface.blit(scoreboard_surf, scoreboard_rect)  # ** DISABLED ** NO FONT. BORDER NOT WORKING YET.
+    else:
+        # DRAW BORDER DIRECTLY ONTO A NEW, DEDICATED SURFACE JUST FOR THE BORDER, TO BE BLITTED SEPARATELY/NORMALLY.
+        # *** Trying to get this working, but I just get a rect filled with black. pygame.SRCALPHA did not help. ***
+        pygame.draw.rect(
+            scoreboard_bord_surf,
             cfg.SCR_BORDER_COLOR,
             scoreboard_bord_rect,
             width=cfg.SCR_BORDER_THICKNESS,
             border_radius=cfg.SCR_BORDER_RADIUS,
         )
 
-    arg_display_surface.blit(scoreboard_surf, scoreboard_rect)  # ** DISABLED ** NO FONT. BORDER NOT WORKING YET.
-    # arg_display_surface.blit(scoreboard_bord_surf, scoreboard_bord_rect)
+        arg_display_surface.blit(scoreboard_bord_surf, scoreboard_bord_rect)
+
+    # -------- SCOREBOARD TEXT - (FINALLY DRAW THE FONT SURFACE WE RENDERED IN THE FIRST STEP):
+    arg_display_surface.blit(scoreboard_surf, scoreboard_rect)
 
 
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
 
-# # DEBUG/INFO_GATHER CODE
+# # DEBUG/INFO-GATHER CODE
 # system_fonts = pygame.font.get_fonts()
 # for fontitem in system_fonts:
 #     print(fontitem)
