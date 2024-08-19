@@ -63,6 +63,8 @@ class Entity(pygame.sprite.Sprite):
         # ***************************
 
         self.physics_outer_walls()  # Handle bouncing off walls. NOTE: Props override this and pass. Props ignore walls.
+        # In fact, inside Props we override and pass update() too, so calling of physics_outer_walls() will never occur
+        # here for props. To clarify, inside Prop, BOTH update() and physics_outer_walls() are overridden and passed.
 
         # Activate the correctly-facing image, based on X direction.
         if self.dir.x < 0:
@@ -205,33 +207,21 @@ class Prop(Entity):
                 y: float,
             ):
         self.instance_id: int = Prop.instance_count
-        # TODO: THINKING about the design pattern here. We are still calling update after forcing in specs to
-        # stay stationary. update() is meant to update position, hence motion. Props by definition don't move. Is it
-        # not MORE correct for a thing that does not move to SIMPLY not call update at all? Since Entity will
-        # In this case, we would not want the parent Entity method (inherited by the Prop instance) to get called.
-        # So this means we would just override update() here and then pass. This seems more correct than setting
-        # special 'motionless' speed and direction and then calling the code to update for movement. It is simpler
-        # and more efficient to do as I have described. I'll leave these comments here and address this in a later
-        # push.
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
-    # def update(self, delta_time: float, ephase_name: str):
-    #     super().update(delta_time, ephase_name)
-    # # TODO: Wait a minute ?!?!    Shouldn't I just delete all of this update() then it will use super.update() anyhow.
-    # # Kind of a DUH! thing but I just noticed this. In Props. UPDATE: What I just did here is correct, BUT this is
-    # before I reconsidered things furthere as I wrote about at 'THINKING'. In a following push I will be removing the
-    # special no motion variables for speed and direction and then I will override update() here and simply pass.
-    # This is the simplest, most efficient and most correct thing to for 'Entities' which do not move, such as Props.
-    # Honestly, Entities are meant for things that move .. so perhaps we are moving towards making a Prop something
-    # else, that does not inherit from Entity at all. We will see. This is also just a new idea to consider over a
-    # few more commits. As I usually do, when I implement this in the next push or so, I will move these comments and
-    # some related code context into a notes file. I may use all this content to generate further educational material.
+    # I forgot that Entity.update() is where the surface itself is created based on direction L or R and thus we have
+    # to call Entity.update() .. meaning super() from here.
+    def update(self, delta_time: float, ephase_name: str):
+        super().update(delta_time, ephase_name)
+        # TRUE BUT WE CANNOT BYPASSE Entity.update():
+        # Props do not move. Update is for updating position and related actions. This suppresses Entity.update()
+        # This is further argument for NOT subclassing Entity to make Props. Props are too different. we can make Prop it's
+        # own class or even base-class since it might work well as that for many kinds of props.
 
-
-    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(), so we can disable that for Props.
         pass
 
 
@@ -341,15 +331,71 @@ def event_meatball(groups: list[pygame.sprite.Group]):
         )  # PyCharm FALSE WARNING HERE (AbstractGroup)
 
 
-def refresh_scoreboard(sboard: pygame.font.Font, score: int):
+# TODO: using arg_ here in front because WARN: shadows name 'display_surface' from outer scope. TODO: Find the Best
+# Practice Pattern to solve this issue. So, this implies (and I know) we have access to the global/outer-scope
+# display_surface FROM HERE, so it would seem we are replacing that global display_surface with this local one.
+# So the arg_ prefix (meaning argument) is a good idea, but I want to understand better the very best design pattern
+# I should use. Is it that I should NEVER declare anything like this at global scope and put it in some class?
+# Perhaps. But I like global scope for some things and it is convenient and justifiably CORRECT for certain size and
+# complexity and type of applications. Also remember that inlineing is a performance strategy and this is a game, so
+# one might justify using global objects a lot and having a rather procedural main program. It also depends on the
+# team developing the app. The more people, the more need for controls over variable access and more formal patterns,
+# generally speaking.
+# I have this issue in a few other places, (delta_time) for example. I've sort of been using the g_ prefix in a
+# related context, which is just labeling the other side of the same issue I think. Again, We could choose to solve
+# this (or clarify and formalize the correct pattern to use) in a number of ways. This function here is just one
+# try at part of the solution, so I can see how it looks, feels and works, both in the app but also in the PyCharm
+# and the MyPy linting (and PEP8 and all the other good best practices, not the least of which is my own sensibility
+# and experience.)
+# UPDATE: Same for arg_scoreboard_font. I'm leaning towards a new concept here.
+# How about prefix these at the point of the global definition and use two prefix naming conventions:
+# gw_ Means globally defined/located and possible/allowed to be written to/changed from somewhere else (inner scope).
+# gr_ Means globally defined/located and not allowed to be written to, only read from.
+# This applies to methods as well, If a method will be used from an inner scope which can change the state of the g_
+# object/variable, then use gw_. Only use gr_ if no inner scope reference to it will ever do anything which changes
+# its state/value(s). This seems like an improvement on all my other ideas so far for this issue.
+# This is my own convention and idea and I think most folks simply just access stuff as they choose up until it
+# becomes a problem for themselves or their team. Perhaps a common solution is some naming convention (which really
+# is just a visual reminder, but those are valuable). Lets also remember that another possible solution is to never
+# declare hardly anything at the global/main level and always create some other class or object to 'contain' it and
+# reference it through. Makes it cleaner and probably also easier to use separate files and import as well if you
+# eventually also need to do that as your sheer code volume increases at all levels (especially main/global though.)
+#
+def update_and_draw_scoreboard(
+            arg_display_surface: pygame.display,
+            arg_scoreboard_font: pygame.font.Font,
+            score: int,
+        ) -> None:
+    # -------- SCOREBOARD TEXT:
     score_text = str(score)
-    scoreboard_surf: pygame.Surface = sboard.render(
+    scoreboard_surf: pygame.Surface = arg_scoreboard_font.render(
         text=score_text,
         antialias=True,
-        color='black',
-        bgcolor='white',
+        color=cfg.SCR_FONT_COLOR,  # TODO: Take this arg out and use cfg OR make other cfgs into args !?? Consistency.
+        bgcolor=None,
     )
-    return scoreboard_surf
+    scoreboard_rect: pygame.FRect = scoreboard_surf.get_frect(center=(cfg.SCR_X, cfg.SCR_Y))
+
+    # -------- SCORBOARD BORDER:
+    scoreboard_bord_surf = pygame.Surface((cfg.SCR_WIDTH, cfg.SCR_HEIGHT), pygame.SRCALPHA)
+    scoreboard_bord_rect: pygame.FRect = scoreboard_bord_surf.get_frect(
+            center=(cfg.SCR_X, cfg.SCR_Y + cfg.SCR_FONT_ADJUST_Y)
+        )
+
+    # DRAW BORDER ONTO THE SURFACE I MADE FOR THAT PURPOSE AND THEN BLIT THAT BORDER SURFACE ONTO DISPLAY SURFACE.
+    # pygame.draw.rect(scoreboard_bord_surf, cfg.SCR_BORDER_COLOR, scoreboard_bord_rect, width=8, border_radius=8)
+
+    # DRAW BORDER DIRECTLY ONTO THE DISPLAY SURFACE
+    pygame.draw.rect(
+            arg_display_surface,
+            cfg.SCR_BORDER_COLOR,
+            scoreboard_bord_rect,
+            width=cfg.SCR_BORDER_THICKNESS,
+            border_radius=cfg.SCR_BORDER_RADIUS,
+        )
+
+    arg_display_surface.blit(scoreboard_surf, scoreboard_rect)  # ** DISABLED ** NO FONT. BORDER NOT WORKING YET.
+    # arg_display_surface.blit(scoreboard_bord_surf, scoreboard_bord_rect)
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -362,13 +408,13 @@ pygame.init()
 #     print(fontitem)
 
 # INIT SCOREBOARD
-if cfg.SCORE_FONT_FORCE_SYSTEM:
+if cfg.SCR_FONT_FORCE_SYSTEM:
     # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
     # Each OS is going to have different fonts and issues with them, I am sure. Currently tested on Windows only.
-    scoreboard_font = pygame.font.SysFont(cfg.SCORE_SYSTEM_FONT, cfg.SCORE_FONT_SIZE)
+    scoreboard_font = pygame.font.SysFont(cfg.SCR_SYSTEM_FONT, cfg.SCR_FONT_SIZE)
 else:
     # Or we just use our included font. Probably a good default policy. This entire project is experimental, so we explore!
-    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCORE_FONT_FILENAME), cfg.SCORE_FONT_SIZE)
+    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCR_FONT_FILENAME), cfg.SCR_FONT_SIZE)
 
 # NOTE: If you request a bad System Font name, you get a warning and the PyGame still works. (some default font. cool.)
 # "UserWarning: The system font 'notosansbold' couldn't be found. Did you mean: 'notosansmodi', 'notosanssymbols', 'notosansbuhid'?"
@@ -511,18 +557,18 @@ if not __name__ == '__main__':
         "Main execution will not be started. Normally this file is executed as the app entry point and not imported.")
     sys.exit(0)
 
-bgpath = os.path.join(cfg.ASSET_PATH, cfg.BGIMG)
-
 if cfg.DEBUG:
     bg_surface = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT))
     bg_surface.fill(cfg.BGCOLOR)
 else:
-    bg_surface = pygame.image.load(bgpath)
+    bg_surface = pygame.image.load(os.path.join(cfg.ASSET_PATH, cfg.BGIMG))
 
 running: bool = True
-ephase = None  # TODO: Hint type here.
+ephase: dict[str, int] | None = None
 g_ephase_name: str | None = None
-g_score: int = 0
+g_score: int = 1776  # Normally 0. During development with continuous testing, starting at '1776'. Why 1776?
+# The United States of America, the greatest nation on Earth, founded on freedom and the rights of the citizenry,
+# formally came into existence in 1776 A.D., with the Declaration of Independence.
 
 ephase_count: int = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()
@@ -582,8 +628,6 @@ while running:
     all_greenballs.update(g_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
     all_meatballs.update(g_delta_time, g_ephase_name)
 
-    # Re-render the new scoreboard surface. We will soon draw it below.
-    sboard_surf = refresh_scoreboard(scoreboard_font, g_score)
 
     # ###############################################    COLLISIONS    #################################################
 
@@ -612,8 +656,8 @@ while running:
     all_greenballs.draw(display_surface)
 
     # SCOREBOARD
-    if cfg.SCOREBOARD:
-        display_surface.blit(sboard_surf, (cfg.SCORE_X, cfg.SCORE_Y))
+    if cfg.SCR:
+        update_and_draw_scoreboard(display_surface, scoreboard_font, g_score)
 
     # PLAYER(s)
     all_players.draw(display_surface)

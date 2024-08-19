@@ -8,17 +8,23 @@ import collections
 
 SCREEN_WIDTH: int = 1640
 SCREEN_HEIGHT: int = 860
-SCOREBOARD: bool = True
-SCORE_X: int = math.floor(SCREEN_WIDTH / 2)
-SCORE_Y: int = math.floor(0.92 * SCREEN_HEIGHT)
-SCORE_HEIGHT: int = 20
-SCORE_WIDTH: int = 100
-SCORE_FONT_FILENAME = 'RabbidHighwaySignII-TTF.ttf'
-SCORE_SYSTEM_FONT = 'notosansbold'  # Only tested on Windows. Early font-validation, fallback, loading is still evolving.
-SCORE_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windows)
+# SCOREBOARD DESIGN & FONT - (SCR)
+SCR: bool = True
+SCR_X: int = math.floor(SCREEN_WIDTH / 2)
+SCR_Y: int = math.floor(0.92 * SCREEN_HEIGHT)
+SCR_WIDTH: int = 120
+SCR_HEIGHT: int = 60
+SCR_FONT_FILENAME = 'RabbidHighwaySignII-TTF.ttf'
+SCR_SYSTEM_FONT = 'notosansbold'  # Only tested on Windows. Early font-validation, fallback, loading is still evolving.
+SCR_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windows)
 # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
 #      Survey this on Windows (already done for Win 11), MacOS and Linux (at least Ubuntu desktop.)
-SCORE_FONT_SIZE: int = 40
+SCR_FONT_ADJUST_Y: int = -4  # Vertical position adjustment, affected by Font selection, size, platform, other factors.
+SCR_FONT_SIZE: int = 40
+SCR_FONT_COLOR: str = 'green'
+SCR_BORDER_COLOR: str = 'red'
+SCR_BORDER_THICKNESS: int = 4
+SCR_BORDER_RADIUS: int = 10
 
 TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
 GAME_TITLE: str = 'Goldfish Picnic'

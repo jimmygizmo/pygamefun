@@ -1,0 +1,75 @@
+
+
+Fixing how update() is handled in Prop and even considering that Prop maybe should not be an Entity and should be
+something that is part of map-generation features etc or some other kind of object, different from Entity that
+specifically does not move. Maybe we are talking about making Prop it's own base class ... OR .. even, further
+sub-classing below Entity so that. OR BECAUSE Entity is the ideal name for the MOST BASE CLASS, Maybe do this:
+
+Entity---------------------\
+   |                       |
+Mover                    Fixed--- etc. (many things like the stationary flowers. some could be hard and some pass-over/through)
+   |
+   +---- Player
+   |
+   +---- Weapon
+   |
+   +---- Npc
+   |
+   +----
+
+
+Slightly different topic, but I was also looking at Weapon, 'meatball' and 'greenball'.
+I think some refactoring will happen here. One is like a hazard that spawns and moves but is maybe 'simple'.
+The other is a 'projectile' (of weapons) not really a Weapon. (It was just an early design and I of course knew
+I would be evolving things like this.)
+Do I make a Meatball and Greenball class?
+This might be a good start, but then one might think of what base class these two might share?
+Entity? No I don't think Entity so much right away. ... not unless we do the further BASE-shift of Entity I discuss
+above, Both of these would be Movers though ... hmmm.
+
+So, figuring out your ideal class hierarchy and other design patters you will use is a more involved task than folks
+might realize. It's a constant evolution and there are often more than one correct way to do things. Ultimately as
+other factors come into play, those will help make decisions about seemigly similar strategies and they really need
+to go.
+
+
+class Prop(Entity):
+    instance_count: int = 0
+    def __init__(self,
+                groups: list[pygame.sprite.Group],
+                img_filename: str,
+                x: float,
+                y: float,
+            ):
+        self.instance_id: int = Prop.instance_count
+        # TODO: THINKING about the design pattern here. We are still calling update after forcing in specs to
+        # stay stationary. update() is meant to update position, hence motion. Props by definition don't move. Is it
+        # not MORE correct for a thing that does not move to SIMPLY not call update at all? Since Entity will
+        # In this case, we would not want the parent Entity method (inherited by the Prop instance) to get called.
+        # So this means we would just override update() here and then pass. This seems more correct than setting
+        # special 'motionless' speed and direction and then calling the code to update for movement. It is simpler
+        # and more efficient to do as I have described. I'll leave these comments here and address this in a later
+        # push.
+        prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
+        prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
+        super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        Prop.instance_count += 1
+
+    # def update(self, delta_time: float, ephase_name: str):
+    #     super().update(delta_time, ephase_name)
+    # # TODO: Wait a minute ?!?!    Shouldn't I just delete all of this update() then it will use super.update() anyhow.
+    # # Kind of a DUH! thing but I just noticed this. In Props. UPDATE: What I just did here is correct, BUT this is
+    # before I reconsidered things furthere as I wrote about at 'THINKING'. In a following push I will be removing the
+    # special no motion variables for speed and direction and then I will override update() here and simply pass.
+    # This is the simplest, most efficient and most correct thing to for 'Entities' which do not move, such as Props.
+    # Honestly, Entities are meant for things that move .. so perhaps we are moving towards making a Prop something
+    # else, that does not inherit from Entity at all. We will see. This is also just a new idea to consider over a
+    # few more commits. As I usually do, when I implement this in the next push or so, I will move these comments and
+    # some related code context into a notes file. I may use all this content to generate further educational material.
+
+
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls, so we can disable that for Props.
+        pass
+
+
+

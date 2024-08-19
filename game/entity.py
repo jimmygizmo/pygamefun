@@ -195,7 +195,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'grumpy-cat-110x120.png',
         'flip': True,
-        'resize': False,
+        'resize': True,
         'w': 220,
         'h': 240,
         'color': 'blanchedalmond',
