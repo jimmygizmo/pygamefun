@@ -19,12 +19,13 @@ SCR_SYSTEM_FONT = 'notosansbold'  # Only tested on Windows. Early font-validatio
 SCR_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windows)
 # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
 #      Survey this on Windows (already done for Win 11), MacOS and Linux (at least Ubuntu desktop.)
-SCR_BORDER_DRAW_COMPROMISE: bool = True  # Until drawing on dedicated border surface works, must draw on display_surface.
-SCR_FONT_ADJUST_Y: int = -4  # Vertical position adjustment, affected by Font selection, size, platform, other factors.
+SCR_FONT_ADJUST_Y: int = -5  # Vertical position adjustment, affected by Font selection, size, platform, other factors.
 SCR_FONT_SIZE: int = 40
 SCR_FONT_COLOR: str = 'green'
 SCR_BORDER_COLOR: str = 'blue'
 SCR_BORDER_THICKNESS: int = 8
+SCR_BORDER_PAD_X: int = 32
+SCR_BORDER_PAD_Y: int = 16
 SCR_BORDER_RADIUS: int = 10
 
 TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.

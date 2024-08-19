@@ -320,15 +320,14 @@ def event_meatball(groups: list[pygame.sprite.Group]):
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
-    # print(f"Meatball spawning at : {spawn_x}, {spawn_y}")
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
             x=spawn_x,
             y=spawn_y,
-            direction=pygame.math.Vector2((0.0, 1.0)),  # Down (Meatballs fall from the sky.)
+            direction=pygame.math.Vector2((0.0, 1.0)),  # Meatballs fall straight down.
             speed=meatball_spec['s'],
-        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+        )
 
 
 def update_and_draw_scoreboard(
@@ -336,52 +335,26 @@ def update_and_draw_scoreboard(
             arg_scoreboard_font: pygame.font.Font,
             score: int,
         ) -> None:
-    # -------- SCOREBOARD TEXT - (CREATE ONLY FOR NOW, DRAW AFTER DEALING WITH BORDER. WE NEED THE RECT.):
+    # -------- SCOREBOARD TEXT
     score_text = str(score)
     scoreboard_surf: pygame.Surface = arg_scoreboard_font.render(
             text=score_text,
             antialias=True,
-            color=cfg.SCR_FONT_COLOR,  # TODO: Take this arg out and use cfg OR make other cfgs into args !?? Consistency.
-            bgcolor=None,
+            color=cfg.SCR_FONT_COLOR,
+            bgcolor=None,  # TODO: Should this arg just be left off?
         )
     scoreboard_rect: pygame.FRect = scoreboard_surf.get_frect(center=(cfg.SCR_X, cfg.SCR_Y))
+    arg_display_surface.blit(scoreboard_surf, scoreboard_rect)
 
-    # -------- SCORBOARD BORDER - (DRAW DIRECTLY TO DISPLAY OR USE AN INTERMEDIATE SURFACE - !under development!):
-
-    # Although we may not use the surface here, (depends on cfg and how we draw.) We ALWAYS use the rect:
-    scoreboard_bord_surf = pygame.Surface((cfg.SCR_WIDTH, cfg.SCR_HEIGHT), pygame.SRCALPHA)
-    # TODO: We could improve this IF we could compose this rect by itself and get the same set of values in another way.
-    scoreboard_bord_rect: pygame.FRect = scoreboard_bord_surf.get_frect(
-            center=(cfg.SCR_X, cfg.SCR_Y + cfg.SCR_FONT_ADJUST_Y)
-        )
-
-    if cfg.SCR_BORDER_DRAW_COMPROMISE:
-        # DRAW BORDER DIRECTLY ONTO THE DISPLAY SURFACE (Thus, scoreboard_bord_surf is not ever used.)
-        # *** This is here because I have not yet been able to get the below working to use an intermediate surface. ***
-        pygame.draw.rect(
-                arg_display_surface,
-                cfg.SCR_BORDER_COLOR,
-                scoreboard_bord_rect,
-                width=cfg.SCR_BORDER_THICKNESS,
-                border_radius=cfg.SCR_BORDER_RADIUS,
-            )
-
-        arg_display_surface.blit(scoreboard_surf, scoreboard_rect)  # ** DISABLED ** NO FONT. BORDER NOT WORKING YET.
-    else:
-        # DRAW BORDER DIRECTLY ONTO A NEW, DEDICATED SURFACE JUST FOR THE BORDER, TO BE BLITTED SEPARATELY/NORMALLY.
-        # *** Trying to get this working, but I just get a rect filled with black. pygame.SRCALPHA did not help. ***
-        pygame.draw.rect(
-            scoreboard_bord_surf,
+    # -------- SCORBOARD BORDER
+    pygame.draw.rect(
+            arg_display_surface,
             cfg.SCR_BORDER_COLOR,
-            scoreboard_bord_rect,
+            scoreboard_rect.inflate(cfg.SCR_BORDER_PAD_X, cfg.SCR_BORDER_PAD_Y)
+                .move(0, cfg.SCR_FONT_ADJUST_Y),
             width=cfg.SCR_BORDER_THICKNESS,
             border_radius=cfg.SCR_BORDER_RADIUS,
         )
-
-        arg_display_surface.blit(scoreboard_bord_surf, scoreboard_bord_rect)
-
-    # -------- SCOREBOARD TEXT - (FINALLY DRAW THE FONT SURFACE WE RENDERED IN THE FIRST STEP):
-    arg_display_surface.blit(scoreboard_surf, scoreboard_rect)
 
 
 # ###############################################    INITIALIZATION    #################################################
