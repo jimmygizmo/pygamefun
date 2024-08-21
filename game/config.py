@@ -8,7 +8,8 @@ import collections
 
 SCREEN_WIDTH: int = 1640
 SCREEN_HEIGHT: int = 860
-# SCOREBOARD DESIGN & FONT - (SCR)
+
+# SCOREBOARD DESIGN - FONT, COLORS, POSITIONING, BORDER - (SCR prefix)
 SCR: bool = True
 SCR_X: int = math.floor(SCREEN_WIDTH / 2)
 SCR_Y: int = math.floor(0.92 * SCREEN_HEIGHT)
@@ -22,7 +23,7 @@ SCR_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windo
 SCR_FONT_ADJUST_Y: int = -5  # Vertical position adjustment, affected by Font selection, size, platform, other factors.
 SCR_FONT_SIZE: int = 40
 SCR_FONT_COLOR: str = 'green'
-SCR_BORDER_COLOR: str = 'blue'
+SCR_BORDER_COLOR: str = 'black'
 SCR_BORDER_THICKNESS: int = 8
 SCR_BORDER_PAD_X: int = 32
 SCR_BORDER_PAD_Y: int = 16
@@ -36,6 +37,7 @@ BGIMG: str = 'grass-field-med-1920x1249.jpg'  # 'grass-field-med-1920x1249.jpg' 
 ASSET_PATH: str = 'assets'  # Relative path with no trailing slash.
 DEBUG: bool = False
 ACID_MODE: bool = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
+WHITEOUT_MODE: bool = False  # White-out all objects in a demonstration of multiple Mask features.
 
 LASER_COOLDOWN_DURATION: int = 100  # Milliseconds - minimum time between laser firing
 PROJECTILE_MARGIN: int = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
