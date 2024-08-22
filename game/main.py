@@ -94,10 +94,12 @@ class Entity(pygame.sprite.Sprite):
         # Activate the correctly-facing image and mask, based on X direction.
         if self.dir.x < 0:
             self.image = self.surface_l
-            self.mask = self.mask_surf_l
+            # self.mask = self.mask_surf_l  # When I use this; error: object has no attribute 'overlap'.
+            self.mask = self.mask_l  # When I use this; error: object has no attribute 'overlap'. ** VERIFIED FIX **
         else:
             self.image = self.surface_r
-            self.mask = self.mask_surf_r
+            # self.mask = self.mask_surf_r  # When I use this; error: object has no attribute 'overlap'.
+            self.mask = self.mask_r  # When I use this; error: object has no attribute 'overlap'. ** VERIFID FIX **
 
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
