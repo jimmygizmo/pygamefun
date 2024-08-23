@@ -8,7 +8,7 @@ from typing import TypedDict
 import pygame
 import random
 import resizer
-
+from game.entity import EnviroSpec
 
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
@@ -39,18 +39,20 @@ class Entity(pygame.sprite.Sprite):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Prop has no e_spec. All others do.
             ):
         self.base_instance_id: int = Entity.base_instance_count
         self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
         self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
-        self.mask_l: pygame.Mask = SCACHE[img_filename]['mask_l']  # Mask from surface LEFT
-        self.mask_r: pygame.Mask = SCACHE[img_filename]['mask_r']  # Mask from surface RIGHT
+        self.mask_l: pygame.Mask = SCACHE[img_filename]['mask_l']
+        self.mask_r: pygame.Mask = SCACHE[img_filename]['mask_r']
         self.mask_surf_l: pygame.Surface = SCACHE[img_filename]['mask_surf_l']  # TODO: These may be used later for special effects.
         self.mask_surf_r: pygame.Surface = SCACHE[img_filename]['mask_surf_r']  # TODO: "
         self.x: float = x
         self.y: float = y
-        self.dir: pygame.math.Vector2 = direction  # Direction
-        self.speed: float = speed  # Speed
+        self.dir: pygame.math.Vector2 = direction
+        self.speed: float = speed
+        self.e_spec = e_spec
         self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
         # self.mask: pygame.Mask = pygame.mask.from_surface(self.image)  # Placeholder (not very efficient. Maybe use type or|None.)
         self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
@@ -67,8 +69,8 @@ class Entity(pygame.sprite.Sprite):
 
     def update(self, delta_time: float, ephase_name: str):
         # NOTE: ephase_name ARG had to be added to places it is not actually used. (* PyCharm static analysis warning *)
-        # Have not looked at this in weeks but I wanted to comment: This is related to the need to override update()
-        # sometimes.
+        # Have not looked at this in weeks, but I wanted to comment: This is related to the need to override update()
+        # sometimes.  # TODO: FIX THIS. PROBABLY MAKE OPTIONAL WITH | None = None ETC. WHATEVER. Should not have to include any un-used args.
 
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
@@ -116,20 +118,23 @@ class Player(Entity):
     def __init__(self,
                 groups: list[pygame.sprite.Group],
                 img_filename: str,
-                weapon_spec: ent.WeaponSpec,
+                weapon_spec: ent.WeaponSpec,  # TODO: SOLVE THIS SHADOW ISSUE. REFER TO OTHER NOTES ON arg_ gr_ gw_ PREFIX IDEAS
+                weapon_e_spec: ent.EnviroSpec,  # TODO: SOLVE THIS SHADOW ISSUE. REFER TO OTHER NOTES ON arg_ gr_ gw_ PREFIX IDEAS
                 weapons_groups: list[pygame.sprite.Group],
                 x: float,
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Player.instance_count
         self.weapon_spec = weapon_spec
+        self.weapon_e_spec = weapon_e_spec
         self.weapons_groups = weapons_groups
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = cfg.LASER_COOLDOWN_DURATION  # milliseconds
-        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Player.instance_count += 1
 
     def laser_timer(self):
@@ -160,7 +165,8 @@ class Player(Entity):
                     y=self.rect.midtop[1],
                     direction=self.weapon_spec['d'],
                     speed=self.weapon_spec['s'],
-                )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+                    e_spec=self.weapon_e_spec,
+                )
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         super().update(delta_time, ephase_name)
@@ -175,9 +181,10 @@ class Weapon(Entity):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Weapon.instance_count
-        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
@@ -205,9 +212,10 @@ class Npc(Entity):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Npc.instance_count
-        super().__init__(groups, img_filename, x, y, direction, speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Npc.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str):
@@ -229,7 +237,7 @@ class Prop(Entity):
         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
-    # I forgot that Entity.update() is where the surface itself is created based on direction L or R and thus we have
+    # I forgot that Entity.update() is where the surface itself is created based on direction L or R, and thus we have
     # to call Entity.update() .. meaning super() from here.
     def update(self, delta_time: float, ephase_name: str):
         super().update(delta_time, ephase_name)
@@ -257,19 +265,19 @@ class Prop(Entity):
 #            All enviro phase keys will not be prefixed with "e_"
 
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
-    pass  # TEMPORARILY DISABLED PER THE ABOVE REASONS.
-    # # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
-    # if ephase_name == 'peace':
-    #     xself.speed = xself.spec['e_p']
-    # elif ephase_name == 'rogue':
-    #     xself.speed = xself.spec['e_r']
-    # elif ephase_name == 'chaos':
-    #     xself.speed = xself.spec['e_c']
-    # elif ephase_name == 'frozen':
-    #     xself.speed = xself.spec['e_f']
-    # else:
-    #     raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
-    #                      "Check values in ENVIRO_PHASES config.")
+    print(xself.e_spec)
+    # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
+    if ephase_name == 'peace':
+        xself.speed = xself.e_spec['e_p']
+    elif ephase_name == 'rogue':
+        xself.speed = xself.e_spec['e_r']
+    elif ephase_name == 'chaos':
+        xself.speed = xself.e_spec['e_c']
+    elif ephase_name == 'frozen':
+        xself.speed = xself.e_spec['e_f']
+    else:
+        raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
+                         "Check values in ENVIRO_PHASES config.")
 
 def load_image(
             filename: str,
@@ -343,7 +351,7 @@ def load_image(
     SCACHE[filename] = c_item
 
 
-def event_meatball(groups: list[pygame.sprite.Group]):
+def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.EnviroSpec):
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
@@ -354,6 +362,7 @@ def event_meatball(groups: list[pygame.sprite.Group]):
             y=spawn_y,
             direction=pygame.math.Vector2((0.0, 1.0)),  # Meatballs fall straight down.
             speed=meatball_spec['s'],
+            e_spec=e_spec_meatball,
         )
 
 
@@ -382,6 +391,44 @@ def update_and_draw_scoreboard(
             width=cfg.SCR_BORDER_THICKNESS,
             border_radius=cfg.SCR_BORDER_RADIUS,
         )
+
+
+def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec) -> ent.EnviroSpec:
+    spec_out: ent.EnviroSpec = {  # Do we really need these bloated inits to keep PyCharm and MyPy type-hinting checks fully happy? NO.
+            'e_p': -9999.9,  # Enviro: Peace (speed)
+            'e_r': -9999.9,  # Enviro: Rogue (speed)
+            'e_c': -9999.9,  # Enviro: Chaos (speed)
+            'e_f': -9999.9,  # Enviro: Frozen (speed)
+        }
+    # But in this case, the -9999.9 from the 'bloated init' serves as a troubleshooting tool and extra built-in state info.
+    # There are benefits too. So I am not just eliminating such inits. In SOME places I am eliminating big inits and using
+    # a type | None and = None for the light-weight init. That is great a lot of the time, HOWEVER, look out for cases where
+    # there is other value added to a more heavyweight init. I would not say that just SELF-DOCUMENTING is enough of a
+    # justification, possibly, but not at the expense of a lot of memory or CPU usage. Decisions of when/where to optimize
+    # or refactor must always be done intelligently and never according to some globally/dumbly applied mantra or philosophy.
+    # Individual developers should be responsible for balancing standards against their own time-phased development plan
+    # that uses experience and relies on trust to decide on subtleties like these type-heavy vs. light/None inits. Never
+    # force your developers to do things like this one way everywhere no matter what. Have a light hand and discuss with them,
+    # don't give mandates. You will frequently swuash a lot of values if you force a lot of standards on intelligent and
+    # experienced developers. You devs usually know the trade-offs of certain design decisions and will implement the correct
+    # patterns according to the right timeline. Let them work organically. You will get 10x value over the medium and long-haul.
+    # Micromanagers will rapidly destroy any good dev team, faster than FANG competitor's recruiter poaching your team with unlimited
+    # budgets behind their hunger for all of your best devs. Good devs will not tolerate micromanagement and good devs
+    # will only -just- barely tolerate Agile and other misguided instruments of destruction and political insanity.
+    # If you have or want to get and or keep the very best coders, leave them alone. Give them high-level goals and listen
+    # to them tell you about progress frequently. Request demos of early progress THEY have planned and completed on their
+    # own plan and schedule. Hold them to major milestones, dates and features WITH BUILT-IN OPTIONAL CONTINGENCIES,
+    # (features you can afford to drop or postpone.) Hold them to all that, but stay the hell out of their way and keep
+    # all the meddling middle-managers out of their way and out of their hair. You'll lose your best devs to deep pockets
+    # in the industry, if you do not. Then you will find your stuggle with mediocre developers to be the core of the demise
+    # of your product-line and possibly your company.
+    key: ent.EnviroKeys  # Must declare the type before the loop as we cannot do this in the for statement itself.
+    for key in spec_in.keys():
+        if key.startswith('e_'):
+            spec_out[key] = spec_in[key]
+
+    print(spec_out)
+    return spec_out
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -471,16 +518,21 @@ for i, player_spec in enumerate(ent.player_specs):
             width=player_spec['w'],
             height=player_spec['h'],
         )
+    e_spec = composed_enviro_spec(player_spec)
+    weapon_spec = ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX]
+    weapon_e_spec = composed_enviro_spec(weapon_spec)  # TODO: This call COULD be done inside Player. Then we would not pass it to Player().
     player: Player = Player(
             groups=[all_sprites, all_players],
             img_filename=player_spec['img_filename'],
-            weapon_spec=ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX],
+            weapon_spec=weapon_spec,
+            weapon_e_spec=weapon_e_spec,
             weapons_groups=new_greenballs_groups,
             x=player_spec['x'],
             y=player_spec['y'],
             direction=player_spec['d'],
             speed=player_spec['s'],
-        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+            e_spec=e_spec,
+        )
     players[player_spec['name']] = player  # Key off name or instance id. name should be unique
 
 # INSTANITATE NPC SPRITES
@@ -494,6 +546,7 @@ for i, npc_spec in enumerate(ent.npc_specs):
             width=npc_spec['w'],
             height=npc_spec['h'],
         )
+    e_spec = composed_enviro_spec(npc_spec)
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs, all_colliders],
             img_filename=npc_spec['img_filename'],
@@ -501,7 +554,8 @@ for i, npc_spec in enumerate(ent.npc_specs):
             y=npc_spec['y'],
             direction=npc_spec['d'],
             speed=npc_spec['s'],
-        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+            e_spec=e_spec,
+        )
     npcs[npc_spec['name']] = npc  # Key off name or instance id. name should be unique
 
 # INSTANITATE PROP SPRITES
@@ -520,7 +574,7 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
             img_filename=generated_prop_spec['img_filename'],
             x=generated_prop_spec['x'],
             y=generated_prop_spec['y'],
-        )  # PyCharm FALSE WARNING HERE (AbstractGroup)
+        )
     props[generated_prop_spec['name']] = prop  # Key off name or instance id. name should be unique
 
 
@@ -563,7 +617,7 @@ clock = pygame.time.Clock()
 meatball_event = pygame.event.custom_type()
 pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
-
+e_spec_meatball = composed_enviro_spec(ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX])
 
 #   * * * * * * * * * * * * * * * * * * * * * * * *
 #   * * * * * * * *    MAIN LOOP    * * * * * * * *
@@ -587,7 +641,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == meatball_event:
-            event_meatball(groups=new_meatballs_groups)
+            event_meatball(groups=new_meatballs_groups, e_spec_meatball=e_spec_meatball)
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################

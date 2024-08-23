@@ -2,10 +2,22 @@
 
 import sys
 import pygame.math  # For pygame.math.Vector2 only.
-from typing import TypedDict
+from typing import TypedDict, Literal
 
 
 # ###########################################    ENTITY SPECIFICATIONS    ##############################################
+
+EnviroSpec = TypedDict('EnviroSpec',
+    {
+        'e_p': float,  # Enviro: Peace (speed)
+        'e_r': float,  # Enviro: Rogue (speed)
+        'e_c': float,  # Enviro: Chaos (speed)
+        'e_f': float,  # Enviro: Frozen (speed)
+    }
+)  # EnviroSpec
+
+EnviroKeys = Literal['e_p', 'e_r', 'e_c', 'e_f']
+
 
 PlayerSpec = TypedDict('PlayerSpec',
     {
