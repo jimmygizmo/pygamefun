@@ -1,0 +1,43 @@
+
+
+
+
+def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec) -> ent.EnviroSpec:
+    spec_out: ent.EnviroSpec = {  # Do we really need these bloated inits to keep PyCharm and MyPy type-hinting checks fully happy? NO.
+            'e_p': -9999.9,  # Enviro: Peace (speed)
+            'e_r': -9999.9,  # Enviro: Rogue (speed)
+            'e_c': -9999.9,  # Enviro: Chaos (speed)
+            'e_f': -9999.9,  # Enviro: Frozen (speed)
+        }
+    # But in this case, the -9999.9 from the 'bloated init' serves as a troubleshooting tool and extra built-in state info.
+    # There are benefits too. So I am not just eliminating such inits. In SOME places I am eliminating big inits and using
+    # a type | None and = None for the light-weight init. That is great a lot of the time, HOWEVER, look out for cases where
+    # there is other value added to a more heavyweight init. I would not say that just SELF-DOCUMENTING is enough of a
+    # justification, possibly, but not at the expense of a lot of memory or CPU usage. Decisions of when/where to optimize
+    # or refactor must always be done intelligently and never according to some globally/dumbly applied mantra or philosophy.
+    # Individual developers should be responsible for balancing standards against their own time-phased development plan
+    # that uses experience and relies on trust to decide on subtleties like these type-heavy vs. light/None inits. Never
+    # force your developers to do things like this one way everywhere no matter what. Have a light hand and discuss with them,
+    # don't give mandates. You will frequently swuash a lot of values if you force a lot of standards on intelligent and
+    # experienced developers. You devs usually know the trade-offs of certain design decisions and will implement the correct
+    # patterns according to the right timeline. Let them work organically. You will get 10x value over the medium and long-haul.
+    # Micromanagers will rapidly destroy any good dev team, faster than FANG competitor's recruiter poaching your team with unlimited
+    # budgets behind their hunger for all of your best devs. Good devs will not tolerate micromanagement and good devs
+    # will only -just- barely tolerate Agile and other misguided instruments of destruction and political insanity.
+    # If you have or want to get and or keep the very best coders, leave them alone. Give them high-level goals and listen
+    # to them tell you about progress frequently. Request demos of early progress THEY have planned and completed on their
+    # own plan and schedule. Hold them to major milestones, dates and features WITH BUILT-IN OPTIONAL CONTINGENCIES,
+    # (features you can afford to drop or postpone.) Hold them to all that, but stay the hell out of their way and keep
+    # all the meddling middle-managers out of their way and out of their hair. You'll lose your best devs to deep pockets
+    # in the industry, if you do not. Then you will find your stuggle with mediocre developers to be the core of the demise
+    # of your product-line and possibly your company.
+    key: ent.EnviroKeys  # Must declare the type before the loop as we cannot do this in the for statement itself.
+    for key in spec_in.keys():
+        if key.startswith('e_'):
+            spec_out[key] = spec_in[key]
+
+    print(spec_out)
+    return spec_out
+
+
+

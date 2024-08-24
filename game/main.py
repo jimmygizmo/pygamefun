@@ -54,7 +54,6 @@ class Entity(pygame.sprite.Sprite):
         self.speed: float = speed
         self.e_spec = e_spec
         self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
-        # self.mask: pygame.Mask = pygame.mask.from_surface(self.image)  # Placeholder (not very efficient. Maybe use type or|None.)
         self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
@@ -252,18 +251,9 @@ class Prop(Entity):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-# NOTE: Disabling enviro_influence temporarily for many reasons:    #### UPDATE: Now re-implementing. See UPDATE below.
-# 1. I have removed spec from instances and this was where new enviro speeds are stored. I need to pass another way now.
-# 2. I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
-# 3. This macro system needs to be super simple and process efficiently OR just pass a simpler dict than spec.
-# 4. Or use callbacks to little functions which implement the enviro responses.
-# 5. When this is figured out I will re-enable the new form. None of this is in the tutorial anyhow.
-# *** MyPy ERROR about PropSpec dict has no keys for p,r,c,f - BUT PropSpec WILL **NEVER** BE PASSED HERE !!! ???
-# (UPDATE: I assume this error will return in a new form, complaining about e_p, e_r, e_c, e_f instead.)
-
-#### UPDATE: Starting to re-implement with the enviro-phase-only stripped dict going back into the instances.
-#            All enviro phase keys will not be prefixed with "e_"
-
+# Enviro-phase ideas: I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
+#     This macro system needs to be super simple and process efficiently. Or use callbacks to little functions which
+#     implement the enviro responses.
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     print(xself.e_spec)
     # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
@@ -367,7 +357,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
 
 
 def update_and_draw_scoreboard(
-            arg_display_surface: pygame.display,
+            arg_display_surface: pygame.Surface,
             arg_scoreboard_font: pygame.font.Font,
             score: int,
         ) -> None:
@@ -400,34 +390,10 @@ def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec)
             'e_c': -9999.9,  # Enviro: Chaos (speed)
             'e_f': -9999.9,  # Enviro: Frozen (speed)
         }
-    # But in this case, the -9999.9 from the 'bloated init' serves as a troubleshooting tool and extra built-in state info.
-    # There are benefits too. So I am not just eliminating such inits. In SOME places I am eliminating big inits and using
-    # a type | None and = None for the light-weight init. That is great a lot of the time, HOWEVER, look out for cases where
-    # there is other value added to a more heavyweight init. I would not say that just SELF-DOCUMENTING is enough of a
-    # justification, possibly, but not at the expense of a lot of memory or CPU usage. Decisions of when/where to optimize
-    # or refactor must always be done intelligently and never according to some globally/dumbly applied mantra or philosophy.
-    # Individual developers should be responsible for balancing standards against their own time-phased development plan
-    # that uses experience and relies on trust to decide on subtleties like these type-heavy vs. light/None inits. Never
-    # force your developers to do things like this one way everywhere no matter what. Have a light hand and discuss with them,
-    # don't give mandates. You will frequently swuash a lot of values if you force a lot of standards on intelligent and
-    # experienced developers. You devs usually know the trade-offs of certain design decisions and will implement the correct
-    # patterns according to the right timeline. Let them work organically. You will get 10x value over the medium and long-haul.
-    # Micromanagers will rapidly destroy any good dev team, faster than FANG competitor's recruiter poaching your team with unlimited
-    # budgets behind their hunger for all of your best devs. Good devs will not tolerate micromanagement and good devs
-    # will only -just- barely tolerate Agile and other misguided instruments of destruction and political insanity.
-    # If you have or want to get and or keep the very best coders, leave them alone. Give them high-level goals and listen
-    # to them tell you about progress frequently. Request demos of early progress THEY have planned and completed on their
-    # own plan and schedule. Hold them to major milestones, dates and features WITH BUILT-IN OPTIONAL CONTINGENCIES,
-    # (features you can afford to drop or postpone.) Hold them to all that, but stay the hell out of their way and keep
-    # all the meddling middle-managers out of their way and out of their hair. You'll lose your best devs to deep pockets
-    # in the industry, if you do not. Then you will find your stuggle with mediocre developers to be the core of the demise
-    # of your product-line and possibly your company.
     key: ent.EnviroKeys  # Must declare the type before the loop as we cannot do this in the for statement itself.
     for key in spec_in.keys():
         if key.startswith('e_'):
             spec_out[key] = spec_in[key]
-
-    print(spec_out)
     return spec_out
 
 
@@ -503,7 +469,8 @@ for prop_t in ent.prop_templates:
 
 # ################################################    INSTANTIATION    #################################################
 
-# TODO: See if we can move the prop spec (spraying/generation) code inside of prop instantiation. Probably can/should.
+# TODO: Consider the merits of moving the prop spec (spraying/generation) code inside of prop instantiation. I'm not
+#    positive it is the best idea, but it needs analysis and might be a clean, logical step.
 
 
 # INSTANITATE PLAYER SPRITE(S)
@@ -604,7 +571,7 @@ else:
     bg_surface = pygame.image.load(os.path.join(cfg.ASSET_PATH, cfg.BGIMG))
 
 running: bool = True
-ephase: dict[str, int] | None = None
+ephase: tuple[str, int] | None = None
 g_ephase_name: str | None = None
 g_score: int = 1776  # Normally 0. During development with continuous testing, starting at '1776'. Why 1776?
 # The United States of America, the greatest nation on Earth, founded on freedom and the rights of the citizenry,
@@ -646,16 +613,17 @@ while running:
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
+    # TODO: CHANGING TO LIST OF TUPLES, NOT COLLECTIONS.DEQUEUE.
     # ENVIRO_PHASES is a collections.deque instance and we popleft() the first/current 'phase'.
     #     Then we add the phase we removed from the left/start of the (deque) to the end (right side/last position).
     if ephase is None:
         ephase = cfg.ENVIRO_PHASES[0]
         g_ephase_name = ephase[0]
         ephase_count = ephase[1]
-        cut_ephase = cfg.ENVIRO_PHASES.popleft()
-        cfg.ENVIRO_PHASES.append(cut_ephase)
+        cut_ephase = cfg.ENVIRO_PHASES.pop(0)  # Pop one off the left.
+        cfg.ENVIRO_PHASES.append(cut_ephase)  # Stick it back on the right, and we'll use it for its specified duration.
     else:
-        ephase_count -= 1  # Decrement the counter for the current phase.
+        ephase_count -= 1  # Decrement the counter for the current ephase while we use it for its specified duration.
         if ephase_count < 1:
             ephase = None
 
@@ -671,17 +639,21 @@ while running:
 
     # ###############################################    COLLISIONS    #################################################
 
-    if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Soon will likely use sprite collisions, not rect.
+    if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Rect collision example. Mainly we will use sprite collisions, often using collide_mask.
         print("BOINGGGGGGG!!")
 
     for greenball in all_greenballs:
-        # greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True)
+        # PyCharm Warning, POSSIBLY FALSE, on: "pygame.sprite.collide_mas" callback argument.
+        # Expected type '(_SpriteSupportsGroup | Any, _TSprite2) -> Any | None'
+        # (matched generic type '(_TSprite ≤: _SpriteSupportsGroup, _TSprite2 ≤: _SpriteSupportsGroup) -> Any | None'),
+        # got '(left: _HasImageAndRect | _HasMaskAndRect, right: _HasImageAndRect | _HasMaskAndRect) -> tuple[int, int] | None' instead
+        # NOTE: MyPy does not complain about this, only PyCharm. I have had other false warnings like this and some went away with PyCharm upgrades.
         greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True, pygame.sprite.collide_mask)
         if greenball_col_sprites:
             for col in greenball_col_sprites:
                 g_score += 1  # g_ variable from outer scope. We do not need 'global' keyword. Limited use of these.
                 print("                   *  *  *  BOOM!  *  *  *")
-                greenball.kill()  # Meatball(s) was/were killed above in spritecollide(). Now greenball is killed too.
+                greenball.kill()
 
 
     # ##################################################    DRAW    ####################################################
