@@ -1,0 +1,24 @@
+
+
+
+
+# # DEBUG/INFO-GATHER CODE
+# system_fonts = pygame.font.get_fonts()
+# for fontitem in system_fonts:
+#     print(fontitem)
+
+
+
+# INIT SCOREBOARD
+if cfg.SCR_FONT_FORCE_SYSTEM:
+    # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
+    # Each OS is going to have different fonts and issues with them, I am sure. Currently tested on Windows only.
+    scoreboard_font = pygame.font.SysFont(cfg.SCR_SYSTEM_FONT, cfg.SCR_FONT_SIZE)
+else:
+    # Or we just use our included font. Probably a good default policy. This entire project is experimental, so we explore!
+    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCR_FONT_FILENAME), cfg.SCR_FONT_SIZE)
+
+# NOTE: If you request a bad System Font name, you get a warning and the PyGame still works. (some default font. cool.)
+# "UserWarning: The system font 'notosansbold' couldn't be found. Did you mean: 'notosansmodi', 'notosanssymbols', 'notosansbuhid'?"
+#     " ... Using the default font instead."
+

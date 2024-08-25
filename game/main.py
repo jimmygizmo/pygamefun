@@ -237,6 +237,14 @@ class Prop(Entity):
                 y: float,
             ):
         self.instance_id: int = Prop.instance_count
+        # TODO: In the analysis of "should Prop even be a sub-class of Entity?" the following "hack variables" can serve
+        #     as perhaps one of the key arguments for creating some new kind of "immobile" base class, more-related to
+        #     constructing maps than to dealing with moving objects, which is what Entity is for. The Map base class
+        #     may need to be introduced and then Prop would inherit from Map. Just brainstorming. I love dynamic map
+        #     generation so there is a lot of interesting map-related functionality we could start working with in a
+        #     new Map base class, and Prop would be one of the first and perhaps simpler sub-classes of Map. NOTE: I
+        #     also considered call this base class "cell" or something like that as I am thinking of it as the elemental
+        #     component (one of very many) which together create all the elements of a "map".
         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
@@ -244,8 +252,7 @@ class Prop(Entity):
 
     def update(self, delta_time: float, ephase_name: str | None = None):
         super().update(delta_time, ephase_name)
-        # TRUE BUT WE CANNOT BYPASS Entity.update():
-        # IMPORTANT POINTS ABOUT UPDATE:
+        # IMPORTANT POINTS ABOUT update() METHODS:
         # 1. The update() method in any Entity subclass or Entity itself is intended for updating position, motion physics
         #     and related actions. Props do not move so we don't have that concern, however there are a few catches.
         # 2. Entity.update() is where the ACTIVE SURFACE (and mask) is created, so you CANNOT bypass/supress that step.
@@ -263,7 +270,7 @@ class Prop(Entity):
         #    hierarchy and what is right at that moment in time in the phases of develoment as well as the tastes of
         #    the coder or coders themselves and what "feels right" (but what is also essentially best-practice as well.)
 
-    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(), so we can disable that for Props.
+    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(). Props don't move.
         pass
 
 
@@ -289,6 +296,7 @@ def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
+
 
 def load_image(
             filename: str,
@@ -418,27 +426,45 @@ def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec)
     return spec_out
 
 
+def template_generated_prop_specs():
+    gen_prop_specs = []
+    for prop_t in ent.prop_templates:
+        for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
+            gen_prop_spec: ent.PropSpec = {
+                'name': prop_t['name'] + str(index),
+                # Unique name of (sprayed) gen_prop_spec. (Compared to npc_spec which are hardcoded.)
+                'instance_id': -1,  # -1 means instance not instantiated yet.
+                'img_filename': prop_t['img_filename'],
+                # Copy the unchanging attributes from the template before handling dynamic ones.
+                'flip': False,
+                'resize': False,
+                'w': prop_t['w'],
+                'h': prop_t['h'],
+                'color': prop_t['color'],
+                'x': 0.0,  # placeholder (mpypy)
+                'y': 0.0,  # placeholder (mpypy)
+            }
+
+            diameter = 2.0 * prop_t['spray_radius']  # Makes it easier to read/understand. Inline this for performance.
+            gen_prop_spec['name'] = prop_t['name'] + "-" + str(index)
+            x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
+            y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
+            gen_prop_spec['x'] = prop_t['x'] + x_offset
+            gen_prop_spec['y'] = prop_t['y'] + y_offset
+
+            gen_prop_specs.append(gen_prop_spec)
+    return gen_prop_specs
+
+
 # ###############################################    INITIALIZATION    #################################################
 
 pygame.init()
 
-# # DEBUG/INFO-GATHER CODE
-# system_fonts = pygame.font.get_fonts()
-# for fontitem in system_fonts:
-#     print(fontitem)
-
 # INIT SCOREBOARD
 if cfg.SCR_FONT_FORCE_SYSTEM:
-    # TODO: Add a cascading load-font test to try for the most common font names based on pygame.font.get_fonts()
-    # Each OS is going to have different fonts and issues with them, I am sure. Currently tested on Windows only.
     scoreboard_font = pygame.font.SysFont(cfg.SCR_SYSTEM_FONT, cfg.SCR_FONT_SIZE)
 else:
-    # Or we just use our included font. Probably a good default policy. This entire project is experimental, so we explore!
     scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCR_FONT_FILENAME), cfg.SCR_FONT_SIZE)
-
-# NOTE: If you request a bad System Font name, you get a warning and the PyGame still works. (some default font. cool.)
-# "UserWarning: The system font 'notosansbold' couldn't be found. Did you mean: 'notosansmodi', 'notosanssymbols', 'notosansbuhid'?"
-#     " ... Using the default font instead."
 
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
@@ -453,7 +479,7 @@ all_meatballs: pygame.sprite.Group = pygame.sprite.Group()
 all_greenballs: pygame.sprite.Group = pygame.sprite.Group()
 all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
-all_colliders: pygame.sprite.Group = pygame.sprite.Group()
+all_colliders: pygame.sprite.Group = pygame.sprite.Group()  # TODO: Might go away. We'll likely always be more specific.
 
 # GROUPS FOR DYNAMIC ENTITIES
 new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs, all_colliders]
@@ -462,31 +488,32 @@ new_meatballs_groups: list[pygame.sprite.Group] = [all_sprites, all_meatballs, a
 
 
 # GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
-generated_prop_specs = []
-for prop_t in ent.prop_templates:
-    for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-        generated_prop_spec: ent.PropSpec = {
-                'name': prop_t['name'] + str(index),  # Unique name of (sprayed) generated_prop_spec. (Compared to npc_spec which are hardcoded.)
-                'instance_id': -1,  # -1 means instance not instantiated yet.
-                'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
-                'flip': False,
-                'resize': False,
-                'w': prop_t['w'],
-                'h': prop_t['h'],
-                'color': prop_t['color'],
-                'x': 0.0,  # placeholder (mpypy)
-                'y': 0.0,  # placeholder (mpypy)
-                }
+# generated_prop_specs = []
+# for prop_t in ent.prop_templates:
+#     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
+#         generated_prop_spec: ent.PropSpec = {
+#                 'name': prop_t['name'] + str(index),  # Unique name of (sprayed) generated_prop_spec. (Compared to npc_spec which are hardcoded.)
+#                 'instance_id': -1,  # -1 means instance not instantiated yet.
+#                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
+#                 'flip': False,
+#                 'resize': False,
+#                 'w': prop_t['w'],
+#                 'h': prop_t['h'],
+#                 'color': prop_t['color'],
+#                 'x': 0.0,  # placeholder (mpypy)
+#                 'y': 0.0,  # placeholder (mpypy)
+#                 }
+#
+#         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
+#         generated_prop_spec['name'] = prop_t['name'] + "-" + str(index)
+#         x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
+#         y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
+#         generated_prop_spec['x'] = prop_t['x'] + x_offset
+#         generated_prop_spec['y'] = prop_t['y'] + y_offset
+#
+#         generated_prop_specs.append(generated_prop_spec)
 
-        diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
-        generated_prop_spec['name'] = prop_t['name'] + "-" + str(index)
-        x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
-        y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
-        generated_prop_spec['x'] = prop_t['x'] + x_offset
-        generated_prop_spec['y'] = prop_t['y'] + y_offset
-
-        generated_prop_specs.append(generated_prop_spec)
-
+generated_prop_specs = template_generated_prop_specs()  # This could be inlined below, but I sort of like the readability and clarity.
 
 # ################################################    INSTANTIATION    #################################################
 
