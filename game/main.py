@@ -30,6 +30,61 @@ SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Valu
 
 # #############################################    CLASS DEFINITIONS    ################################################
 
+class MapThing(pygame.sprite.Sprite):
+    base_instance_count: int = 0
+    def __init__(self,
+                groups: list[pygame.sprite.Group],
+                img_filename: str,
+                x: float,
+                y: float,
+            ):
+        self.base_instance_id: int = MapThing.base_instance_count
+        self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
+        self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
+        self.mask_l: pygame.Mask = SCACHE[img_filename]['mask_l']
+        self.mask_r: pygame.Mask = SCACHE[img_filename]['mask_r']
+        self.mask_surf_l: pygame.Surface = SCACHE[img_filename]['mask_surf_l']  # TODO: These may be used later for special effects.
+        self.mask_surf_r: pygame.Surface = SCACHE[img_filename]['mask_surf_r']  # TODO: "
+        self.x: float = x
+        self.y: float = y
+        # TODO: This is probably an example of a place we want to optimize the init with TYPE: | None = None. See notes elsewhere.
+        #      This does NOT apply EVERYWHERE so be careful. On second check here, IT LOOKS GOOD FOR REFACTOR. OK TO BE None. (| None type)
+        self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
+        self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
+        self.rect: pygame.FRect = pygame.FRect()
+        super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        MapThing.base_instance_count += 1
+        self.rect = self.surface_l.get_frect(center=(self.x, self.y))
+
+        if cfg.WHITEOUT_MODE:
+            self.mask_surf_l.set_colorkey((0, 0, 0))  # Make the black transparent.
+            self.mask_surf_r.set_colorkey((0, 0, 0))  # "
+            self.surface_l = self.mask_surf_l  # White-out the object.
+            self.surface_r = self.mask_surf_r  # "
+
+        # Simple initial "wedge-in" implementation is to just pick the left-facing version for Props.
+        # Later we will be modifing load_image() as noted near here and this part will change a little bit.
+        self.image = self.surface_l
+        self.mask = self.mask_l
+        # self.image = self.surface_r
+        # self.mask = self.mask_r
+
+
+    # NOTICE: No update(), no physics_outer_walls() like Entity has.
+
+    # TODO: NOTES ON REFACTOR PLAN: My issues with the signature for Entity.update() and update() of its subclasses
+    #     may be solved when I move Prop to use the above new base class of MapThing (pending any better name) or I
+    #     may address it at the same time. Also, during this refactoring, I may formalize Entity and now MapThing as
+    #     Abstract Base Classes. We'll see. This is the direction I am moving in and it is probablly just a matter of
+    #     which of the next few commits I will do that in.
+    #     #
+    #     Also, I am leaving in support for both LEFT and RIGHT but really that is mostly so I don't have to
+    #     refactor load_image right away. I considered using a flag to pass to load_image, but there are probably
+    #     better ways. Maybe I can use a wrapper function, or break load image into a two styles of top level
+    #     funcs with some helper funcs. That might be a good idea generally speaking, since load_image is a little bit
+    #     spagettiish already.
+
+
 class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
@@ -39,6 +94,8 @@ class Entity(pygame.sprite.Sprite):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                angle: float,
+                angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Prop has no e_spec. All others do.
             ):
         self.base_instance_id: int = Entity.base_instance_count
@@ -52,7 +109,11 @@ class Entity(pygame.sprite.Sprite):
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction
         self.speed: float = speed
+        self.angle: float = 0.0  # NEW  -  3:28 in vid
+        self.angular_vel: float = 0.0  # NEW  -  3:28 in vid
         self.e_spec = e_spec
+        # TODO: This is probably an example of a place we want to optimize the init with TYPE: | None = None. See notes elsewhere.
+        #      This does NOT apply EVERYWHERE so be careful. On second check here, IT LOOKS GOOD FOR REFACTOR. OK TO BE None. (| None type)
         self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
         self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
         self.rect: pygame.FRect = pygame.FRect()
@@ -120,6 +181,10 @@ class Entity(pygame.sprite.Sprite):
 
 class Player(Entity):
     instance_count: int = 0
+
+    DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+
     def __init__(self,
                 groups: list[pygame.sprite.Group],
                 img_filename: str,
@@ -130,6 +195,8 @@ class Player(Entity):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                angle: float,
+                angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Player.instance_count
@@ -139,7 +206,16 @@ class Player(Entity):
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = cfg.LASER_COOLDOWN_DURATION  # milliseconds
-        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(
+            groups=groups,
+            img_filename=img_filename,
+            x=x,
+            y=x,
+            direction=direction,
+            speed=speed,
+            angle=angle,
+            angular_vel=angular_vel,
+            e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Player.instance_count += 1
 
     def laser_timer(self):
@@ -170,6 +246,8 @@ class Player(Entity):
                     y=self.rect.midtop[1],
                     direction=self.weapon_spec['d'],
                     speed=self.weapon_spec['s'],
+                    angle=DUMMY_ANGLE,
+                    angular_vel=DUMMY_ANGULAR_VEL,
                     e_spec=self.weapon_e_spec,
                 )
         self.laser_timer()
@@ -186,10 +264,21 @@ class Weapon(Entity):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                angle: float,
+                angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Weapon.instance_count
-        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        super().__init__(
+            groups=groups,
+            img_filename=img_filename,
+            x=x,
+            y=y,
+            direction=direction,
+            speed=speed,
+            angle=angle,
+            angular_vel=angular_vel,
+            e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str | None = None):
@@ -217,10 +306,22 @@ class Npc(Entity):
                 y: float,
                 direction: pygame.math.Vector2,
                 speed: float,
+                angle: float,
+                angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
         self.instance_id: int = Npc.instance_count
-        super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        super().__init__(
+            groups=groups,
+            img_filename=img_filename,
+            x=x,
+            y=y,
+            direction=direction,
+            speed=speed,
+            angle=angle,
+            angular_vel=angular_vel,
+            e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
+
         Npc.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str | None = None):
@@ -228,7 +329,20 @@ class Npc(Entity):
         super().update(delta_time, ephase_name)
 
 
-class Prop(Entity):
+class Prop(MapThing):
+    instance_count: int = 0
+    def __init__(self,
+                groups: list[pygame.sprite.Group],
+                img_filename: str,
+                x: float,
+                y: float,
+            ):
+        self.instance_id: int = Prop.instance_count
+        super().__init__(groups, img_filename, x, y)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        Prop.instance_count += 1
+
+
+class PropOld(Entity):
     instance_count: int = 0
     def __init__(self,
                 groups: list[pygame.sprite.Group],
@@ -374,6 +488,8 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
+    DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
@@ -381,6 +497,8 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             y=spawn_y,
             direction=pygame.math.Vector2((0.0, 1.0)),  # Meatballs fall straight down.
             speed=meatball_spec['s'],
+            angle=DUMMY_ANGLE,
+            angular_vel=DUMMY_ANGULAR_VEL,
             e_spec=e_spec_meatball,
         )
 
@@ -486,39 +604,14 @@ new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs,
 new_meatballs_groups: list[pygame.sprite.Group] = [all_sprites, all_meatballs, all_colliders]
 # TODO: JUST NOTING HERE AGAIN AS IN OTHER PLACES. WE REALLY DON'T NEED all_sprites. And probably neither all_colliders
 
+generated_prop_specs = template_generated_prop_specs()
 
-# GENERATE PROP SPECS - 'SPRAY' REPLICATED PROPS (randomly within specified radius, to specified count)
-# generated_prop_specs = []
-# for prop_t in ent.prop_templates:
-#     for index in range(prop_t['spray_count']):  # We will use the index for a unique prop name. Not critical.
-#         generated_prop_spec: ent.PropSpec = {
-#                 'name': prop_t['name'] + str(index),  # Unique name of (sprayed) generated_prop_spec. (Compared to npc_spec which are hardcoded.)
-#                 'instance_id': -1,  # -1 means instance not instantiated yet.
-#                 'img_filename': prop_t['img_filename'],  # Copy the unchanging attributes from the template before handling dynamic ones.
-#                 'flip': False,
-#                 'resize': False,
-#                 'w': prop_t['w'],
-#                 'h': prop_t['h'],
-#                 'color': prop_t['color'],
-#                 'x': 0.0,  # placeholder (mpypy)
-#                 'y': 0.0,  # placeholder (mpypy)
-#                 }
-#
-#         diameter = 2.0 * prop_t['spray_radius']  # This variable makes it easier to read/understand. Inline for perf.
-#         generated_prop_spec['name'] = prop_t['name'] + "-" + str(index)
-#         x_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() gives a random float value
-#         y_offset = random.uniform(0.0, diameter) - prop_t['spray_radius']  # uniform() includes the limits
-#         generated_prop_spec['x'] = prop_t['x'] + x_offset
-#         generated_prop_spec['y'] = prop_t['y'] + y_offset
-#
-#         generated_prop_specs.append(generated_prop_spec)
-
-generated_prop_specs = template_generated_prop_specs()  # This could be inlined below, but I sort of like the readability and clarity.
 
 # ################################################    INSTANTIATION    #################################################
 
-# TODO: Consider the merits of moving the prop spec (spraying/generation) code inside of prop instantiation. I'm not
-#    positive it is the best idea, but it needs analysis and might be a clean, logical step.
+
+DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
 
 
 # INSTANITATE PLAYER SPRITE(S)
@@ -546,6 +639,8 @@ for i, player_spec in enumerate(ent.player_specs):
             y=player_spec['y'],
             direction=player_spec['d'],
             speed=player_spec['s'],
+            angle=DUMMY_ANGLE,
+            angular_vel=DUMMY_ANGULAR_VEL,
             e_spec=e_spec,
         )
     players[player_spec['name']] = player  # Key off name or instance id. name should be unique
@@ -569,6 +664,8 @@ for i, npc_spec in enumerate(ent.npc_specs):
             y=npc_spec['y'],
             direction=npc_spec['d'],
             speed=npc_spec['s'],
+            angle=DUMMY_ANGLE,
+            angular_vel=DUMMY_ANGULAR_VEL,
             e_spec=e_spec,
         )
     npcs[npc_spec['name']] = npc  # Key off name or instance id. name should be unique
@@ -743,6 +840,12 @@ pygame.quit()
 
 # PYGAME-CE DOCS:
 # https://pyga.me/docs/
+
+# Abstract Base Classes - Geeks Article:
+# https://www.geeksforgeeks.org/abstract-classes-in-python/
+
+# Abstract Base Classes - Python.Org:
+# https://docs.python.org/3/library/abc.html
 
 
 ##

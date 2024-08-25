@@ -3,6 +3,24 @@
 Status of:
 game/main.py
 
+UPDATE:
+It turns out I needed to do a bit more work to leave "game/main.py" in a nice, fairly feature-complete yet very
+basic state so I completed a lot of the stuff I may have listed below as still neededing to be done soon.
+I will update this doc soon. I'm starting to add rotation now and I think sounds soon. Still not sure when
+I will branch off into another separate "game" in this project. The video is supposed to cover five different game
+styles. I'm doing a LOT more work and adding a lot more features than the video but my point is, it is not clear
+yet that we have moved on to a separate "game". It's not important. The main thing is this project has LOTS of
+really excellent code, design patters, notes and more and will be a great project to use as a resource for PyGame-CE
+development. My own plans are to evolve this code base into more than just games and explore some real-time, graphics-
+rich control and dashboard applications, for one thing. Integrating real-time online systems for both gaming and
+commercial/non-gaming uses is also in the plans, so this project will contain a LOT of useful design patterns and it
+will also branch into other projects when the need becomes obvious.
+
+OLDER NOTES BELOW HERE. WILL CONSOLIDATE SOON.
+----------------------------------------------------------------------------------------
+
+
+
 I'm doing much more advanced code with a lot more features but following most of the basic features and guidance of
 the tutorial and where I am pausing on this 'game' (galazian/space-invaders style with the fish and grumpy cat etc)
 at the same place as the tutorial does.
