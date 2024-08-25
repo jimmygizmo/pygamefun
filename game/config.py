@@ -1,9 +1,7 @@
 # config.py
 
 import math
-
 import sys
-# import collections  # TODO: remove. using simpler list of tuples now.
 
 
 # ###############################################    CONFIGURATION    ##################################################
@@ -52,27 +50,14 @@ MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small 
 MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
-# List of tuples of the phase name and the phase duration in frames/iterations. collections.deque.popleft() is said
-# to be efficient at popping from the left side of a list. I'm just giving it a try. There are many ways to rotate a list.
-# ENVIRO_PHASES: collections.deque = collections.deque([
-#         ('peace', 800),
-#         ('rogue', 160),
-#         ('chaos', 400),
-#         ('frozen', 60),
-#         ('rogue', 50),
-#         ('frozen', 110),
-#         ]
-#     )  # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
-
-# SIMPLIFIED TO A LIST OF TUPLES. IT WORKS WELL.
-ENVIRO_PHASES: list[tuple[str, int]] = [
+ENVIRO_PHASES: list[tuple[str, int]] = [  # See related types: ent.EnviroSpec, ent.EnviroKeys
         ('peace', 800),
         ('rogue', 160),
         ('chaos', 400),
         ('frozen', 60),
         ('rogue', 50),
         ('frozen', 110),
-        ] # The equivalent Spec keys for these phases are simply the first letters of the phase names: p, r, c, f
+    ] # See ent.EnviroKeys, a Literal type. Spec key convention: First letter of phase name, 'e_' prefix: e_p, e_r, e_c, e_f
 
 
 if __name__ == '__main__':

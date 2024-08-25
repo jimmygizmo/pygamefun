@@ -8,7 +8,7 @@ from typing import TypedDict
 import pygame
 import random
 import resizer
-from game.entity import EnviroSpec
+
 
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
@@ -66,11 +66,7 @@ class Entity(pygame.sprite.Sprite):
             self.surface_l = self.mask_surf_l  # White-out the object.
             self.surface_r = self.mask_surf_r  # "
 
-    def update(self, delta_time: float, ephase_name: str):
-        # NOTE: ephase_name ARG had to be added to places it is not actually used. (* PyCharm static analysis warning *)
-        # Have not looked at this in weeks, but I wanted to comment: This is related to the need to override update()
-        # sometimes.  # TODO: FIX THIS. PROBABLY MAKE OPTIONAL WITH | None = None ETC. WHATEVER. Should not have to include any un-used args.
-
+    def update(self, delta_time: float, ephase_name: str | None = None):
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
@@ -111,6 +107,16 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
+  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
+  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
+  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
+  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
+  # Do I need to define two signatures/methods inside Entity?
+  # This all stems from warning (error?) that signatures don't match Entity.update() .. and IIRC there were cases
+  # such as for Props when I would not want to pass an enviro_phase .. or maybe I would just want to invoke an update
+  # on a type of object and bypass all enviro functionality by not passing the enviro_phase. Seems I should be able
+  # to have two signatures/forms of calling update and not offend Entity.update() or any Python, PyCharm or MyPy errors
+  # and/or warnings. That's the current issue in this area.
 
 class Player(Entity):
     instance_count: int = 0
@@ -142,7 +148,7 @@ class Player(Entity):
             if current_time - self.laser_shoot_time >= self.cooldown_duration:
                 self.can_shoot = True
 
-    def update(self, delta_time: float, ephase_name: str):
+    def update(self, delta_time: float, ephase_name: str | None = None):
         enviro_influence(self, ephase_name)
 
         keys = pygame.key.get_pressed()
@@ -186,7 +192,7 @@ class Weapon(Entity):
         super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
 
-    def update(self, delta_time: float, ephase_name: str):
+    def update(self, delta_time: float, ephase_name: str | None = None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
@@ -217,7 +223,7 @@ class Npc(Entity):
         super().__init__(groups, img_filename, x, y, direction, speed, e_spec=e_spec)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Npc.instance_count += 1
 
-    def update(self, delta_time: float, ephase_name: str):
+    def update(self, delta_time: float, ephase_name: str | None = None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
@@ -236,14 +242,26 @@ class Prop(Entity):
         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
-    # I forgot that Entity.update() is where the surface itself is created based on direction L or R, and thus we have
-    # to call Entity.update() .. meaning super() from here.
-    def update(self, delta_time: float, ephase_name: str):
+    def update(self, delta_time: float, ephase_name: str | None = None):
         super().update(delta_time, ephase_name)
         # TRUE BUT WE CANNOT BYPASS Entity.update():
-        # Props do not move. Update is for updating position and related actions. This suppresses Entity.update()
-        # This is further argument for NOT subclassing Entity to make Props. Props are too different. we can make Prop it's
-        # own class or even base-class since it might work well as that for many kinds of props.
+        # IMPORTANT POINTS ABOUT UPDATE:
+        # 1. The update() method in any Entity subclass or Entity itself is intended for updating position, motion physics
+        #     and related actions. Props do not move so we don't have that concern, however there are a few catches.
+        # 2. Entity.update() is where the ACTIVE SURFACE (and mask) is created, so you CANNOT bypass/supress that step.
+        # 3. So, the presence of an update() here suppresses Entity.update() but what we do is call it from here.
+        #     Non-Prop objects would likely make calls and/or updates related to motion here, BUT all subclasses have
+        #     to finally call super().update(), that is Entity.update() because they all need their main image and mask
+        #     attributes set and Entity does that based on the horizontal direction of travel etc (L vs. R).
+        # 4. To make this work, it was necessary to make it so THE ONLY THING that Entity.update() does is to create
+        #    self.image and self.mask. ALL OTHER MOTION CODE/CALLS for objects must live in their own update() methods
+        #    when OVERRIDE Entity.update(), but then also call Entity.update(), that is super().update() as a final
+        #    step.
+        # 5. Finally, It is being considered to make Props something else, maybe a subclass of some kind of Map object,
+        #    because Props may not share enough code with other things which move. Still considering this. Remember,
+        #    it is all about code organization, clean implementation of design patterns, a good and logical class
+        #    hierarchy and what is right at that moment in time in the phases of develoment as well as the tastes of
+        #    the coder or coders themselves and what "feels right" (but what is also essentially best-practice as well.)
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(), so we can disable that for Props.
         pass
@@ -254,9 +272,12 @@ class Prop(Entity):
 # Enviro-phase ideas: I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
 #     This macro system needs to be super simple and process efficiently. Or use callbacks to little functions which
 #     implement the enviro responses.
+# TODO: Assess how much of a performance impact this is. It does not need to happen on every frame. This could change
+#     only at the time the phase changes and the update to speed (or any other attribute) would persist in the instance.
+#     I think this needs to be implemented differently and be triggered from the phase change counter if-else in the
+#     main loop. Need to figure out the access to the instances from there etc. Maybe we will call this via a separate
+#     sprite group method invocation.
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
-    print(xself.e_spec)
-    # ENVIRO PHASES - APPLICATION OF INFLUENCE OF CURRENT PHASE
     if ephase_name == 'peace':
         xself.speed = xself.e_spec['e_p']
     elif ephase_name == 'rogue':
