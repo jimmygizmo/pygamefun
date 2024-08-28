@@ -30,6 +30,7 @@ SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Valu
 
 # #############################################    CLASS DEFINITIONS    ################################################
 
+# TODO: Make into an Abstract Base Class using the ABC module.
 class MapThing(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
@@ -37,6 +38,7 @@ class MapThing(pygame.sprite.Sprite):
                 img_filename: str,
                 x: float,
                 y: float,
+                angle: float,
             ):
         self.base_instance_id: int = MapThing.base_instance_count
         self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
@@ -47,10 +49,9 @@ class MapThing(pygame.sprite.Sprite):
         self.mask_surf_r: pygame.Surface = SCACHE[img_filename]['mask_surf_r']  # TODO: "
         self.x: float = x
         self.y: float = y
-        # TODO: This is probably an example of a place we want to optimize the init with TYPE: | None = None. See notes elsewhere.
-        #      This does NOT apply EVERYWHERE so be careful. On second check here, IT LOOKS GOOD FOR REFACTOR. OK TO BE None. (| None type)
-        self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
-        self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
+        self.angle: float = angle
+        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
+        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         MapThing.base_instance_count += 1
@@ -62,29 +63,14 @@ class MapThing(pygame.sprite.Sprite):
             self.surface_l = self.mask_surf_l  # White-out the object.
             self.surface_r = self.mask_surf_r  # "
 
-        # Simple initial "wedge-in" implementation is to just pick the left-facing version for Props.
-        # Later we will be modifing load_image() as noted near here and this part will change a little bit.
+        # Props only use the LEFT side image and mask for everything, at this time.
         self.image = self.surface_l
         self.mask = self.mask_l
-        # self.image = self.surface_r
-        # self.mask = self.mask_r
+
+    # NOTICE: MapThing has no update(), no physics_outer_walls() like Entity has.
 
 
-    # NOTICE: No update(), no physics_outer_walls() like Entity has.
-
-    # TODO: NOTES ON REFACTOR PLAN: My issues with the signature for Entity.update() and update() of its subclasses
-    #     may be solved when I move Prop to use the above new base class of MapThing (pending any better name) or I
-    #     may address it at the same time. Also, during this refactoring, I may formalize Entity and now MapThing as
-    #     Abstract Base Classes. We'll see. This is the direction I am moving in and it is probablly just a matter of
-    #     which of the next few commits I will do that in.
-    #     #
-    #     Also, I am leaving in support for both LEFT and RIGHT but really that is mostly so I don't have to
-    #     refactor load_image right away. I considered using a flag to pass to load_image, but there are probably
-    #     better ways. Maybe I can use a wrapper function, or break load image into a two styles of top level
-    #     funcs with some helper funcs. That might be a good idea generally speaking, since load_image is a little bit
-    #     spagettiish already.
-
-
+# TODO: Make into an Abstract Base Class using the ABC module.
 class Entity(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
@@ -112,10 +98,8 @@ class Entity(pygame.sprite.Sprite):
         self.angle: float = 0.0  # NEW  -  3:28 in vid
         self.angular_vel: float = 0.0  # NEW  -  3:28 in vid
         self.e_spec = e_spec
-        # TODO: This is probably an example of a place we want to optimize the init with TYPE: | None = None. See notes elsewhere.
-        #      This does NOT apply EVERYWHERE so be careful. On second check here, IT LOOKS GOOD FOR REFACTOR. OK TO BE None. (| None type)
-        self.image: pygame.Surface = pygame.Surface((0, 0))  # Active image (depending on direction of motion). Placeholder.
-        self.mask: pygame.Mask | None = None  # Placeholder. Trying None for efficiency. TODO: Could do this in multiple other places.
+        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
+        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
@@ -139,13 +123,37 @@ class Entity(pygame.sprite.Sprite):
         # In fact, inside Props we override and pass update() too, so calling of physics_outer_walls() will never occur
         # here for props. To clarify, inside Prop, BOTH update() and physics_outer_walls() are overridden and passed.
 
-        # Activate the correctly-facing image and mask, based on X direction.
+        # # ORIGINAL - NO ROTATION
+        # # Activate the correctly-facing image and mask, based on X direction.
+        # if self.dir.x < 0:
+        #     self.image = self.surface_l
+        #     self.mask = self.mask_l
+        # else:
+        #     self.image = self.surface_r
+        #     self.mask = self.mask_r
+
+        # NEW - WITH ROTATION
+        # Activate the correctly-facing image and mask, based on X direction. WITH ROTATION HANDLED.
+
+        self.angle += self.angular_vel
+        print(self.angle)
+        if self.angle >= 360:
+            self.angle = 0.0
+
         if self.dir.x < 0:
-            self.image = self.surface_l
-            self.mask = self.mask_l
+            self.image = pygame.transform.rotozoom(self.surface_l, self.angle, 1.0)
+            self.mask = self.mask_l  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
         else:
-            self.image = self.surface_r
-            self.mask = self.mask_r
+            self.image = pygame.transform.rotozoom(self.surface_r, self.angle, 1.0)
+            self.mask = self.mask_r  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
+
+
+    def rotation(self):
+        self.angle += self.angular_vel
+        if self.angle >= 360:
+            self.angle = 0.0
+        pygame.transform.rotozoom(self.image, self.angular_vel, 1.0)
+        # TODO: What about the Mask? rotozoon() does not seem to work on a Mask.
 
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
@@ -168,22 +176,12 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
-  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
-  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
-  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
-  # I'm still not happy with ephase_name type hinting and needing to match the signature of update() to allow overriding.
-  # Do I need to define two signatures/methods inside Entity?
-  # This all stems from warning (error?) that signatures don't match Entity.update() .. and IIRC there were cases
-  # such as for Props when I would not want to pass an enviro_phase .. or maybe I would just want to invoke an update
-  # on a type of object and bypass all enviro functionality by not passing the enviro_phase. Seems I should be able
-  # to have two signatures/forms of calling update and not offend Entity.update() or any Python, PyCharm or MyPy errors
-  # and/or warnings. That's the current issue in this area.
 
 class Player(Entity):
     instance_count: int = 0
 
-    DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-    DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
 
     def __init__(self,
                 groups: list[pygame.sprite.Group],
@@ -246,8 +244,8 @@ class Player(Entity):
                     y=self.rect.midtop[1],
                     direction=self.weapon_spec['d'],
                     speed=self.weapon_spec['s'],
-                    angle=DUMMY_ANGLE,
-                    angular_vel=DUMMY_ANGULAR_VEL,
+                    angle=weapon_spec['a'],
+                    angular_vel=weapon_spec['av'],
                     e_spec=self.weapon_e_spec,
                 )
         self.laser_timer()
@@ -336,68 +334,36 @@ class Prop(MapThing):
                 img_filename: str,
                 x: float,
                 y: float,
+                angle: float,
             ):
         self.instance_id: int = Prop.instance_count
-        super().__init__(groups, img_filename, x, y)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+        super().__init__(groups, img_filename, x, y, angle)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
 
 
-class PropOld(Entity):
-    instance_count: int = 0
-    def __init__(self,
-                groups: list[pygame.sprite.Group],
-                img_filename: str,
-                x: float,
-                y: float,
-            ):
-        self.instance_id: int = Prop.instance_count
-        # TODO: In the analysis of "should Prop even be a sub-class of Entity?" the following "hack variables" can serve
-        #     as perhaps one of the key arguments for creating some new kind of "immobile" base class, more-related to
-        #     constructing maps than to dealing with moving objects, which is what Entity is for. The Map base class
-        #     may need to be introduced and then Prop would inherit from Map. Just brainstorming. I love dynamic map
-        #     generation so there is a lot of interesting map-related functionality we could start working with in a
-        #     new Map base class, and Prop would be one of the first and perhaps simpler sub-classes of Map. NOTE: I
-        #     also considered call this base class "cell" or something like that as I am thinking of it as the elemental
-        #     component (one of very many) which together create all the elements of a "map".
-        prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
-        prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
-        super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
-        Prop.instance_count += 1
-
-    def update(self, delta_time: float, ephase_name: str | None = None):
-        super().update(delta_time, ephase_name)
-        # IMPORTANT POINTS ABOUT update() METHODS:
-        # 1. The update() method in any Entity subclass or Entity itself is intended for updating position, motion physics
-        #     and related actions. Props do not move so we don't have that concern, however there are a few catches.
-        # 2. Entity.update() is where the ACTIVE SURFACE (and mask) is created, so you CANNOT bypass/supress that step.
-        # 3. So, the presence of an update() here suppresses Entity.update() but what we do is call it from here.
-        #     Non-Prop objects would likely make calls and/or updates related to motion here, BUT all subclasses have
-        #     to finally call super().update(), that is Entity.update() because they all need their main image and mask
-        #     attributes set and Entity does that based on the horizontal direction of travel etc (L vs. R).
-        # 4. To make this work, it was necessary to make it so THE ONLY THING that Entity.update() does is to create
-        #    self.image and self.mask. ALL OTHER MOTION CODE/CALLS for objects must live in their own update() methods
-        #    when OVERRIDE Entity.update(), but then also call Entity.update(), that is super().update() as a final
-        #    step.
-        # 5. Finally, It is being considered to make Props something else, maybe a subclass of some kind of Map object,
-        #    because Props may not share enough code with other things which move. Still considering this. Remember,
-        #    it is all about code organization, clean implementation of design patterns, a good and logical class
-        #    hierarchy and what is right at that moment in time in the phases of develoment as well as the tastes of
-        #    the coder or coders themselves and what "feels right" (but what is also essentially best-practice as well.)
-
-    def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(). Props don't move.
-        pass
+# class PropOld(Entity):
+#     instance_count: int = 0
+#     def __init__(self,
+#                 groups: list[pygame.sprite.Group],
+#                 img_filename: str,
+#                 x: float,
+#                 y: float,
+#             ):
+#         self.instance_id: int = Prop.instance_count
+#         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
+#         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
+#         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
+#         Prop.instance_count += 1
+#
+#     def update(self, delta_time: float, ephase_name: str | None = None):
+#         super().update(delta_time, ephase_name)
+#
+#     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(). Props don't move.
+#         pass
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-# Enviro-phase ideas: I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
-#     This macro system needs to be super simple and process efficiently. Or use callbacks to little functions which
-#     implement the enviro responses.
-# TODO: Assess how much of a performance impact this is. It does not need to happen on every frame. This could change
-#     only at the time the phase changes and the update to speed (or any other attribute) would persist in the instance.
-#     I think this needs to be implemented differently and be triggered from the phase change counter if-else in the
-#     main loop. Need to figure out the access to the instances from there etc. Maybe we will call this via a separate
-#     sprite group method invocation.
 def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
     if ephase_name == 'peace':
         xself.speed = xself.e_spec['e_p']
@@ -460,10 +426,8 @@ def load_image(
     if flip:
         surface_l = pygame.transform.flip(surface_l, True, False)
 
-    # Mask mask_l made from surface_l regardless of resize or not, and must be done after possible flip (above):
-    mask_l: pygame.Mask = pygame.mask.from_surface(surface_l)  # Mask from surface LEFT
-    # And Mask Surface LEFT:
-    mask_surf_l: pygame.Surface = mask_l.to_surface()  # Now a 'mask surface' from that (black & white silhouette)
+    mask_l: pygame.Mask = pygame.mask.from_surface(surface_l)  # Mask from surface LEFT. Done after possible flip and regardless of resize or not.
+    mask_surf_l: pygame.Surface = mask_l.to_surface()  # Now a 'mask surface' from that (black & white silhouette)  # TODO: NOT USING THIS YET. Remove?
 
     # Create RIGHT-facing surface and mask:
     surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
@@ -488,8 +452,8 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
-    DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-    DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
@@ -497,8 +461,8 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             y=spawn_y,
             direction=pygame.math.Vector2((0.0, 1.0)),  # Meatballs fall straight down.
             speed=meatball_spec['s'],
-            angle=DUMMY_ANGLE,
-            angular_vel=DUMMY_ANGULAR_VEL,
+            angle=meatball_spec['a'],
+            angular_vel=meatball_spec['av'],
             e_spec=e_spec_meatball,
         )
 
@@ -561,6 +525,7 @@ def template_generated_prop_specs():
                 'color': prop_t['color'],
                 'x': 0.0,  # placeholder (mpypy)
                 'y': 0.0,  # placeholder (mpypy)
+                'a': prop_t['a'],
             }
 
             diameter = 2.0 * prop_t['spray_radius']  # Makes it easier to read/understand. Inline this for performance.
@@ -610,8 +575,8 @@ generated_prop_specs = template_generated_prop_specs()
 # ################################################    INSTANTIATION    #################################################
 
 
-DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+# DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+# DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
 
 
 # INSTANITATE PLAYER SPRITE(S)
@@ -639,8 +604,8 @@ for i, player_spec in enumerate(ent.player_specs):
             y=player_spec['y'],
             direction=player_spec['d'],
             speed=player_spec['s'],
-            angle=DUMMY_ANGLE,
-            angular_vel=DUMMY_ANGULAR_VEL,
+            angle=player_spec['a'],
+            angular_vel=player_spec['av'],
             e_spec=e_spec,
         )
     players[player_spec['name']] = player  # Key off name or instance id. name should be unique
@@ -664,8 +629,8 @@ for i, npc_spec in enumerate(ent.npc_specs):
             y=npc_spec['y'],
             direction=npc_spec['d'],
             speed=npc_spec['s'],
-            angle=DUMMY_ANGLE,
-            angular_vel=DUMMY_ANGULAR_VEL,
+            angle=npc_spec['a'],
+            angular_vel=npc_spec['av'],
             e_spec=e_spec,
         )
     npcs[npc_spec['name']] = npc  # Key off name or instance id. name should be unique
@@ -673,7 +638,7 @@ for i, npc_spec in enumerate(ent.npc_specs):
 # INSTANITATE PROP SPRITES
 props: dict[str, Prop] = {}
 for i, generated_prop_spec in enumerate(generated_prop_specs):
-    generated_prop_spec['instance_id'] = i
+    generated_prop_spec['instance_id'] = i  # The instance id inside the class is totally different. ? Yes. TODO: Clarify.
     load_image(
             filename=generated_prop_spec['img_filename'],
             flip=generated_prop_spec['flip'],
@@ -686,11 +651,12 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
             img_filename=generated_prop_spec['img_filename'],
             x=generated_prop_spec['x'],
             y=generated_prop_spec['y'],
+            angle=generated_prop_spec['a'],
         )
     props[generated_prop_spec['name']] = prop  # Key off name or instance id. name should be unique
 
 
-# LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point.)
+# LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point. Just loading the cache.)
 for i, weapon_spec in enumerate(ent.weapon_specs):
     weapon_spec['instance_id'] = i
     load_image(
@@ -718,9 +684,8 @@ else:
 running: bool = True
 ephase: tuple[str, int] | None = None
 g_ephase_name: str | None = None
-g_score: int = 1776  # Normally 0. During development with continuous testing, starting at '1776'. Why 1776?
-# The United States of America, the greatest nation on Earth, founded on freedom and the rights of the citizenry,
-# formally came into existence in 1776 A.D., with the Declaration of Independence.
+g_score: int = 1776  # Normally 0. During development with continuous testing, starting at '9876'.
+
 
 ephase_count: int = 0  # 0, not None since we will likly first/always do an arithmetic check on it, not an existence check.
 clock = pygame.time.Clock()

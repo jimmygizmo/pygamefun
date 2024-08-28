@@ -1,0 +1,20 @@
+
+
+        # IMPORTANT POINTS ABOUT update() METHODS:
+        # 1. The update() method in any Entity subclass or Entity itself is intended for updating position, motion physics
+        #     and related actions. Props do not move so we don't have that concern, however there are a few catches.
+        # 2. Entity.update() is where the ACTIVE SURFACE (and mask) is created, so you CANNOT bypass/supress that step.
+        # 3. So, the presence of an update() here suppresses Entity.update() but what we do is call it from here.
+        #     Non-Prop objects would likely make calls and/or updates related to motion here, BUT all subclasses have
+        #     to finally call super().update(), that is Entity.update() because they all need their main image and mask
+        #     attributes set and Entity does that based on the horizontal direction of travel etc (L vs. R).
+        # 4. To make this work, it was necessary to make it so THE ONLY THING that Entity.update() does is to create
+        #    self.image and self.mask. ALL OTHER MOTION CODE/CALLS for objects must live in their own update() methods
+        #    when OVERRIDE Entity.update(), but then also call Entity.update(), that is super().update() as a final
+        #    step.
+        # 5. Finally, It is being considered to make Props something else, maybe a subclass of some kind of Map object,
+        #    because Props may not share enough code with other things which move. Still considering this. Remember,
+        #    it is all about code organization, clean implementation of design patterns, a good and logical class
+        #    hierarchy and what is right at that moment in time in the phases of develoment as well as the tastes of
+        #    the coder or coders themselves and what "feels right" (but what is also essentially best-practice as well.)
+

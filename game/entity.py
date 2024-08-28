@@ -33,6 +33,8 @@ PlayerSpec = TypedDict('PlayerSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
+        'a': float,  # Initial/default Angle
+        'av': float,  # Initial/default Angular Velocity
         'e_p': float,  # Enviro: Peace (speed)
         'e_r': float,  # Enviro: Rogue (speed)
         'e_c': float,  # Enviro: Chaos (speed)
@@ -55,6 +57,8 @@ player_specs: list[PlayerSpec] = [
         'y': 540.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 780.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 590.0,
         'e_r': 1100.0,
         'e_c': 1700.0,
@@ -77,6 +81,8 @@ WeaponSpec = TypedDict('WeaponSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
+        'a': float,  # Initial/default Angle
+        'av': float,  # Initial/default Angular Velocity
         'e_p': float,  # Enviro: Peace (speed)
         'e_r': float,  # Enviro: Rogue (speed)
         'e_c': float,  # Enviro: Chaos (speed)
@@ -99,6 +105,8 @@ weapon_specs: list[WeaponSpec] = [
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 134.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 98.0,
         'e_r': 122.0,
         'e_c': 840.0,
@@ -117,6 +125,8 @@ weapon_specs: list[WeaponSpec] = [
         'y': 260.0,
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 104.0,
+        'a': 0.0,
+        'av': 10.0,
         'e_p': 698.0,
         'e_r': 822.0,
         'e_c': 1640.0,
@@ -139,6 +149,8 @@ NpcSpec = TypedDict('NpcSpec',
         'y': float,  # Initial position Y value
         'd': pygame.math.Vector2,  # Direction
         's': float,  # Initial/default speed
+        'a': float,  # Initial/default Angle
+        'av': float,  # Initial/default Angular Velocity
         'e_p': float,  # Enviro: Peace (speed)
         'e_r': float,  # Enviro: Rogue (speed)
         'e_c': float,  # Enviro: Chaos (speed)
@@ -161,6 +173,8 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
         's': 100.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 100.0,
         'e_r': 100.0,
         'e_c': 350.0,
@@ -179,6 +193,8 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
         's': 100.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 100.0,
         'e_r': 100.0,
         'e_c': 420.0,
@@ -197,6 +213,8 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
         's': 141.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 160.0,
         'e_r': 880.0,
         'e_c': 1290.0,
@@ -215,6 +233,8 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
         's': 90.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 80.0,
         'e_r': 50.0,
         'e_c': 2170.0,
@@ -233,6 +253,8 @@ npc_specs: list[NpcSpec] = [
         'y': 300.0,
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 80.0,
+        'a': 0.0,
+        'av': 0.0,
         'e_p': 90.0,
         'e_r': 100.0,
         'e_c': 700.0,
@@ -253,6 +275,7 @@ PropTemplate = TypedDict('PropTemplate',
         'color': str,
         'x': float,
         'y': float,
+        'a': float,  # Initial/default Angle
         'spray_count': int,
         'spray_radius': float,
     }
@@ -270,6 +293,7 @@ prop_templates: list[PropTemplate] = [
         'color': 'crimson',
         'x': 804.0,
         'y': 440.0,
+        'a': 0.0,
         'spray_count': 60,
         'spray_radius': 780.0,
     },
@@ -283,6 +307,7 @@ prop_templates: list[PropTemplate] = [
         'color': 'darkturquoise',
         'x': 880.0,
         'y': 360.0,
+        'a': 0.0,
         'spray_count': 18,
         'spray_radius': 680.0,
     },
@@ -301,6 +326,7 @@ PropSpec = TypedDict('PropSpec',
         'color': str,
         'x': float,
         'y': float,
+        'a': float,
     }
 )  # PropSpec
 

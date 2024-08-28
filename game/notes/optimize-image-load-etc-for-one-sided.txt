@@ -1,0 +1,34 @@
+
+
+REALLY THERE IS A MORE COMPLEX LARGER TOPIC, PRE-PROCESSING/LOADING OF IMAGE FILES INTO MULTIPLE SPRITE VERSIONS
+WITH CACHING AND MULTIPLE MODES/TEMPLATES FOR DIFFERENT USES IN THE GAME.
+
+EXAMPLES:
+PRE-ROTATION
+PRE-FADING
+PRE-FLASH/EFFECT
+
+Anything which needs to "make" surfaces during the game especially when transforming, filtering or modifying the image
+data will occur for that new surface, well then those activities need to occur in bulk BEFORE gameplay and store
+the resulting resources in a cache, because you will need efficient (memory-resident) retrieval of that data later
+during game actions/events and operational phases like level loading/init etc.
+
+
+BELOW ARE EARLIER NOTES/IDEAS
+
+
+
+# TODO: IDEA regarding Props (and other cases) where we would NOT support both LEFT and RIGHT. For the SINGLE-SIDED case
+# for things that do not move. (Players, Weapons and Npcs all have LEFT vs. RIGHT facing version of surface, mask and
+# mask surface, in most or all places and in the cache.) Now, Props will initially support just one side, LEFT. They
+# can still flip upon load, but for now and maybe forever, since Props don't move, they will never need more than one
+# side. So how do we support this OPTION. Possibilities:
+# A. Have a flag in the cache:    one_sided: bool = True    for Props.
+# B. Have a flag in the Prop templates and generated prop specs for SAME. This should be A. as it is really the more important of the two.
+# C. An option for indiating the state of the SCACHE entry is to simply have None in the RIGHT slots (all 3 None) to
+#     indicate one_sided=True. Id we do this just need to affirm this state in all places and check on default behavior etc.
+# D. We want optimal behavior. Props don't move so only LEFT resources neeeded. SCACHE and LOADING of it should hold
+#     and do the minimum required and ideally also explicitly show state with logical default setting and use of values.
+
+
+

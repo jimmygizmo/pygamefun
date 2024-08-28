@@ -1,0 +1,29 @@
+
+
+
+
+
+# #############################################    FUNCTION DEFINITIONS    #############################################
+
+# Enviro-phase ideas: I want to generalize so I need a tiny macro language to instruct enviro response changes to ANY ATTRIBUTE.
+#     This macro system needs to be super simple and process efficiently. Or use callbacks to little functions which
+#     implement the enviro responses.
+# TODO: Assess how much of a performance impact this is. It does not need to happen on every frame. This could change
+#     only at the time the phase changes and the update to speed (or any other attribute) would persist in the instance.
+#     I think this needs to be implemented differently and be triggered from the phase change counter if-else in the
+#     main loop. Need to figure out the access to the instances from there etc. Maybe we will call this via a separate
+#     sprite group method invocation.
+def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
+    if ephase_name == 'peace':
+        xself.speed = xself.e_spec['e_p']
+    elif ephase_name == 'rogue':
+        xself.speed = xself.e_spec['e_r']
+    elif ephase_name == 'chaos':
+        xself.speed = xself.e_spec['e_c']
+    elif ephase_name == 'frozen':
+        xself.speed = xself.e_spec['e_f']
+    else:
+        raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
+                         "Check values in ENVIRO_PHASES config.")
+
+
