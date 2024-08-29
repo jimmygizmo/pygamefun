@@ -254,7 +254,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 80.0,
         'a': 0.0,
-        'av': 0.0,
+        'av': -1.0,
         'e_p': 90.0,
         'e_r': 100.0,
         'e_c': 700.0,

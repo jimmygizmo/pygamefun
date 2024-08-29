@@ -95,8 +95,8 @@ class Entity(pygame.sprite.Sprite):
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction
         self.speed: float = speed
-        self.angle: float = 0.0  # NEW  -  3:28 in vid
-        self.angular_vel: float = 0.0  # NEW  -  3:28 in vid
+        self.angle: float = angle
+        self.angular_vel: float = angular_vel
         self.e_spec = e_spec
         self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
         self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
@@ -136,7 +136,7 @@ class Entity(pygame.sprite.Sprite):
         # Activate the correctly-facing image and mask, based on X direction. WITH ROTATION HANDLED.
 
         self.angle += self.angular_vel
-        print(self.angle)
+        if self.angle: print(self.angle)  #  *** DEBUG ***
         if self.angle >= 360:
             self.angle = 0.0
 
@@ -454,6 +454,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
     # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
     # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
+    # print(meatball_spec)
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
