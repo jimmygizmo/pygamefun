@@ -9,6 +9,38 @@ import sys
 SCREEN_WIDTH: int = 1640
 SCREEN_HEIGHT: int = 860
 
+TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
+GAME_TITLE: str = 'Goldfish Picnic'
+
+BGCOLOR: str = 'olivedrab'
+BGIMG: str = 'grass-field-med-1920x1249.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
+ASSET_PATH: str = 'assets'  # Relative path with no trailing slash.
+DEBUG: bool = False
+ACID_MODE: bool = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
+WHITEOUT_MODE: bool = False  # White-out all objects in a demonstration of multiple Mask features.
+ROTATION: bool = True  # Rotation is expensive in the initial implementation. TODO: Make rotation more efficient.
+
+LASER_COOLDOWN_DURATION: int = 100  # Milliseconds - minimum time between laser firing
+PROJECTILE_MARGIN: int = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
+PLAYER_MAIN_WEAPON_INDEX: int = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
+# 0 = green ball (orb)    1 = meatball
+
+PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
+MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
+MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
+MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
+# TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
+
+ENVIRO_PHASES: list[tuple[str, int]] = [  # See related types: ent.EnviroSpec, ent.EnviroKeys
+        ('peace', 800),
+        ('rogue', 160),
+        ('chaos', 400),
+        ('frozen', 60),
+        ('rogue', 50),
+        ('frozen', 110),
+    ] # See ent.EnviroKeys, a Literal type. Spec key convention: First letter of phase name, 'e_' prefix: e_p, e_r, e_c, e_f
+
+
 # SCOREBOARD DESIGN - FONT, COLORS, POSITIONING, BORDER - (SCR prefix)
 SCR: bool = True
 SCR_X: int = math.floor(SCREEN_WIDTH / 2)
@@ -28,36 +60,6 @@ SCR_BORDER_THICKNESS: int = 8
 SCR_BORDER_PAD_X: int = 32
 SCR_BORDER_PAD_Y: int = 16
 SCR_BORDER_RADIUS: int = 10
-
-TICKRATE: int = 60  # (frame rate) - 0/None gives maximum/unlimited. Depends on code but recently saw 500-1000 FPS.
-GAME_TITLE: str = 'Goldfish Picnic'
-
-BGCOLOR: str = 'olivedrab'
-BGIMG: str = 'grass-field-med-1920x1249.jpg'  # 'grass-field-med-1920x1249.jpg'  # 'lawn-bg-dark-2560x1440.jpg'
-ASSET_PATH: str = 'assets'  # Relative path with no trailing slash.
-DEBUG: bool = False
-ACID_MODE: bool = False  # Suppress background re-painting. This makes objects leave psychedelic trails for a fun effect.
-WHITEOUT_MODE: bool = False  # White-out all objects in a demonstration of multiple Mask features.
-
-LASER_COOLDOWN_DURATION: int = 100  # Milliseconds - minimum time between laser firing
-PROJECTILE_MARGIN: int = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
-PLAYER_MAIN_WEAPON_INDEX: int = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
-# 0 = green ball    1 = meatball
-
-PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
-MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
-MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
-MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
-# TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
-
-ENVIRO_PHASES: list[tuple[str, int]] = [  # See related types: ent.EnviroSpec, ent.EnviroKeys
-        ('peace', 800),
-        ('rogue', 160),
-        ('chaos', 400),
-        ('frozen', 60),
-        ('rogue', 50),
-        ('frozen', 110),
-    ] # See ent.EnviroKeys, a Literal type. Spec key convention: First letter of phase name, 'e_' prefix: e_p, e_r, e_c, e_f
 
 
 if __name__ == '__main__':

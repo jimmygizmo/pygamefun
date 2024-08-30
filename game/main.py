@@ -123,29 +123,24 @@ class Entity(pygame.sprite.Sprite):
         # In fact, inside Props we override and pass update() too, so calling of physics_outer_walls() will never occur
         # here for props. To clarify, inside Prop, BOTH update() and physics_outer_walls() are overridden and passed.
 
-        # # ORIGINAL - NO ROTATION
-        # # Activate the correctly-facing image and mask, based on X direction.
-        # if self.dir.x < 0:
-        #     self.image = self.surface_l
-        #     self.mask = self.mask_l
-        # else:
-        #     self.image = self.surface_r
-        #     self.mask = self.mask_r
-
-        # NEW - WITH ROTATION
-        # Activate the correctly-facing image and mask, based on X direction. WITH ROTATION HANDLED.
-
-        self.angle += self.angular_vel
-        if self.angle: print(self.angle)  #  *** DEBUG ***
-        if self.angle >= 360:
-            self.angle = 0.0
-
-        if self.dir.x < 0:
-            self.image = pygame.transform.rotozoom(self.surface_l, self.angle, 1.0)
-            self.mask = self.mask_l  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
-        else:
-            self.image = pygame.transform.rotozoom(self.surface_r, self.angle, 1.0)
-            self.mask = self.mask_r  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
+        # Activate the correctly-facing image and mask, based on X direction. Use expensive rotation, if enabled.
+        if cfg.ROTATION:
+            self.angle += self.angular_vel  # ROTATE BY THE ANGULAR VELOCITY
+            if self.angle >= 360:
+                self.angle = 0.0
+            if self.dir.x < 0:  # MOVING LEFT - ROTATION ENABLED
+                self.image = pygame.transform.rotozoom(self.surface_l, self.angle, 1.0)
+                self.mask = self.mask_l  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
+            else:  # MOVING RIGHT - ROTATION ENABLED
+                self.image = pygame.transform.rotozoom(self.surface_r, self.angle, 1.0)
+                self.mask = self.mask_r  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
+        else:  # No rotation:
+            if self.dir.x < 0:  # MOVING LEFT
+                self.image = self.surface_l
+                self.mask = self.mask_l
+            else:  # MOVING RIGHT
+                self.image = self.surface_r
+                self.mask = self.mask_r
 
 
     def rotation(self):
@@ -237,6 +232,7 @@ class Player(Entity):
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
             weapon_img_filename = self.weapon_spec['img_filename']
+            print(self.weapon_spec)  # *** DEBUG ***
             projectile: Weapon = Weapon(
                     groups=self.weapons_groups,
                     img_filename=weapon_img_filename,
@@ -339,27 +335,6 @@ class Prop(MapThing):
         self.instance_id: int = Prop.instance_count
         super().__init__(groups, img_filename, x, y, angle)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
-
-
-# class PropOld(Entity):
-#     instance_count: int = 0
-#     def __init__(self,
-#                 groups: list[pygame.sprite.Group],
-#                 img_filename: str,
-#                 x: float,
-#                 y: float,
-#             ):
-#         self.instance_id: int = Prop.instance_count
-#         prop_zero_direction: pygame.math.Vector2 = pygame.math.Vector2(0, 0)  # Props special case direction, to init Entity.
-#         prop_zero_speed: float = 0.0  # Props special case speed, to init Entity.
-#         super().__init__(groups, img_filename, x, y, prop_zero_direction, prop_zero_speed)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
-#         Prop.instance_count += 1
-#
-#     def update(self, delta_time: float, ephase_name: str | None = None):
-#         super().update(delta_time, ephase_name)
-#
-#     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls(). Props don't move.
-#         pass
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
