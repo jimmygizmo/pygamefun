@@ -236,8 +236,8 @@ class Player(Entity):
                     y=self.rect.midtop[1],
                     direction=self.weapon_spec['d'],
                     speed=self.weapon_spec['s'],
-                    angle=weapon_spec['a'],
-                    angular_vel=weapon_spec['av'],
+                    angle=self.weapon_spec['a'],
+                    angular_vel=self.weapon_spec['av'],
                     e_spec=self.weapon_e_spec,
                 )
         self.laser_timer()
@@ -654,7 +654,7 @@ for i, gr_weapon_spec in enumerate(ent.weapon_specs):
             width=gr_weapon_spec['w'],
             height=gr_weapon_spec['h'],
         )
-  
+
 
 # ###############################################    MAIN EXECUTION    #################################################
 
