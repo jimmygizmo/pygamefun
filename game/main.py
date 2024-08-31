@@ -84,7 +84,6 @@ class Entity(pygame.sprite.Sprite):
                 angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Prop has no e_spec. All others do.
             ):
-        print(f"NEW ENTITY JUST CREATED WITH angular_vel: {angular_vel}")  #  *** DEBUG ***
         self.base_instance_id: int = Entity.base_instance_count
         self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
         self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
@@ -164,20 +163,14 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
-# TODO: IMPORTANT - RE BUG IN WHICH greenball spins not with its own angular_vel but with that for meatball. If we change the order
-# in weapon_specs, the problem reverses. STRONG EVIDENCE SUGGESTS THAT THE BELOW "shadows name from outer scope" COULD VERY WELL
-# BE OUR ISSUE. It is almost as if, we are using the LAST weapon_spec values .. well at leasst for AV. This bug has been tough.
-# I'm not 100% sure. But confident that it is a good idea to try fixing that shadowing issue once and for all and then going
-# from there.
-
 
 class Player(Entity):
     instance_count: int = 0
     def __init__(self,
                 groups: list[pygame.sprite.Group],
                 img_filename: str,
-                weapon_spec: ent.WeaponSpec,  # TODO: SOLVE THIS SHADOW ISSUE. REFER TO OTHER NOTES ON arg_ gr_ gw_ PREFIX IDEAS
-                weapon_e_spec: ent.EnviroSpec,  # TODO: SOLVE THIS SHADOW ISSUE. REFER TO OTHER NOTES ON arg_ gr_ gw_ PREFIX IDEAS
+                weapon_spec: ent.WeaponSpec,
+                weapon_e_spec: ent.EnviroSpec,
                 weapons_groups: list[pygame.sprite.Group],
                 x: float,
                 y: float,
@@ -227,8 +220,6 @@ class Player(Entity):
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
             weapon_img_filename = self.weapon_spec['img_filename']
-            print(f"NEW ORB (green-ball) WEAPON - ANGULAR VEL: {self.weapon_spec['av']}")  # *** DEBUG ***
-            print(f"NEW ORB weapon_spec: {self.weapon_spec}")  # *** DEBUG ***  - NOTE: AV is correct in passed weapon_spec
             projectile: Weapon = Weapon(
                     groups=self.weapons_groups,
                     img_filename=weapon_img_filename,
@@ -258,20 +249,7 @@ class Weapon(Entity):
                 angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
-        debug_intermediate_angular_vel = angular_vel
         self.instance_id: int = Weapon.instance_count
-        print(f"Weapon INIT for {img_filename} about to SUPER INIT. ANGULAR VELOCITY: {debug_intermediate_angular_vel}")  #  ***  DEBUG ***
-        # IMPORTANT TROUBLESHOOTING CONCLUSION: For BOTH meatball and green-ball we are getting same AV, the value is only correct for meatball.
-        # SO, green-ball is getting the AV for meatball at this point. Problem seems to be just before this point.
-        # NOTE - IMPORTANT: In the FIRING CODE inside Player's update(), WE ARE PASSING THE CORRECT AV to Weapon() INIT.
-        # Log output - - - - - - - - - - -
-        # NEW WEAPON - ANGULAR VEL: 0.0
-        # Weapon INIT for green-ball-140x140.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
-        # NEW WEAPON - ANGULAR VEL: 0.0
-        # Weapon INIT for green-ball-140x140.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
-        # Weapon INIT for meatball-204x220.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
-        #                    *  *  *  BOOM!  *  *  *
-        # End log output - - - - - - - - - -
         super().__init__(
             groups=groups,
             img_filename=img_filename,
@@ -436,10 +414,6 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
-    # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-    # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-    # print(meatball_spec)
-    print(f"NEW MEATBALL - ANGULAR VEL: {meatball_spec['av']}")  # *** DEBUG ***
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
@@ -565,7 +539,6 @@ generated_prop_specs = template_generated_prop_specs()
 # a rough meaning:
 # gr_    Lives in global scope and is intended for READ ONLY. Some bugs are still possible.
 # gw_    Lives in global scope and may be written to. Many kinds of bugs possible if care is not taken.
-# TODO: See notes, I had a third prefix I was considering.
 
 # INSTANITATE PLAYER SPRITE(S)
 players: dict[str, Player] = {}
@@ -688,16 +661,7 @@ e_spec_meatball = composed_enviro_spec(ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_I
 #   * * * * * * * *    MAIN LOOP    * * * * * * * *
 #   * * * * * * * * * * * * * * * * * * * * * * * *
 while running:
-    g_delta_time = clock.tick(cfg.TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
-    # TODO: I think I made this g_ early on because of shadowing warning that may no longer be an issue.
-    #    Look into this again and maybe clarify further when/where/how I use g_ for either 1. limited and fully
-    #    intentional use of a global variable or 2. to solve some shadowing issue usually with arguments or interior
-    #    temp working vars. Seems like both issues can be solved in multiple ways so although I make VERY limited use
-    #    of any global variables (almost always only constants, which is honestly a little different) .. but int fact
-    #    alsmost NEVER --UPDATE-- a global variable from any interior namespace .. except now. In this case since we
-    #    only have one score and one player possibly initiating changes to the score, we do not have any race condition
-    #    concern. So in this case, updating the score (g_score) as a global variable feels just fine. No concerns.
-    #    This is likely to change as I get more values I need to update centrally.
+    gr_delta_time = clock.tick(cfg.TICKRATE) / 1000  # Seconds elapsed for a single frame (e.g. - 60 Frm/sec = 0.017 sec/Frm)
 
 
     # ##################################################    INPUT    ###################################################
@@ -711,9 +675,8 @@ while running:
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
-    # TODO: CHANGING TO LIST OF TUPLES, NOT COLLECTIONS.DEQUEUE.
-    # ENVIRO_PHASES is a collections.deque instance and we popleft() the first/current 'phase'.
-    #     Then we add the phase we removed from the left/start of the (deque) to the end (right side/last position).
+    # We rotate this list of tuples by popping off the left (next-in-line/first-in) and appending back onto the right
+    # (end-of-line/recently-added).
     if ephase is None:
         ephase = cfg.ENVIRO_PHASES[0]
         g_ephase_name = ephase[0]
@@ -728,11 +691,11 @@ while running:
 
     # #################################################    UPDATE    ###################################################
 
-    all_props.update(g_delta_time, g_ephase_name)
-    all_npcs.update(g_delta_time, g_ephase_name)
-    all_players.update(g_delta_time, g_ephase_name)
-    all_greenballs.update(g_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
-    all_meatballs.update(g_delta_time, g_ephase_name)
+    all_props.update(gr_delta_time, g_ephase_name)
+    all_npcs.update(gr_delta_time, g_ephase_name)
+    all_players.update(gr_delta_time, g_ephase_name)
+    all_greenballs.update(gr_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
+    all_meatballs.update(gr_delta_time, g_ephase_name)
 
 
     # ###############################################    COLLISIONS    #################################################
