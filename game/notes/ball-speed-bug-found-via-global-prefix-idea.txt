@@ -1,0 +1,56 @@
+
+
+So I had wanted to differentiate the few global variables I may have at any given phase of development from similar
+vars used in innner scopes (typically arguments). I often get a shadow warning.
+
+NOW. my ball rotation speed bug is a BAD BUG. And I have chased it a LOT and ruled out a lot of stuff. I am left
+suspecting a bug caused by a shadowed var (one of the global ones I wanted to rename to have a prefix).
+
+I now stronlgy suspect my bug WAS THIS. That a global var shadowing an inner argument with the same name (AND INSTANTIATED
+IN A UNIQUE WAY .. Weapon when fired in fact .. the greenball) was the cause of this weapon getting the wrong rotation.
+
+It was getting the last rotation of the global weapon_spec from the loop that loads images.
+
+I'm not sure why inside Entity.update() ONLY got this wrong var for when weapons were fired.
+I'm sure I could figure out the weirdness but it is not straightforward.
+
+ALL OTHER ROTATIONS WORK FINE FOR ALL OTHER CASES USING Entity.update() .. but the fired weapons (greenball) is a special
+case because it is AN INSTANCE INSTANTIATE FROM WITHIN ANOTHER INSTANCE. So .. figure that out lol.
+
+Anyhow, I added my prefixes to the global vars:
+player_spec, npc_spec and weapon_spec.
+
+weapon_spec was the key as I suspected from other tests I did changing the order of weapon specs in entity.py for example.
+
+ NOW I HAVE A NEW ERROR .. AND THIS NEARLY CLEARLY EXPLAINS THE BUG AND SHOWS HOW TO FIX IT:
+
+ NEW ENTITY JUST CREATED WITH angular_vel: 1.0
+NEW MEATBALL - ANGULAR VEL: 1.0
+Weapon INIT for meatball-204x220.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
+NEW ENTITY JUST CREATED WITH angular_vel: 1.0
+Traceback (most recent call last):
+  File "/home/bilbo/repos/pygamefun/game/main.py", line 733, in <module>
+    all_players.update(g_delta_time, g_ephase_name)
+  File "/home/bilbo/.pyenv/versions/3.12.4/envs/ve.pygamefun/lib/python3.12/site-packages/pygame/sprite.py", line 554, in update
+    sprite.update(*args, **kwargs)
+  File "/home/bilbo/repos/pygamefun/game/main.py", line 239, in update
+    angle=weapon_spec['a'],
+          ^^^^^^^^^^^
+NameError: name 'weapon_spec' is not defined. Did you mean: 'self.weapon_spec'?
+NEW ORB (green-ball) WEAPON - ANGULAR VEL: 0.0
+NEW ORB weapon_spec: {'name': 'orb', 'instance_id': 0, 'img_filename': 'green-ball-140x140.png', 'flip': False, 'resize': True, 'w': 70, 'h': 70, 'color': 'green3', 'x': 890.0, 'y': 260.0, 'd': Vector2(0, -1), 's': 134.0, 'a': 0.0, 'av': 0.0, 'e_p': 98.0, 'e_r': 122.0, 'e_c': 840.0, 'e_f': 2350.0}
+
+Process finished with exit code 1
+
+..................
+
+Now the code cannot get the weapon_spec from the WRONG PLACE since there in the WRONG PLACE we renamed it to gr_weapon_spec.
+
+This proved the Entity.update() code IN THIS SPECIA CASE OF THE FIRED WEAPON was getting weapon_spec from the global variable.
+
+IT SHOULD NOT HAVE BEEN BUT THIS PROVES IT WAS.
+
+Now I can correctly address the fix.
+
+=====================================================================================================================
+

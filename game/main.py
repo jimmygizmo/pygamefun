@@ -560,61 +560,68 @@ generated_prop_specs = template_generated_prop_specs()
 
 # ################################################    INSTANTIATION    #################################################
 
+# Experimantal naming convention for variables at the global level which may have shadowing issues becuase their name
+# is one likely to also be used in inner scopes. This is a system of a few prefixes to use on variable names, with
+# a rough meaning:
+# gr_    Lives in global scope and is intended for READ ONLY. Some bugs are still possible.
+# gw_    Lives in global scope and may be written to. Many kinds of bugs possible if care is not taken.
+# TODO: See notes, I had a third prefix I was considering.
+
 # INSTANITATE PLAYER SPRITE(S)
 players: dict[str, Player] = {}
-for i, player_spec in enumerate(ent.player_specs):
-    player_spec['name'] = player_spec['name'] + str(i)
-    player_spec['instance_id'] = i
+for i, gr_player_spec in enumerate(ent.player_specs):
+    gr_player_spec['name'] = gr_player_spec['name'] + str(i)
+    gr_player_spec['instance_id'] = i
     load_image(
-            filename=player_spec['img_filename'],
-            flip=player_spec['flip'],
-            resize=player_spec['resize'],
-            width=player_spec['w'],
-            height=player_spec['h'],
+            filename=gr_player_spec['img_filename'],
+            flip=gr_player_spec['flip'],
+            resize=gr_player_spec['resize'],
+            width=gr_player_spec['w'],
+            height=gr_player_spec['h'],
         )
-    e_spec = composed_enviro_spec(player_spec)
-    weapon_spec = ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX]
-    weapon_e_spec = composed_enviro_spec(weapon_spec)  # TODO: This call COULD be done inside Player. Then we would not pass it to Player().
+    gr_e_spec = composed_enviro_spec(gr_player_spec)
+    gr_weapon_spec = ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX]
+    gr_weapon_e_spec = composed_enviro_spec(gr_weapon_spec)  # TODO: This call COULD be done inside Player. Then we would not pass it to Player().
     player: Player = Player(
             groups=[all_sprites, all_players],
-            img_filename=player_spec['img_filename'],
-            weapon_spec=weapon_spec,
-            weapon_e_spec=weapon_e_spec,
+            img_filename=gr_player_spec['img_filename'],
+            weapon_spec=gr_weapon_spec,
+            weapon_e_spec=gr_weapon_e_spec,
             weapons_groups=new_greenballs_groups,
-            x=player_spec['x'],
-            y=player_spec['y'],
-            direction=player_spec['d'],
-            speed=player_spec['s'],
-            angle=player_spec['a'],
-            angular_vel=player_spec['av'],
-            e_spec=e_spec,
+            x=gr_player_spec['x'],
+            y=gr_player_spec['y'],
+            direction=gr_player_spec['d'],
+            speed=gr_player_spec['s'],
+            angle=gr_player_spec['a'],
+            angular_vel=gr_player_spec['av'],
+            e_spec=gr_e_spec,
         )
-    players[player_spec['name']] = player  # Key off name or instance id. name should be unique
+    players[gr_player_spec['name']] = player  # Key off name or instance id. name should be unique
 
 # INSTANITATE NPC SPRITES
 npcs: dict[str, Npc] = {}
-for i, npc_spec in enumerate(ent.npc_specs):
-    npc_spec['instance_id'] = i
+for i, gr_npc_spec in enumerate(ent.npc_specs):
+    gr_npc_spec['instance_id'] = i
     load_image(
-            filename=npc_spec['img_filename'],
-            flip=npc_spec['flip'],
-            resize=npc_spec['resize'],
-            width=npc_spec['w'],
-            height=npc_spec['h'],
+            filename=gr_npc_spec['img_filename'],
+            flip=gr_npc_spec['flip'],
+            resize=gr_npc_spec['resize'],
+            width=gr_npc_spec['w'],
+            height=gr_npc_spec['h'],
         )
-    e_spec = composed_enviro_spec(npc_spec)
+    gr_e_spec = composed_enviro_spec(gr_npc_spec)
     npc: Npc = Npc(
             groups=[all_sprites, all_npcs, all_colliders],
-            img_filename=npc_spec['img_filename'],
-            x=npc_spec['x'],
-            y=npc_spec['y'],
-            direction=npc_spec['d'],
-            speed=npc_spec['s'],
-            angle=npc_spec['a'],
-            angular_vel=npc_spec['av'],
-            e_spec=e_spec,
+            img_filename=gr_npc_spec['img_filename'],
+            x=gr_npc_spec['x'],
+            y=gr_npc_spec['y'],
+            direction=gr_npc_spec['d'],
+            speed=gr_npc_spec['s'],
+            angle=gr_npc_spec['a'],
+            angular_vel=gr_npc_spec['av'],
+            e_spec=gr_e_spec,
         )
-    npcs[npc_spec['name']] = npc  # Key off name or instance id. name should be unique
+    npcs[gr_npc_spec['name']] = npc  # Key off name or instance id. name should be unique
 
 # INSTANITATE PROP SPRITES
 props: dict[str, Prop] = {}
@@ -638,16 +645,16 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point. Just loading the cache.)
-for i, weapon_spec in enumerate(ent.weapon_specs):
-    weapon_spec['instance_id'] = i
+for i, gr_weapon_spec in enumerate(ent.weapon_specs):
+    gr_weapon_spec['instance_id'] = i
     load_image(
-            filename=weapon_spec['img_filename'],
-            flip=weapon_spec['flip'],
-            resize=weapon_spec['resize'],
-            width=weapon_spec['w'],
-            height=weapon_spec['h'],
+            filename=gr_weapon_spec['img_filename'],
+            flip=gr_weapon_spec['flip'],
+            resize=gr_weapon_spec['resize'],
+            width=gr_weapon_spec['w'],
+            height=gr_weapon_spec['h'],
         )
-
+  
 
 # ###############################################    MAIN EXECUTION    #################################################
 
