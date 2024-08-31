@@ -84,6 +84,7 @@ class Entity(pygame.sprite.Sprite):
                 angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Prop has no e_spec. All others do.
             ):
+        print(f"NEW ENTITY JUST CREATED WITH angular_vel: {angular_vel}")  #  *** DEBUG ***
         self.base_instance_id: int = Entity.base_instance_count
         self.surface_l: pygame.Surface = SCACHE[img_filename]['surface_l']
         self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
@@ -142,14 +143,6 @@ class Entity(pygame.sprite.Sprite):
                 self.image = self.surface_r
                 self.mask = self.mask_r
 
-
-    def rotation(self):
-        self.angle += self.angular_vel
-        if self.angle >= 360:
-            self.angle = 0.0
-        pygame.transform.rotozoom(self.image, self.angular_vel, 1.0)
-        # TODO: What about the Mask? rotozoon() does not seem to work on a Mask.
-
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
         if self.rect.left <= 0:
@@ -171,13 +164,15 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
 
+# TODO: IMPORTANT - RE BUG IN WHICH greenball spins not with its own angular_vel but with that for meatball. If we change the order
+# in weapon_specs, the problem reverses. STRONG EVIDENCE SUGGESTS THAT THE BELOW "shadows name from outer scope" COULD VERY WELL
+# BE OUR ISSUE. It is almost as if, we are using the LAST weapon_spec values .. well at leasst for AV. This bug has been tough.
+# I'm not 100% sure. But confident that it is a good idea to try fixing that shadowing issue once and for all and then going
+# from there.
+
 
 class Player(Entity):
     instance_count: int = 0
-
-    # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-    # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-
     def __init__(self,
                 groups: list[pygame.sprite.Group],
                 img_filename: str,
@@ -232,7 +227,8 @@ class Player(Entity):
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
             weapon_img_filename = self.weapon_spec['img_filename']
-            print(self.weapon_spec)  # *** DEBUG ***
+            print(f"NEW ORB (green-ball) WEAPON - ANGULAR VEL: {self.weapon_spec['av']}")  # *** DEBUG ***
+            print(f"NEW ORB weapon_spec: {self.weapon_spec}")  # *** DEBUG ***  - NOTE: AV is correct in passed weapon_spec
             projectile: Weapon = Weapon(
                     groups=self.weapons_groups,
                     img_filename=weapon_img_filename,
@@ -262,7 +258,20 @@ class Weapon(Entity):
                 angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
             ):
+        debug_intermediate_angular_vel = angular_vel
         self.instance_id: int = Weapon.instance_count
+        print(f"Weapon INIT for {img_filename} about to SUPER INIT. ANGULAR VELOCITY: {debug_intermediate_angular_vel}")  #  ***  DEBUG ***
+        # IMPORTANT TROUBLESHOOTING CONCLUSION: For BOTH meatball and green-ball we are getting same AV, the value is only correct for meatball.
+        # SO, green-ball is getting the AV for meatball at this point. Problem seems to be just before this point.
+        # NOTE - IMPORTANT: In the FIRING CODE inside Player's update(), WE ARE PASSING THE CORRECT AV to Weapon() INIT.
+        # Log output - - - - - - - - - - -
+        # NEW WEAPON - ANGULAR VEL: 0.0
+        # Weapon INIT for green-ball-140x140.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
+        # NEW WEAPON - ANGULAR VEL: 0.0
+        # Weapon INIT for green-ball-140x140.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
+        # Weapon INIT for meatball-204x220.png about to SUPER INIT. ANGULAR VELOCITY: 1.0
+        #                    *  *  *  BOOM!  *  *  *
+        # End log output - - - - - - - - - -
         super().__init__(
             groups=groups,
             img_filename=img_filename,
@@ -430,6 +439,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     # DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
     # DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
     # print(meatball_spec)
+    print(f"NEW MEATBALL - ANGULAR VEL: {meatball_spec['av']}")  # *** DEBUG ***
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
@@ -549,11 +559,6 @@ generated_prop_specs = template_generated_prop_specs()
 
 
 # ################################################    INSTANTIATION    #################################################
-
-
-# DUMMY_ANGLE: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-# DUMMY_ANGULAR_VEL: float = 0.0  # TODO: TEMPORARY, FIX THIS.
-
 
 # INSTANITATE PLAYER SPRITE(S)
 players: dict[str, Player] = {}

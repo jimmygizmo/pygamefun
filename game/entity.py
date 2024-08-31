@@ -106,7 +106,7 @@ weapon_specs: list[WeaponSpec] = [
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 134.0,
         'a': 0.0,
-        'av': -2.0,
+        'av': 0.0,
         'e_p': 98.0,
         'e_r': 122.0,
         'e_c': 840.0,
@@ -126,7 +126,7 @@ weapon_specs: list[WeaponSpec] = [
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 104.0,
         'a': 0.0,
-        'av': 6.0,
+        'av': 1.0,
         'e_p': 698.0,
         'e_r': 822.0,
         'e_c': 1640.0,
@@ -174,7 +174,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((-0.624, 0.782)),  # placeholder instance (mypy)
         's': 100.0,
         'a': 0.0,
-        'av': 0.0,
+        'av': 3.0,
         'e_p': 100.0,
         'e_r': 100.0,
         'e_c': 350.0,
@@ -194,7 +194,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((0.137, -0.991)),  # placeholder instance (mypy)
         's': 100.0,
         'a': 0.0,
-        'av': 0.0,
+        'av': -1.0,
         'e_p': 100.0,
         'e_r': 100.0,
         'e_c': 420.0,
@@ -214,7 +214,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
         's': 141.0,
         'a': 0.0,
-        'av': 0.0,
+        'av': 11.0,
         'e_p': 160.0,
         'e_r': 880.0,
         'e_c': 1290.0,
