@@ -62,7 +62,10 @@ SCR_BORDER_PAD_Y: int = 16
 SCR_BORDER_RADIUS: int = 10
 
 
-# RANDOM RANGE LIMITS
+# RANDOM RANGE LIMITS (In my mind, sort of like TAB stops on an old typewriter or in a word processor etc. Only just sort-of lol.)
+#     ROTATION/ANGULAR VELOCITY
+# NOTE: We don't need a ROT_SLOW_MIN for now. But we use ROT_MAX as a sort of defualt SUPER FAST, so we have that one.
+#     So if you go for FULL-RANGE 7704, or just let the default apply, then you get the SUPER FAST option.
 ROT_MIN: float = 0.01
 ROT_SLOW_MAX: float = 1.0
 ROT_MED_MIN: float = 1.01
@@ -70,6 +73,8 @@ ROT_MED_MAX: float = 2.0
 ROT_FAST_MIN: float = 2.01
 ROT_FAST_MAX: float = 8.0
 ROT_MAX: float = 12.0
+#     TODO: SPEED/VELOCITY
+#     TODO: DIRECTION   (quadrants and angle/span)
 
 
 if __name__ == '__main__':

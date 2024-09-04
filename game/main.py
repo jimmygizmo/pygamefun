@@ -105,7 +105,13 @@ class Entity(pygame.sprite.Sprite):
         self.rect: pygame.FRect = pygame.FRect()
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
-        self.rect = self.surface_l.get_frect(center=(self.x, self.y))
+        self.rect = self.surface_l.get_frect(center=(self.x, self.y))  # TODO: LIKELY EXCESSIVE INIT WE CAN MAKE NONE
+        # TODO: We can do this if we confirm that update() will ALWAYS be called first, even in edge cases.
+        # Also the canonically-correct thing to do is to get this rect from self.image, but at this point in may simply
+        # be premature to do certain init activities. If that is the conclusion, then we need more of the Type | None = None
+        # True, we are in the process of replacing more init to the more lightweight Type | None = None. It's a case by case
+        # basis but this one also looks like it will be able to be None here. Just check when update() first gets called,
+        # like when the game first starts etc. Or for weapons newly instantiated etc.
 
         if cfg.WHITEOUT_MODE:
             self.mask_surf_l.set_colorkey((0, 0, 0))  # Make the black transparent.
@@ -162,6 +168,8 @@ class Entity(pygame.sprite.Sprite):
             else:  # MOVING RIGHT
                 self.image = self.surface_r
                 self.mask = self.mask_r
+
+        self.rect = self.image.get_frect(center=self.rect.center)
 
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
@@ -526,15 +534,8 @@ def template_generated_prop_specs():
 # Takes av values and looks for special values for SLOW, MED. FAST or FULL-RANGE random rotation speed (angular velocity).
 # 7701 - SLOW, 7702 - MED, 7703 - FAST, 7704 - FULL RANGE. The values involved will be changing as how delta_time is
 # used will be changing. Returns a random angular velocity.
-# ROT_MIN: float = 0.01
 # We don't need a ROT_SLOW_MIN for now. But we use ROT_MAX as a sort of defualt SUPER FAST, so we have that one.
 #     So if you go for FULL-RANGE 7704, or just let the default apply, then you get the SUPER FAST option.
-# ROT_SLOW_MAX: float = 1.0
-# ROT_MED_MIN: float = 1.01
-# ROT_MED_MAX: float = 2.0
-# ROT_FAST_MIN: float = 2.01
-# ROT_FAST_MAX: float = 8.0
-# ROT_MAX: float = 20.0
 def random_angular_vel(av_special_value: float) -> float:
     av: float = 1.222  # Specific only for troubleshooting. This is a default value to be replaced in all valid cases.
     if av_special_value == 7701.0:
