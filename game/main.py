@@ -31,6 +31,8 @@ SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Valu
 # #############################################    CLASS DEFINITIONS    ################################################
 
 # TODO: Make into an Abstract Base Class using the ABC module.
+# TODO: Add support for Angle (self.angle) and for Props it can just be set when instantiated. Props don't update or move.
+#     Random angles for 'sprayed' props would be a nice feature. Random angular_vel would be nice for NPCs, Weapons perhaps.
 class MapThing(pygame.sprite.Sprite):
     base_instance_count: int = 0
     def __init__(self,
@@ -112,6 +114,7 @@ class Entity(pygame.sprite.Sprite):
             self.surface_r = self.mask_surf_r  # "
 
     def update(self, delta_time: float, ephase_name: str | None = None):
+        print(delta_time, ephase_name)
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
@@ -125,7 +128,26 @@ class Entity(pygame.sprite.Sprite):
 
         # Activate the correctly-facing image and mask, based on X direction. Use expensive rotation, if enabled.
         if cfg.ROTATION:
+            # TODO: FIX DELTA_TIME ISSUE. I cannot scale rotation like this with current delta_time being so small. When you
+            #     enable this and do it like linear velocity, it just looks like rotation stops. I think I hit this issue earlier
+            #     with speed and then just increased my speeds artificially. The problem has to do with the units I am using
+            #     vs. the frame rate. I should problably set a baseline based on ROTATION through 360 and then figure things
+            #     backwards to determine my ARBITRARY speed/linear-vel values and thus end up with something I can use the same
+            #     delta_time value. Degress with there being 360 cannot be scaled like an arbitrary linear velocity/distance can.
+            #     I suppose we could use a separate/modified delta_time to use for rotation, but the first plan is the best by far.
+            # self.angle += self.angular_vel * delta_time  # ROTATE BY THE ANGULAR VELOCITY    *** CURRENTLY JUST MAKES ROTATION WAY WAY TOO SLOW ***
             self.angle += self.angular_vel  # ROTATE BY THE ANGULAR VELOCITY
+            # TODO: Make this reset to 360 degrees PLUS the amount it just PASSED 260 degrees. No jerking. Best general behavior.
+            #     Think about this though for full context. When the rotation transform method is called and if it is given
+            #     a parameter > 360 degrees, one might safely assume that it is going to do the exact same thing. In fact,
+            #     the math libraries inevitably used by the rotation method in PyGame will likely do that. It will be
+            #     an automatic result. STILL, I fill like adding my own code here for that. This can be considered more
+            #     On a performance note, it might be MOST efficient to pass the angle unchanged, even if it is > 360.
+            #     This is because the code that checks or resolbes the issue downstream is going to most likely run (or take effect via math) anyhow.
+            #     So earlier additional checks to convert to < 360 would then be totally unnecessary and wasted cycles.
+            #     When you are optimizing for performance and other resources, you have to think about it carefully ..
+            #     and then ultimately you need to do performance profiling (running code a measuring time spent in
+            #     specific code lines/routines).
             if self.angle >= 360:
                 self.angle = 0.0
             if self.dir.x < 0:  # MOVING LEFT - ROTATION ENABLED
