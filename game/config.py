@@ -62,6 +62,16 @@ SCR_BORDER_PAD_Y: int = 16
 SCR_BORDER_RADIUS: int = 10
 
 
+# RANDOM RANGE LIMITS
+ROT_MIN: float = 0.01
+ROT_SLOW_MAX: float = 1.0
+ROT_MED_MIN: float = 1.01
+ROT_MED_MAX: float = 2.0
+ROT_FAST_MIN: float = 2.01
+ROT_FAST_MAX: float = 8.0
+ROT_MAX: float = 12.0
+
+
 if __name__ == '__main__':
     print("WARNING: PyGameFun config.py has been run directly, however it is only meant to be imported.")
     sys.exit(1)

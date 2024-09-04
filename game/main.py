@@ -114,7 +114,6 @@ class Entity(pygame.sprite.Sprite):
             self.surface_r = self.mask_surf_r  # "
 
     def update(self, delta_time: float, ephase_name: str | None = None):
-        print(delta_time, ephase_name)
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
@@ -436,6 +435,9 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
+    random_av: float = 1.111  # Specific, to be replaced but assists any potential troubleshooting like this.
+    if  7700.0 < meatball_spec['av'] < 7799.9:
+        random_av = random_angular_vel(meatball_spec['av'])
     projectile: Weapon = Weapon(
             groups=groups,
             img_filename=meatball_spec['img_filename'],
@@ -444,7 +446,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             direction=pygame.math.Vector2((0.0, 1.0)),  # Meatballs fall straight down.
             speed=meatball_spec['s'],
             angle=meatball_spec['a'],
-            angular_vel=meatball_spec['av'],
+            angular_vel=random_av,
             e_spec=e_spec_meatball,
         )
 
@@ -519,6 +521,33 @@ def template_generated_prop_specs():
 
             gen_prop_specs.append(gen_prop_spec)
     return gen_prop_specs
+
+
+# Takes av values and looks for special values for SLOW, MED. FAST or FULL-RANGE random rotation speed (angular velocity).
+# 7701 - SLOW, 7702 - MED, 7703 - FAST, 7704 - FULL RANGE. The values involved will be changing as how delta_time is
+# used will be changing. Returns a random angular velocity.
+# ROT_MIN: float = 0.01
+# We don't need a ROT_SLOW_MIN for now. But we use ROT_MAX as a sort of defualt SUPER FAST, so we have that one.
+#     So if you go for FULL-RANGE 7704, or just let the default apply, then you get the SUPER FAST option.
+# ROT_SLOW_MAX: float = 1.0
+# ROT_MED_MIN: float = 1.01
+# ROT_MED_MAX: float = 2.0
+# ROT_FAST_MIN: float = 2.01
+# ROT_FAST_MAX: float = 8.0
+# ROT_MAX: float = 20.0
+def random_angular_vel(av_special_value: float) -> float:
+    av: float = 1.222  # Specific only for troubleshooting. This is a default value to be replaced in all valid cases.
+    if av_special_value == 7701.0:
+        av =  random.uniform(cfg.ROT_MIN, (cfg.ROT_SLOW_MAX - cfg.ROT_MIN))
+    elif av_special_value == 7702.0:
+        av =  random.uniform(cfg.ROT_MED_MIN, (cfg.ROT_MED_MAX - cfg.ROT_MED_MIN))
+    elif av_special_value == 7703.0:
+        av =  random.uniform(cfg.ROT_FAST_MIN, (cfg.ROT_MAX - cfg.ROT_MED_MIN))
+    else:
+        av =  random.uniform(cfg.ROT_MIN, (cfg.ROT_MAX - cfg.ROT_MIN))
+    if bool(random.getrandbits(1)):  # Rotation direction is simply random. TODO: Later it may be configurable via additional special values.
+        av = av * -1.0
+    return av
 
 
 # ###############################################    INITIALIZATION    #################################################

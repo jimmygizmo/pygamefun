@@ -4,6 +4,25 @@ import sys
 import pygame.math  # For pygame.math.Vector2 only.
 from typing import TypedDict, Literal
 
+# SPECIAL FEATURE VALUES - ALL ARE 4 DIGITS AND ALL START WITH 77__.0. DEFAULT NOOP (NON-SPECIFIC) IS 7700:
+# Rotation: angular_vel av 7701.0: random angular_vel SLOW
+# Rotation: angular_vel av 7702.0: random angular_vel MED
+# Rotation: angular_vel av 7703.0: random angular_vel FAST
+# Rotation: angular_vel av 7704.0: random angular_vel SLOW-TO-FAST (full range of rotation speeds)
+# Speed: speed s 7711.0: random speed s SLOW
+# Speed: Speed s 7712.0: random speed s MED
+# Speed: speed s 7713.0: random speed s FAST
+# Speed: speed s 7714.0: random speed s SLOW-TO-FAST (full range of speeds)
+# Direction: direction d 7721.0: random direction d UP WIDE (180 degree range)
+# Direction: direction d 7722.0: random direction d DOWN WIDE (180 degree range)
+# Direction: direction d 7723.0: random direction d LEFT WIDE (180 degree range)
+# Direction: direction d 7724.0: random direction d RIGHT WIDE (180 degree range)
+
+# IMPORTANT: These are Float values. The .0 is required or at least very strongly advised as everything else in this
+# program that would be a float would have .0 if anything else. Be consistent.
+
+# TODO: The first one we will implement is random rotation speed (angular velocity) for meatballs.
+
 
 # ###########################################    ENTITY SPECIFICATIONS    ##############################################
 
@@ -106,7 +125,7 @@ weapon_specs: list[WeaponSpec] = [
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 134.0,
         'a': 0.0,
-        'av': -20.0,
+        'av': 6.0,
         'e_p': 98.0,
         'e_r': 122.0,
         'e_c': 840.0,
@@ -126,7 +145,7 @@ weapon_specs: list[WeaponSpec] = [
         'd': pygame.math.Vector2((0.0, -1.0)),  # placeholder instance (mypy)
         's': 104.0,
         'a': 0.0,
-        'av': 1.0,
+        'av': 7704.0,
         'e_p': 698.0,
         'e_r': 822.0,
         'e_c': 1640.0,
