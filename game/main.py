@@ -12,6 +12,13 @@ import resizer
 
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
+
+# TODO: Document how filename and frames_dir will be unique (both are relative paths under /assets/ and files/dirs)
+#     in the same dir must have unique names. THUS, these are used as the keys to the hash entries for the resources
+#     stored in the cache for these unique paths. One is an image filename and the other is a directory name, which
+#     will be full of sequentially-named image files. In both cases these are unique identifiers, enforced by the fact
+#     that these are paths within the same base path in the filesystem. This is a nice clean and simple mechanism
+#     to use for unique keys for the cache which also have excellent semantics.
 # SURFACE CACHE - 'SCACHE'
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
 # for surfaces and not need to load them from disk. This is important for dynamically/frequently spawned/destroyed sprites.
@@ -27,8 +34,46 @@ SurfCacheItem = TypedDict('SurfCacheItem',
 )  # SurfCacheitem
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
 
+# TODO: Description.
+AnimCacheItem = TypedDict('AnimCacheItem',
+    {
+        'frames': list[pygame.Surface],
+    }
+)  # AnimCacheItem
+ACACHE: dict[str, AnimCacheItem] = {}  # The Animation Cache. Key = frames_dir, Value = AnimCacheItem.
+
+# TODO: I don't know that we need any masks for the animations/frames at this point, or ever would. It's not impossible.
+
 
 # #############################################    CLASS DEFINITIONS    ################################################
+
+class Anim(pygame.sprite.Sprite):
+    base_instance_count: int = 0
+    def __init__(self,
+                groups: list[pygame.sprite.Group],
+                frames_dir: str,
+                x: float,
+                y: float,
+                frame_rate: float,
+            ):
+        self.base_instance_id: int = MapThing.base_instance_count
+        self.frames: list[pygame.Surface] = ACACHE[frames_dir]['frames']
+        self.x: float = x
+        self.y: float = y
+        self.image: pygame.Surface | None = None  # Active image
+        self.rect: pygame.FRect = pygame.FRect()
+        super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
+        Anim.base_instance_count += 1
+        self.rect = self.image.get_frect(center=(self.x, self.y))
+
+
+
+
+
+
+
+
+
 
 # TODO: Make into an Abstract Base Class using the ABC module.
 # TODO: Add support for Angle (self.angle) and for Props it can just be set when instantiated. Props don't update or move.
@@ -377,7 +422,7 @@ def load_image(
             height: int | None,
         ) -> None:
     image_path = os.path.join(cfg.ASSET_PATH, filename)
-    surface_l: pygame.Surface = pygame.Surface((0, 0))
+    surface_l: pygame.Surface = pygame.Surface((0, 0))  # TODO: Make thiS TYPE | None = None (after analysis)
     if resize:
         if width and height:
             with open(image_path, 'rb') as fh:
@@ -428,7 +473,7 @@ def load_image(
 
     # TODO: Mask Surfaces (not Masks) mask_surf_l and mask_surf_r MAY be used later for special effects.
 
-    c_item: SurfCacheItem = {
+    sc_item: SurfCacheItem = {
             'surface_l': surface_l,
             'surface_r': surface_r,
             'mask_l': mask_l,
@@ -436,7 +481,28 @@ def load_image(
             'mask_surf_l': mask_surf_l,
             'mask_surf_r': mask_surf_r,
         }
-    SCACHE[filename] = c_item
+    SCACHE[filename] = sc_item
+
+
+
+def load_anim_frames(
+            frames_dir: str,
+            flip: bool,
+            resize: bool,
+            width: int | None,
+            height: int | None,
+        ) -> None:
+    frames_path = os.path.join(cfg.ASSET_PATH, frames_dir)
+    frames: list[pygame.Surface] | None = None
+    file_path_sequence = sorted(os.listdir(frames_path))
+    for filename in file_path_sequence:
+        if filename.endswith('.png'):
+            image_path = os.path.join(frames_path, filename)
+            print(image_path)
+            with open(image_path, 'rb') as fh:
+                # img_bytes = fh.read()
+                pass
+
 
 
 def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.EnviroSpec):
@@ -679,6 +745,19 @@ for i, gr_weapon_spec in enumerate(ent.weapon_specs):
             width=gr_weapon_spec['w'],
             height=gr_weapon_spec['h'],
         )
+
+
+# LOAD ANIMATION CACHE WITH FRAMES DATA. (No Animations have been instantiated at this point. Just loading the cache.)
+for i, gr_anim_spec in enumerate(ent.anim_specs):
+    gr_anim_spec['instance_id'] = i
+    load_anim_frames(
+            frames_dir=gr_anim_spec['frames_dir'],
+            flip=gr_anim_spec['flip'],
+            resize=gr_anim_spec['resize'],
+            width=gr_anim_spec['w'],
+            height=gr_anim_spec['h'],
+        )
+
 
 
 # ###############################################    MAIN EXECUTION    #################################################

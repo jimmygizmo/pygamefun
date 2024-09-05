@@ -54,7 +54,7 @@ SCR_FONT_FORCE_SYSTEM: bool = False  # Forces use of a common system font (Windo
 #      Survey this on Windows (already done for Win 11), MacOS and Linux (at least Ubuntu desktop.)
 SCR_FONT_ADJUST_Y: int = -5  # Vertical position adjustment, affected by Font selection, size, platform, other factors.
 SCR_FONT_SIZE: int = 40
-SCR_FONT_COLOR: str = 'green'
+SCR_FONT_COLOR: str = 'black'
 SCR_BORDER_COLOR: str = 'black'
 SCR_BORDER_THICKNESS: int = 8
 SCR_BORDER_PAD_X: int = 32

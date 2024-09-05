@@ -26,6 +26,65 @@ from typing import TypedDict, Literal
 
 # ###########################################    ENTITY SPECIFICATIONS    ##############################################
 
+
+# TODO: Change ALL instance_id to TYPE: int | None and init to None, meaning no instance yet. Check all code for instance_id first.
+#     Check for where it does anything related to -1 or < 0 etc. Generally, I think we can use TYPE | None a LOT more.
+#     Using None to indicate some early/pre-initialization value or any special state/condition not like the 'normal' values,
+#     this is EXTREMELY PYTHONIC and core to how you code Python and even to how many libraries operate, so it would make
+#     no sense begin limiting the use of None as an optional/allowed init value, just to keep MyPy happy and to keep things
+#     more strongly/simply typed. Barring some edge-case performance or other concern, I think we can use TYPE | None
+#     all over the place, because it is: SEMANTICALLY GOOD, PYTHONIC, POWERFUL, COMPATIBLE, LOGICAL, FLEXIBLE, TRADITIONAL.
+#     This thought process came out of a phase of trying to meet all MyPy recommendations explicitly and to try to do
+#     relatively strong typing in Python. It was sort of an adventure. I mean there is nothing wrong with using a value
+#     like -1 to mean not-yet-initialized .. but then you can't use -1 for -1 lol. There are MANY important reasons. I
+#     like to re-explore the original principals and realities upon which I base my understandings and methods to keep
+#     all of the up-to-date and optimal. I'm confident now on generally trying to meet MOST/NEARLY-ALL MyPy recommendations,
+#     but I make exceptions in some areas or rather one might say, I am clarifying that not all MyPy recommendations apply
+#     all the time, in fact, some of the might rarely be the best thing. One needs to assess every coding choice they make
+#     from many intelligent perspectives and not just take mandates at face value. Don't be a sheep, be an adventurer,
+#     but maybe your adventures will reveal that the sheep are doing 80% of the stuff right, but you know better about that
+#     20%, because you take the time to assess everything you do based on the merits of the actions themselves.
+
+# TODO: AnimSpec ?   Probably.  We will add an animation cache, ACACHE, similar to SCACHE.  There is a dir of images to
+#     load instead of a single image. Width and Height are facts, not necessarily relevant. The animation will certainly
+#     have multiple other specs, such as repeat, frame rate, etc.
+#     So this logic concludes we will certainly be adding a new AnimationSpec or AnimSpec to organize all this information.
+
+
+AnimSpec = TypedDict('AnimSpec',
+    {
+        'name': str,  # Animation short name
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Animation created. -1 means no instance created for this spec yet.
+        'frames_dir': str,  # Name of the directory containing the sequentially-named frames. PNGs with transparency. Resides inside /assets/.
+        'flip': bool,  # If True, all frames will be flipped horizontally at the time of loading
+        'resize': bool,  # If True, all frames will be resized using resizer.alphonic_resize()
+        'w': int,  # PNG pixel width
+        'h': int,  # PNG pixel height
+        'color': str,  # Debug mode color of rectangle
+        'x': float,  # Initial position X value
+        'y': float,  # Initial position Y value
+        'frame_rate': float,  # Frame rate
+    }
+)  # AnimSpec
+
+# ANIMATION DATA - Initial state for animations.
+anim_specs: list[AnimSpec] = [
+    {
+        'name': 'exp-elaborate',
+        'instance_id': -1,
+        'frames_dir':  'anim-exp-elaborate',
+        'flip': False,
+        'resize': False,
+        'w': 512,
+        'h': 512,
+        'color': 'aqua',
+        'x': 890.0,
+        'y': 540.0,
+        'frame_rate': 32.0,
+    },
+]  # anim_specs: list[AnimSpec]
+
+
 EnviroSpec = TypedDict('EnviroSpec',
     {
         'e_p': float,  # Enviro: Peace (speed)
@@ -41,7 +100,7 @@ EnviroKeys = Literal['e_p', 'e_r', 'e_c', 'e_f']
 PlayerSpec = TypedDict('PlayerSpec',
     {
         'name': str,  # Player short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Player created. -1 means no instance created for this spec yet.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
@@ -89,7 +148,7 @@ player_specs: list[PlayerSpec] = [
 WeaponSpec = TypedDict('WeaponSpec',
     {
         'name': str,  # Weapon/projectile short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Weapon created. -1 means no instance created for this spec yet.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
@@ -157,7 +216,7 @@ weapon_specs: list[WeaponSpec] = [
 NpcSpec = TypedDict('NpcSpec',
     {
         'name': str,  # NPC short name
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet.
         'img_filename': str,  # Filename of PNG (with transparency)
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
@@ -233,7 +292,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((1.0, 1.0)),  # placeholder instance (mypy)
         's': 141.0,
         'a': 0.0,
-        'av': 11.0,
+        'av': 7.0,
         'e_p': 160.0,
         'e_r': 880.0,
         'e_c': 1290.0,
@@ -244,7 +303,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'grumpy-cat-110x120.png',
         'flip': True,
-        'resize': True,
+        'resize': False,
         'w': 220,
         'h': 240,
         'color': 'blanchedalmond',
@@ -253,7 +312,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((0.261, 0.966)),  # placeholder instance (mypy)
         's': 90.0,
         'a': 0.0,
-        'av': 0.0,
+        'av': -0.2,
         'e_p': 80.0,
         'e_r': 50.0,
         'e_c': 2170.0,
@@ -264,7 +323,7 @@ npc_specs: list[NpcSpec] = [
         'instance_id': -1,
         'img_filename':  'goldfish-280x220.png',
         'flip': False,
-        'resize': True,
+        'resize': False,
         'w': 560,
         'h': 440,
         'color': 'darkgoldenrod1',
@@ -273,7 +332,7 @@ npc_specs: list[NpcSpec] = [
         'd': pygame.math.Vector2((-0.994, -0.114)),  # placeholder instance (mypy)
         's': 80.0,
         'a': 0.0,
-        'av': -1.0,
+        'av': 0.0,
         'e_p': 90.0,
         'e_r': 100.0,
         'e_c': 700.0,
@@ -336,7 +395,7 @@ prop_templates: list[PropTemplate] = [
 PropSpec = TypedDict('PropSpec',
     {
         'name': str,
-        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet. (Jumping through MyPy hoops. Can't use None.) We are transitioning to OOP. This will all change.
+        'instance_id': int,  # 0-based Int serial number unique to each instance of Entity created. -1 means no instance created for this spec yet.
         'img_filename': str,
         'flip': bool,  # If True, image will be flipped horizontally at the time of loading
         'resize': bool,  # If True, image will be resized using resizer.alphonic_resize()
