@@ -1,9 +1,36 @@
 
+
 # Project-specific.
 # This is a temporary file used in an experimental OpenCV image resize hack. See resizer.py
 game/*temp-png.png
 game/*temp-out-png.png
 
+
+########################################################################################################################
+# General Customizations and Git-Ignore Template Development
+
+# Zone.identifier files (extended attribute, meta information for image files and maybe anything downloaded) (Windows)
+# We would never want these in any repo, so this is a good new general item to add to all .gitignore templates
+**/*Zone.Identifier
+
+# Original source for this .gitignore file might have beenGitHub or PyCharm/IntelliJ. I'm not sure and did not inspect
+# it closely when making these comments. BUT I do recall it seemed like a NEW and better one to consider as my baseline
+# gitignore, which of course I would need to customize a lot. I think below here is all or mostly from that original
+# source which if my recollection serves me, was a good updated source as of July 2024.
+# TODO: Confirm the above, compare to other recent good sources, continue making my own fresh new gitignore(s) since
+#     it has been a few years since I updated my own. (A lot of the time I have just taken the GitHub Python gitignore
+#     and made a few adjustments a the top. A few of my full stack projects use a React/Javascript/Node gitignore
+#     from GitHub similarly.
+
+# Microsoft - URL Security Zones:
+# https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms537183(v=vs.85)?redirectedfrom=MSDN
+
+# Microsoft - Zone.Identifier Stream Name
+# https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8?redirectedfrom=MSDN
+
+########################################################################################################################
+# Most/all original from the original source below here. I am fairly certain.
+# # # # # # # # #
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
