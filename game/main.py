@@ -484,7 +484,6 @@ def load_image(
     SCACHE[filename] = sc_item
 
 
-
 def load_anim_frames(
             frames_dir: str,
             flip: bool,
@@ -493,16 +492,38 @@ def load_anim_frames(
             height: int | None,
         ) -> None:
     frames_path = os.path.join(cfg.ASSET_PATH, frames_dir)
-    frames: list[pygame.Surface] | None = None
+    frames: list[pygame.Surface] = []
     file_path_sequence = sorted(os.listdir(frames_path))
     for filename in file_path_sequence:
         if filename.endswith('.png'):
             image_path = os.path.join(frames_path, filename)
-            print(image_path)
-            with open(image_path, 'rb') as fh:
-                # img_bytes = fh.read()
-                pass
+            print(image_path)  #  ***  DEBUG  ***
+            frame_surface = pygame.image.load(image_path).convert_alpha()  # For clarity.  TODO: Inline to optimize.
+            frames.append(frame_surface)
 
+    ac_item: AnimCacheItem = {
+            'frames': frames,
+        }
+    ACACHE[frames_dir] = ac_item
+
+
+# UPDATE: Below is already fixed just above here but this issue needs consistent resolution throught this project.
+# TODO: *** CRITICAL ***  OK, We cannot do TYPE | None = None INITS in some new places I just discovered or re-discovered.
+#    At least with respect to PyGame warnings and possibly also MyPy (not confirmed yet) I am getting a waring about the | None.
+#    This is the error, about the value/variable I am passing to frames attribute in AnimCacheItem above:
+#    ERROR: Expected type 'list[Surface]', got 'list[Surface] | None' instead
+#    *** This changes things. I thought I could be more efficient in MANY places by adding the | None and thus removing some
+#        more heavyweight INIT like creating a surface etc. But I guess I cannot and still keep PyCharm and MyPy warnings happy.
+#        Am I looking at a strong reason to now selectively suppress some warnings? I hate seeing them, but I still would
+#        like to stay ahead of performance optimization and not create objects simply to satisfy static code inspection.
+#        I don't see a case where the | None creates more risk for bugs. On the contrary, it is so PYTHONIC, I see the | None for
+#        many INIT cases, to be almost essential. I'll need to look into suppressing both PyCharm and MyPy warnings as an option.
+#        On larger projects you inevitably do suppress many warnings as there will be a large amount of analysis in the
+#        CI/CD pipeline and lots of interest by management in active usage and tuning of static code analysis and other reports.
+#        The performance reports can be used to counter-balance adherance to static-code analysis and enforcement related to that.
+#        In the case of the stuff I am talking about here, I am forced to use extra memory and CPU, simply to keep the warnings
+#        down and that will not always be acceptable. Right now in this app it is not a problem, BUT my goal is to keep things
+#        rather lean and optimized right from the beginning. Some users have slower machines. We need to remember that as well.
 
 
 def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.EnviroSpec):
@@ -757,7 +778,6 @@ for i, gr_anim_spec in enumerate(ent.anim_specs):
             width=gr_anim_spec['w'],
             height=gr_anim_spec['h'],
         )
-
 
 
 # ###############################################    MAIN EXECUTION    #################################################
