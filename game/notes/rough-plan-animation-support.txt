@@ -1,0 +1,30 @@
+Just thinking that I have all the parts already in the code to implement the animation support in the Anim class.
+I may learn a better way soon, but for a first pass, I have the parts I need already I think.
+
+The lazer timer can be used to implement the frame-rate-specified timer between frames for the Anim class to
+self-manage transition to the active self.image.
+
+The enviro phase rotation done at the global level has a rotating stack which is a pattern to support a repeating
+animation, although the first explosion anim to be implemented does not need to repeat, but later anims will. Obvious
+feature to support.
+
+Everything like this works off of the call to Anim.update() via the sprite groups.
+
+TODO: We'll need a new sprite group.
+
+At the moment the init code is all in place and the class is started too. About to work on the update().
+I have not yet seen how my primary info source will implement this, so that will be interesting. I did not look to
+see if PyGame has some support in Sprites for animating frames like this.
+
+I am assuming I will "roll my own" for all animation functionality but that is simply because this is one of the most
+important and best ways to learn. And when I started programming, you had to roll your own for everyhting. There were
+no librares to speak of beyond my core first language of BASIC.
+And most of my work for decades has always been in interesting, diverse, challenging and in cutting-edge areas where
+although you use lots of libraries, you also have to roll-your-own functionality constantly as well.
+Whether it is basic or advanced functionality, you should always be able to implement a library you need as well as you
+might be able to find it.
+
+Any coder worth their salt should be able to implement any functionality they really need, not just locate and use
+a library. But first look for the really good library, because IF it exists and there are no other issues, use it.
+(unless you can do better! Then release a new lib as open source!! :)
+

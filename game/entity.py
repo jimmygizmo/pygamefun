@@ -4,7 +4,7 @@ import sys
 import pygame.math  # For pygame.math.Vector2 only.
 from typing import TypedDict, Literal
 
-# SPECIAL FEATURE VALUES - ALL ARE 4 DIGITS AND ALL START WITH 77__.0. DEFAULT NOOP (NON-SPECIFIC) IS 7700:
+# PHSYICS SPECIAL FEATURE VALUES - ALL ARE 4 DIGITS AND ALL START WITH 77__.0. DEFAULT NOOP (NON-SPECIFIC) IS 7700:
 # Rotation: angular_vel av 7701.0: random angular_vel SLOW
 # Rotation: angular_vel av 7702.0: random angular_vel MED
 # Rotation: angular_vel av 7703.0: random angular_vel FAST
@@ -18,10 +18,11 @@ from typing import TypedDict, Literal
 # Direction: direction d 7723.0: random direction d LEFT WIDE (180 degree range)
 # Direction: direction d 7724.0: random direction d RIGHT WIDE (180 degree range)
 
-# IMPORTANT: These are Float values. The .0 is required or at least very strongly advised as everything else in this
-# program that would be a float would have .0 if anything else. Be consistent.
+# IMPORTANT: The Physics values are Float values. The .0 is required or at least very strongly advised as everything
+# else in this program that would be a float would have .0 if anything else. Be consistent.
 
-# TODO: The first one we will implement is random rotation speed (angular velocity) for meatballs.
+# ANIMATION SPECIAL FEATURE VALUES
+# Repeat Count: repeat_count -1: repeat playing the animation in a loop, continuously forever - LOOP ANIMATION
 
 
 # ###########################################    ENTITY SPECIFICATIONS    ##############################################
@@ -64,6 +65,7 @@ AnimSpec = TypedDict('AnimSpec',
         'x': float,  # Initial position X value
         'y': float,  # Initial position Y value
         'frame_rate': float,  # Frame rate
+        'repeat_count': int,  # Count to repeat. -1 to repeat continuously.
     }
 )  # AnimSpec
 
@@ -77,7 +79,7 @@ anim_specs: list[AnimSpec] = [
         'resize': False,
         'w': 512,
         'h': 512,
-        'color': 'aqua',
+        'color': 'orangered2',
         'x': 890.0,
         'y': 540.0,
         'frame_rate': 32.0,

@@ -55,24 +55,56 @@ class Anim(pygame.sprite.Sprite):
                 x: float,
                 y: float,
                 frame_rate: float,
+                repeat_count: int,
             ):
         self.base_instance_id: int = MapThing.base_instance_count
         self.frames: list[pygame.Surface] = ACACHE[frames_dir]['frames']
         self.x: float = x
         self.y: float = y
-        self.image: pygame.Surface | None = None  # Active image
-        self.rect: pygame.FRect = pygame.FRect()
+        self.frame_rate: float = frame_rate
+        # WE DO NOT NEED THESE TWO THINGS HERE. I HAVE BEEN WONDERING AND NOW IT IS CONFIRMED. CLEAN UP AROUND HERE.
+        # self.image: pygame.Surface = self.frames[0]  # Active image/surface  (instantiates with the first frame surface)
+        # self.rect: pygame.FRect = pygame.FRect()  # TODO: CONFIRM WHY THIS IS HERE. I GUESS WE NEED IT FOR THE SUPER INIT? Not sure.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Anim.base_instance_count += 1
-        self.rect = self.image.get_frect(center=(self.x, self.y))
+        self.rect = self.frames[0].get_frect(center=(self.x, self.y))  # TODO: .. and WHY do we need the ONE ABOVE HERE? OTHER CLASSES DO THIS TOO.
+        self.frame_count: int = len(self.frames)
+        self.current_frame_index: int = 0
+        self.repeat_count: int = repeat_count
+        self.repeat: bool = False
+        if self.repeat_count == -1 or self.repeat_count > 0:
+            self.repeat = True
+        self.image = self.frames[self.current_frame_index]
+        # TODO: Probably need to convert frame_rate into inter_frame_delay here. I think this just means inverting it but watch the units.
+        self.inter_frame_delay: float = 10.0  # Dummy placeholder. We really want to manage this with a "frame rate".
+        self.last_frame_advance: int = pygame.time.get_ticks()  # Dummy value. TODO: FIX.
 
+    def frame_timer(self):
+        current_time = pygame.time.get_ticks()  # Milliseconds since pygame.init() was called.
+        if current_time - self.last_frame_advance >= self.inter_frame_delay:
+            self.advance_frame()
 
+    def advance_frame(self):
+        print(f"CURRENT FRAME INDEX: {self.current_frame_index}")
+        if self.current_frame_index >= self.frame_count - 1:  # End of animation
+            if self.repeat and self.repeat_count > 1:  # End of animation but we repeat if appropriate. Reset frame index to start.
+                self.current_frame_index = 0
+                self.image = self.frames[self.current_frame_index]
+                self.repeat_count -= 1
+                print(f"REPEAT COUNT: {self.repeat_count}")
+            else:
+                print("FINALIZING")
+                self.finalize()  # No repeat and end of animation so self-destroy.
+        else:  # During animation
+            self.current_frame_index += 1  # Next frame as we play through all frames.
+            self.image = self.frames[self.current_frame_index]
+        self.last_frame_advance = pygame.time.get_ticks()
 
+    def update(self, delta_time: float, ephase_name: str | None = None):
+        self.frame_timer()  # Calls advance_frame() when necessary. Keeps a cadence of inter_frame_delay (inverse of frame rate)
 
-
-
-
-
+    def finalize(self):
+        self.kill()
 
 
 # TODO: Make into an Abstract Base Class using the ABC module.
@@ -99,7 +131,7 @@ class MapThing(pygame.sprite.Sprite):
         self.angle: float = angle
         self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
         self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
-        self.rect: pygame.FRect = pygame.FRect()
+        self.rect: pygame.FRect = pygame.FRect()  # TODO: I don't think we need this here. MUST BE CAREFULLY CONFIRMED. Set after super.update tho.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         MapThing.base_instance_count += 1
         self.rect = self.surface_l.get_frect(center=(self.x, self.y))
@@ -350,6 +382,19 @@ class Weapon(Entity):
             self.kill()
         if self.rect.bottom >= cfg.SCREEN_HEIGHT + cfg.PROJECTILE_MARGIN:  # A little beyond BOTTOM wall in Y Axis
             self.kill()
+
+    def explode(self):
+        # self.can_shoot = False
+        # self.laser_shoot_time = pygame.time.get_ticks()
+        # weapon_img_filename = self.weapon_spec['img_filename']
+        explosion: Anim = Anim(
+            groups=[all_anims],  # TODO: Abstract out this hardcoded hack.
+            frames_dir='anim-exp-elaborate',  # TODO: Abstract out this hardcoded hack.
+            x=self.rect.midtop[0],
+            y=self.rect.midtop[1],
+            frame_rate=100.0,  # TODO: Abstract out this hardcoded hack.
+            repeat_count=1,
+        )
 
 
 class Npc(Entity):
@@ -662,6 +707,7 @@ all_greenballs: pygame.sprite.Group = pygame.sprite.Group()
 all_npcs: pygame.sprite.Group = pygame.sprite.Group()
 all_props: pygame.sprite.Group = pygame.sprite.Group()
 all_colliders: pygame.sprite.Group = pygame.sprite.Group()  # TODO: Might go away. We'll likely always be more specific.
+all_anims: pygame.sprite.Group = pygame.sprite.Group()
 
 # GROUPS FOR DYNAMIC ENTITIES
 new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs, all_colliders]
@@ -847,6 +893,7 @@ while running:
     all_players.update(gr_delta_time, g_ephase_name)
     all_greenballs.update(gr_delta_time, g_ephase_name)  # Must update GreenBalls (Weapons) AFTER Player since Player creates Weapons during Player update.
     all_meatballs.update(gr_delta_time, g_ephase_name)
+    all_anims.update(gr_delta_time, g_ephase_name)
 
 
     # ###############################################    COLLISIONS    #################################################
@@ -865,6 +912,7 @@ while running:
             for col in greenball_col_sprites:
                 g_score += 1  # g_ variable from outer scope. We do not need 'global' keyword. Limited use of these.
                 print("                   *  *  *  BOOM!  *  *  *")
+                greenball.explode()
                 greenball.kill()
 
 
@@ -879,6 +927,7 @@ while running:
     all_npcs.draw(display_surface)
     all_meatballs.draw(display_surface)
     all_greenballs.draw(display_surface)
+    all_anims.draw(display_surface)
 
     # SCOREBOARD
     if cfg.SCR:

@@ -24,6 +24,7 @@ LASER_COOLDOWN_DURATION: int = 100  # Milliseconds - minimum time between laser 
 PROJECTILE_MARGIN: int = 160  # Distane beyond wall on X or Y axis at which projectile/Weapon is "Finalized"
 PLAYER_MAIN_WEAPON_INDEX: int = 0  # Index in weapon_specs of the weapon_spec item to use for the Player's main projectile.
 # 0 = green ball (orb)    1 = meatball
+MAIN_WEAPON_KILL_ANIM_INDEX: int = 0  # Index in anim_specs of the anim_spec item to use for the Player's main projectile kill/finalization (explosion) animation.
 
 PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
 MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
