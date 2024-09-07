@@ -28,17 +28,17 @@ MAIN_WEAPON_EXP_ANIM_INDEX: int = 0  # Index in anim_specs of the anim_spec item
 
 PYGAME_FROMBYTES_IMAGE_LOAD_WORKAROUND_ENABLE: bool = True
 MEATBALL_SPAWN_MARGIN: int = 60  # Meatballs can spawn this far slightly to the left/right and above the screen.
-MEATBALL_SPAWN_TIME_MIN: int = 20  # They spawn no faster than this but a small random-in-range pause is added too.
-MEATBALL_SPAWN_TIME_RANGE: int = 500  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
+MEATBALL_SPAWN_TIME_MIN: int = 40  # They spawn no faster than this but a small random-in-range pause is added too.
+MEATBALL_SPAWN_TIME_RANGE: int = 800  # Random from 0 to this range max is then ADDED TO THE MINIMUM.
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
 
 ENVIRO_PHASES: list[tuple[str, int]] = [  # See related types: ent.EnviroSpec, ent.EnviroKeys
-        ('peace', 800),
-        ('rogue', 160),
-        ('chaos', 400),
+        ('peace', 1200),
+        ('rogue', 120),
+        ('chaos', 200),
         ('frozen', 60),
         ('rogue', 50),
-        ('frozen', 110),
+        ('frozen', 80),
     ] # See ent.EnviroKeys, a Literal type. Spec key convention: First letter of phase name, 'e_' prefix: e_p, e_r, e_c, e_f
 
 

@@ -54,30 +54,28 @@ class Anim(pygame.sprite.Sprite):
                 frames_dir: str,
                 x: float,
                 y: float,
-                frame_rate: float,
+                frame_delay: float,
                 repeat_count: int,
             ):
         self.base_instance_id: int = MapThing.base_instance_count
         self.frames: list[pygame.Surface] = ACACHE[frames_dir]['frames']
         self.x: float = x
         self.y: float = y
-        self.frame_rate: float = frame_rate
         # WE DO NOT NEED THESE TWO THINGS HERE. I HAVE BEEN WONDERING AND NOW IT IS CONFIRMED. CLEAN UP AROUND HERE.
         # self.image: pygame.Surface = self.frames[0]  # Active image/surface  (instantiates with the first frame surface)
         # self.rect: pygame.FRect = pygame.FRect()  # TODO: CONFIRM WHY THIS IS HERE. I GUESS WE NEED IT FOR THE SUPER INIT? Not sure.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Anim.base_instance_count += 1
-        self.rect = self.frames[0].get_frect(center=(self.x, self.y))  # TODO: .. and WHY do we need the ONE ABOVE HERE? OTHER CLASSES DO THIS TOO.
+        self.rect: pygame.FRect = self.frames[0].get_frect(center=(self.x, self.y))  # TODO: .. and WHY do we need the ONE ABOVE HERE? OTHER CLASSES DO THIS TOO.
         self.frame_count: int = len(self.frames)
         self.current_frame_index: int = 0
         self.repeat_count: int = repeat_count
         self.repeat: bool = False
         if self.repeat_count == -1 or self.repeat_count > 0:
             self.repeat = True
-        self.image = self.frames[self.current_frame_index]
-        # TODO: Probably need to convert frame_rate into inter_frame_delay here. I think this just means inverting it but watch the units.
-        self.inter_frame_delay: float = 5.0  # Dummy placeholder. We really want to manage this with a "frame rate".
-        self.last_frame_advance: int = pygame.time.get_ticks()  # Dummy value. TODO: FIX.
+        self.image: pygame.Surface = self.frames[self.current_frame_index]
+        self.inter_frame_delay: float = frame_delay
+        self.last_frame_advance: int = pygame.time.get_ticks()
 
     def frame_timer(self):
         current_time = pygame.time.get_ticks()  # Milliseconds since pygame.init() was called.
@@ -97,8 +95,8 @@ class Anim(pygame.sprite.Sprite):
             self.image = self.frames[self.current_frame_index]
         self.last_frame_advance = pygame.time.get_ticks()
 
-    def update(self, delta_time: float, ephase_name: str | None = None):
-        self.frame_timer()  # Calls advance_frame() when necessary. Keeps a cadence of inter_frame_delay (inverse of frame rate)
+    def update(self, delta_time: float, ephase_name: str | None):
+        self.frame_timer()  # Calls advance_frame() when necessary, keeping a cadence of inter_frame_delay.
 
     def finalize(self):
         self.kill()
@@ -126,12 +124,12 @@ class MapThing(pygame.sprite.Sprite):
         self.x: float = x
         self.y: float = y
         self.angle: float = angle
-        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
-        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
-        self.rect: pygame.FRect = pygame.FRect()  # TODO: I don't think we need this here. MUST BE CAREFULLY CONFIRMED. Set after super.update tho.
+        # self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # SAFELY DISABLED  # TODO: Check classes below here
+        # self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # SAFELY DISABLED  # TODO: Check classes below here
+        # self.rect: pygame.FRect = pygame.FRect()  # TODO: I don't think we need this here. MUST BE CAREFULLY CONFIRMED. Set after super.update tho.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         MapThing.base_instance_count += 1
-        self.rect = self.surface_l.get_frect(center=(self.x, self.y))
+        self.rect: pygame.FRect = self.surface_l.get_frect(center=(self.x, self.y))
 
         if cfg.WHITEOUT_MODE:
             self.mask_surf_l.set_colorkey((0, 0, 0))  # Make the black transparent.
@@ -174,9 +172,9 @@ class Entity(pygame.sprite.Sprite):
         self.angle: float = angle
         self.angular_vel: float = angular_vel
         self.e_spec = e_spec
-        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).
-        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).
-        self.rect: pygame.FRect = pygame.FRect()
+        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
+        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
+        self.rect: pygame.FRect = pygame.FRect()  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
         self.rect = self.surface_l.get_frect(center=(self.x, self.y))  # TODO: LIKELY EXCESSIVE INIT WE CAN MAKE NONE
@@ -193,7 +191,7 @@ class Entity(pygame.sprite.Sprite):
             self.surface_l = self.mask_surf_l  # White-out the object.
             self.surface_r = self.mask_surf_r  # "
 
-    def update(self, delta_time: float, ephase_name: str | None = None):
+    def update(self, delta_time: float, ephase_name: str | None):
         delta_vector: pygame.math.Vector2 = self.dir * self.speed * delta_time
         # MYPY ERROR HERE - TRICKY ONE:
         # main.py:365: error: Incompatible types in assignment (expression has type "Vector2",
@@ -308,7 +306,7 @@ class Player(Entity):
             if current_time - self.laser_shoot_time >= self.cooldown_duration:
                 self.can_shoot = True
 
-    def update(self, delta_time: float, ephase_name: str | None = None):
+    def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
 
         keys = pygame.key.get_pressed()
@@ -368,7 +366,7 @@ class Weapon(Entity):
         Weapon.instance_count += 1
         self.final_anim_spec = final_anim_spec
 
-    def update(self, delta_time: float, ephase_name: str | None = None):
+    def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
@@ -394,7 +392,7 @@ class Weapon(Entity):
             frames_dir=self.final_anim_spec['frames_dir'],
             x=self.rect.midtop[0],
             y=self.rect.midtop[1],
-            frame_rate=self.final_anim_spec['frame_rate'],  # TODO: THIS IS NOT USED YET. We use inter_frame_delay.
+            frame_delay=self.final_anim_spec['frame_delay'],  # TODO: THIS IS NOT USED YET. We use inter_frame_delay.
             repeat_count=self.final_anim_spec['repeat_count'],
         )
 
@@ -426,7 +424,7 @@ class Npc(Entity):
 
         Npc.instance_count += 1
 
-    def update(self, delta_time: float, ephase_name: str | None = None):
+    def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
@@ -447,7 +445,25 @@ class Prop(MapThing):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-def enviro_influence(xself: Player | Weapon | Npc, ephase_name: str) -> None:
+# I'm making environ_influence robust to being called with missing argument values in which case it silently does nothing,
+# and this is because having both a valid espec AND a current and valid ephase_name might not always be guaranteed as
+# this app gets more complex. Not to say bugs are expected, but these are not essential to the game functioning and they
+# sort of are optional/temporary things and require a fair amount to be in place and correct to be ready to function for
+# enviro_influence. Let's just say that in a more complex and dynamic game that might be loading environmental factors
+# dynamically or even from intermittent online sources, making this part flexible/robust is not a bad idea. ALSO, and
+# perhaps more importantly, I WANT A FEATURE CAPABILTIY, to be able to omit one or the other from some other strategic
+# perspective and use that as part of the INTENDED INTERFACE to allow additional modes of control. Thus, one can deliberately
+# eliminate (make None) either xself or (much more likely) ephase_name and not worry about the fact that update() for some
+# classes is hard-coded to call environ_influence(), and thus BE ABLE TO DISABLE ENVIRO INFLUENCE IN THIS ADDITIONAL WAY,
+# (by making ephase_name None).
+# ALTERNATE STRATEGY: I think we could still do this or variants by REQUIRING this func to have all args .. then
+# INSIDE the relevant update() methods (Player, Npc, Weapon) WE CHECK FOR ephase_name to be NOT None before attempting
+# to call enviro_influence. TODO: Consider the best approach and finalize this. MyPy might require this alternate to be happy.
+# Since we reference the subscripts like 'e_p' .. there is no way for MyPy to be happy about the | None option on the type.
+# I think this means we will need to check before calling and not allow Nones here. TODO: Make it so.
+def enviro_influence(xself: Player | Weapon | Npc | None, ephase_name: str | None) -> None:
+    if xself is None or ephase_name is None:
+        return
     if ephase_name == 'peace':
         xself.speed = xself.e_spec['e_p']
     elif ephase_name == 'rogue':

@@ -64,7 +64,7 @@ AnimSpec = TypedDict('AnimSpec',
         'color': str,  # Debug mode color of rectangle
         'x': float,  # Initial position X value
         'y': float,  # Initial position Y value
-        'frame_rate': float,  # Frame rate
+        'frame_delay': float,  # Frame rate
         'repeat_count': int,  # Count to repeat. -1 to repeat continuously.
     }
 )  # AnimSpec
@@ -82,7 +82,7 @@ anim_specs: list[AnimSpec] = [
         'color': 'orangered2',
         'x': 890.0,
         'y': 540.0,
-        'frame_rate': 32.0,  # TODO: Not used yet.
+        'frame_delay': 10.0,
         'repeat_count': 1,
     },
 ]  # anim_specs: list[AnimSpec]
@@ -378,7 +378,7 @@ prop_templates: list[PropTemplate] = [
         'x': 804.0,
         'y': 440.0,
         'a': 0.0,
-        'spray_count': 60,
+        'spray_count': 10,
         'spray_radius': 780.0,
     },
     {
@@ -392,7 +392,7 @@ prop_templates: list[PropTemplate] = [
         'x': 880.0,
         'y': 360.0,
         'a': 0.0,
-        'spray_count': 18,
+        'spray_count': 6,
         'spray_radius': 680.0,
     },
 ]  # prop_templates: list[PropTemplate]
