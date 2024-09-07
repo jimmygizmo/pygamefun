@@ -8,7 +8,7 @@ from typing import TypedDict
 import pygame
 import random
 import resizer
-
+from game.entity import anim_specs
 
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
@@ -76,7 +76,7 @@ class Anim(pygame.sprite.Sprite):
             self.repeat = True
         self.image = self.frames[self.current_frame_index]
         # TODO: Probably need to convert frame_rate into inter_frame_delay here. I think this just means inverting it but watch the units.
-        self.inter_frame_delay: float = 10.0  # Dummy placeholder. We really want to manage this with a "frame rate".
+        self.inter_frame_delay: float = 5.0  # Dummy placeholder. We really want to manage this with a "frame rate".
         self.last_frame_advance: int = pygame.time.get_ticks()  # Dummy value. TODO: FIX.
 
     def frame_timer(self):
@@ -85,15 +85,12 @@ class Anim(pygame.sprite.Sprite):
             self.advance_frame()
 
     def advance_frame(self):
-        print(f"CURRENT FRAME INDEX: {self.current_frame_index}")
         if self.current_frame_index >= self.frame_count - 1:  # End of animation
             if self.repeat and self.repeat_count > 1:  # End of animation but we repeat if appropriate. Reset frame index to start.
                 self.current_frame_index = 0
                 self.image = self.frames[self.current_frame_index]
                 self.repeat_count -= 1
-                print(f"REPEAT COUNT: {self.repeat_count}")
             else:
-                print("FINALIZING")
                 self.finalize()  # No repeat and end of animation so self-destroy.
         else:  # During animation
             self.current_frame_index += 1  # Next frame as we play through all frames.
@@ -336,6 +333,7 @@ class Player(Entity):
                     angle=self.weapon_spec['a'],
                     angular_vel=self.weapon_spec['av'],
                     e_spec=self.weapon_e_spec,
+                    final_anim_spec=self.weapon_spec['final_anim_spec']
                 )
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
@@ -354,6 +352,7 @@ class Weapon(Entity):
                 angle: float,
                 angular_vel: float,
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
+                final_anim_spec: ent.AnimSpec | None = None,  # Optional. Currently, greenball has one, meatball does not.
             ):
         self.instance_id: int = Weapon.instance_count
         super().__init__(
@@ -367,6 +366,7 @@ class Weapon(Entity):
             angular_vel=angular_vel,
             e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
+        self.final_anim_spec = final_anim_spec
 
     def update(self, delta_time: float, ephase_name: str | None = None):
         enviro_influence(self, ephase_name)
@@ -384,16 +384,18 @@ class Weapon(Entity):
             self.kill()
 
     def explode(self):
-        # self.can_shoot = False
+        if not self.final_anim_spec:
+            return
+
         # self.laser_shoot_time = pygame.time.get_ticks()
         # weapon_img_filename = self.weapon_spec['img_filename']
         explosion: Anim = Anim(
-            groups=[all_anims],  # TODO: Abstract out this hardcoded hack.
-            frames_dir='anim-exp-elaborate',  # TODO: Abstract out this hardcoded hack.
+            groups=[all_anims],  # TODO: Abstract out this hardcoded hack. Or not.
+            frames_dir=self.final_anim_spec['frames_dir'],
             x=self.rect.midtop[0],
             y=self.rect.midtop[1],
-            frame_rate=100.0,  # TODO: Abstract out this hardcoded hack.
-            repeat_count=1,
+            frame_rate=self.final_anim_spec['frame_rate'],  # TODO: THIS IS NOT USED YET. We use inter_frame_delay.
+            repeat_count=self.final_anim_spec['repeat_count'],
         )
 
 
@@ -738,7 +740,18 @@ for i, gr_player_spec in enumerate(ent.player_specs):
             height=gr_player_spec['h'],
         )
     gr_e_spec = composed_enviro_spec(gr_player_spec)
+    # TODO: Adding new feature to weapon_spec passed through Player instance. We will now EMBED the anim_spec for
+    #     the explosion animation the specific weapon makes. This is a first in this game/project; to embed one spec
+    #     object inside another, but after consideration, it seems to be a good pattern. It avoids making too many
+    #     attributes in Player and sort of keeps things organized in a nice logical way. Later this pattern might
+    #     not be perfect for all use cases of a Weapon class, but then again it might. So many things in this area will
+    #     be evolving, but for the current state, it seems a great idea to embed spec objects, because for cases like
+    #     animations, some of these things will be closely coupled and will benefit from passing through the existing
+    #     arguments and doing so in a clean logical way. It feels right. The animation for the explosion of the weapon
+    #     is specified within the specs of the weapon. Makes sense and I see that the mechanics of this will be clean.
     gr_weapon_spec = ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX]
+    # NEW: We insert the anim spec into the weapon spec. The anim is selected vi Config.
+    gr_weapon_spec['final_anim_spec'] = anim_specs[cfg.MAIN_WEAPON_EXP_ANIM_INDEX]
     gr_weapon_e_spec = composed_enviro_spec(gr_weapon_spec)  # TODO: This call COULD be done inside Player. Then we would not pass it to Player().
     player: Player = Player(
             groups=[all_sprites, all_players],

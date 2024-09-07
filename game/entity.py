@@ -82,7 +82,8 @@ anim_specs: list[AnimSpec] = [
         'color': 'orangered2',
         'x': 890.0,
         'y': 540.0,
-        'frame_rate': 32.0,
+        'frame_rate': 32.0,  # TODO: Not used yet.
+        'repeat_count': 1,
     },
 ]  # anim_specs: list[AnimSpec]
 
@@ -167,6 +168,7 @@ WeaponSpec = TypedDict('WeaponSpec',
         'e_r': float,  # Enviro: Rogue (speed)
         'e_c': float,  # Enviro: Chaos (speed)
         'e_f': float,  # Enviro: Frozen (speed)
+        'final_anim_spec': AnimSpec | None,
     }
 )  # WeaponSpec
 
@@ -191,6 +193,7 @@ weapon_specs: list[WeaponSpec] = [
         'e_r': 122.0,
         'e_c': 840.0,
         'e_f': 2350.0,
+        'final_anim_spec': None,
     },
     {
         'name': 'meatball',
@@ -211,6 +214,7 @@ weapon_specs: list[WeaponSpec] = [
         'e_r': 822.0,
         'e_c': 1640.0,
         'e_f': 3350.0,
+        'final_anim_spec': None,
     },
 ]  # weapon_specs: list[WeaponSpec]
 
