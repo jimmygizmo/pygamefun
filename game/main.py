@@ -100,6 +100,7 @@ class Anim(pygame.sprite.Sprite):
 
     def finalize(self):
         self.kill()
+# end class Anim() BASE CLASS  -  #
 
 
 # TODO: Make into an Abstract Base Class using the ABC module.
@@ -140,8 +141,7 @@ class MapThing(pygame.sprite.Sprite):
         # Props only use the LEFT side image and mask for everything, at this time.
         self.image = self.surface_l
         self.mask = self.mask_l
-
-    # NOTICE: MapThing has no update(), no physics_outer_walls() like Entity has.
+# end class MapThing() BASE CLASS  -  # NOTE: MapThing has no update() and no physics_outer_walls() like Entity has.
 
 
 # TODO: Make into an Abstract Base Class using the ABC module.
@@ -263,6 +263,7 @@ class Entity(pygame.sprite.Sprite):
         if self.rect.bottom >= cfg.SCREEN_HEIGHT:
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
+# end class Entity()  -  #
 
 
 class Player(Entity):
@@ -336,6 +337,7 @@ class Player(Entity):
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         super().update(delta_time, ephase_name)
+# end class Player()  -  #
 
 
 class Weapon(Entity):
@@ -384,9 +386,6 @@ class Weapon(Entity):
     def explode(self):
         if not self.final_anim_spec:
             return
-
-        # self.laser_shoot_time = pygame.time.get_ticks()
-        # weapon_img_filename = self.weapon_spec['img_filename']
         explosion: Anim = Anim(
             groups=[all_anims],  # TODO: Abstract out this hardcoded hack. Or not.
             frames_dir=self.final_anim_spec['frames_dir'],
@@ -395,6 +394,7 @@ class Weapon(Entity):
             frame_delay=self.final_anim_spec['frame_delay'],  # TODO: THIS IS NOT USED YET. We use inter_frame_delay.
             repeat_count=self.final_anim_spec['repeat_count'],
         )
+# end class Weapon()  -  #
 
 
 class Npc(Entity):
@@ -427,6 +427,7 @@ class Npc(Entity):
     def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
+# end class Npc()  -  #
 
 
 class Prop(MapThing):
@@ -441,6 +442,7 @@ class Prop(MapThing):
         self.instance_id: int = Prop.instance_count
         super().__init__(groups, img_filename, x, y, angle)  # super.update() can be done before or after setting any self.* but think about how it might matter! Maybe not at all.
         Prop.instance_count += 1
+# end class Prop()  -  #
 
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
@@ -475,6 +477,7 @@ def enviro_influence(xself: Player | Weapon | Npc | None, ephase_name: str | Non
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
+# end def enviro_influence()  -  #
 
 
 def load_image(
@@ -545,6 +548,7 @@ def load_image(
             'mask_surf_r': mask_surf_r,
         }
     SCACHE[filename] = sc_item
+# end def load_image()  -  #
 
 
 def load_anim_frames(
@@ -568,6 +572,7 @@ def load_anim_frames(
             'frames': frames,
         }
     ACACHE[frames_dir] = ac_item
+# end def load_amim_frames()  -  #
 
 
 # UPDATE: Below is already fixed just above here but this issue needs consistent resolution throught this project.
@@ -607,6 +612,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             angular_vel=random_av,
             e_spec=e_spec_meatball,
         )
+# end def event_meatball()
 
 
 def update_and_draw_scoreboard(
@@ -634,6 +640,8 @@ def update_and_draw_scoreboard(
             width=cfg.SCR_BORDER_THICKNESS,
             border_radius=cfg.SCR_BORDER_RADIUS,
         )
+# end def update_and_draw_scoreboard()  -  # Called every frame, expensive and of medium-importance,
+# update_and_draw_scoreboard() is a performance-tuning focus area.
 
 
 def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec) -> ent.EnviroSpec:
@@ -648,6 +656,7 @@ def composed_enviro_spec(spec_in: ent.PlayerSpec | ent.WeaponSpec | ent.NpcSpec)
         if key.startswith('e_'):
             spec_out[key] = spec_in[key]
     return spec_out
+# end def composed_enviro_spec()  -  #
 
 
 def template_generated_prop_specs():
@@ -679,6 +688,7 @@ def template_generated_prop_specs():
 
             gen_prop_specs.append(gen_prop_spec)
     return gen_prop_specs
+# end def template_generated_prop_specs()  -  #
 
 
 # Takes av values and looks for special values for SLOW, MED. FAST or FULL-RANGE random rotation speed (angular velocity).
@@ -699,6 +709,7 @@ def random_angular_vel(av_special_value: float) -> float:
     if bool(random.getrandbits(1)):  # Rotation direction is simply random. TODO: Later it may be configurable via additional special values.
         av = av * -1.0
     return av
+# end def random_angular_vel()  -  #
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -784,6 +795,8 @@ for i, gr_player_spec in enumerate(ent.player_specs):
             e_spec=gr_e_spec,
         )
     players[gr_player_spec['name']] = player  # Key off name or instance id. name should be unique
+# end PLAYER instantiation(s)  -  # 
+
 
 # INSTANITATE NPC SPRITES
 npcs: dict[str, Npc] = {}
@@ -809,6 +822,8 @@ for i, gr_npc_spec in enumerate(ent.npc_specs):
             e_spec=gr_e_spec,
         )
     npcs[gr_npc_spec['name']] = npc  # Key off name or instance id. name should be unique
+# end NPC instantiations(s)  -  #
+
 
 # INSTANITATE PROP SPRITES
 props: dict[str, Prop] = {}
@@ -829,6 +844,7 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
             angle=generated_prop_spec['a'],
         )
     props[generated_prop_spec['name']] = prop  # Key off name or instance id. name should be unique
+# end PROP instantiation(s)  -  #
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point. Just loading the cache.)
@@ -841,6 +857,7 @@ for i, gr_weapon_spec in enumerate(ent.weapon_specs):
             width=gr_weapon_spec['w'],
             height=gr_weapon_spec['h'],
         )
+# end WEAPON surface/image cache loading into SCACHE  -  #
 
 
 # LOAD ANIMATION CACHE WITH FRAMES DATA. (No Animations have been instantiated at this point. Just loading the cache.)
@@ -853,6 +870,7 @@ for i, gr_anim_spec in enumerate(ent.anim_specs):
             width=gr_anim_spec['w'],
             height=gr_anim_spec['h'],
         )
+# end ANIMATION frames surface/image cache loading into ACACHE  -  #
 
 
 # ###############################################    MAIN EXECUTION    #################################################
@@ -913,6 +931,7 @@ while running:
         ephase_count -= 1  # Decrement the counter for the current ephase while we use it for its specified duration.
         if ephase_count < 1:
             ephase = None
+    # end ENVIRO PHASE management/rotation  -  #
 
 
     # #################################################    UPDATE    ###################################################
@@ -943,7 +962,7 @@ while running:
                 print("                   *  *  *  BOOM!  *  *  *")
                 greenball.explode()
                 greenball.kill()
-
+    # end greenball (player projectile) collision-detection  -  #
 
     # ##################################################    DRAW    ####################################################
 
