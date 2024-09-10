@@ -61,12 +61,12 @@ class Anim(pygame.sprite.Sprite):
         self.frames: list[pygame.Surface] = ACACHE[frames_dir]['frames']
         self.x: float = x
         self.y: float = y
-        # WE DO NOT NEED THESE TWO THINGS HERE. I HAVE BEEN WONDERING AND NOW IT IS CONFIRMED. CLEAN UP AROUND HERE.
-        # self.image: pygame.Surface = self.frames[0]  # Active image/surface  (instantiates with the first frame surface)
-        # self.rect: pygame.FRect = pygame.FRect()  # TODO: CONFIRM WHY THIS IS HERE. I GUESS WE NEED IT FOR THE SUPER INIT? Not sure.
+        # self.image: pygame.Surface  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
+        # self.mask  # Animations like these do not use a mask because they do not involve physics or collisions.
+        # self.rect: pygame.FRect  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Anim.base_instance_count += 1
-        self.rect: pygame.FRect = self.frames[0].get_frect(center=(self.x, self.y))  # TODO: .. and WHY do we need the ONE ABOVE HERE? OTHER CLASSES DO THIS TOO.
+        self.rect: pygame.FRect = self.frames[0].get_frect(center=(self.x, self.y))
         self.frame_count: int = len(self.frames)
         self.current_frame_index: int = 0
         self.repeat_count: int = repeat_count
@@ -94,6 +94,7 @@ class Anim(pygame.sprite.Sprite):
             self.current_frame_index += 1  # Next frame as we play through all frames.
             self.image = self.frames[self.current_frame_index]
         self.last_frame_advance = pygame.time.get_ticks()
+    # end def Anim.advance_frame()  -  #
 
     def update(self, delta_time: float, ephase_name: str | None):
         self.frame_timer()  # Calls advance_frame() when necessary, keeping a cadence of inter_frame_delay.
@@ -125,9 +126,9 @@ class MapThing(pygame.sprite.Sprite):
         self.x: float = x
         self.y: float = y
         self.angle: float = angle
-        # self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # SAFELY DISABLED  # TODO: Check classes below here
-        # self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # SAFELY DISABLED  # TODO: Check classes below here
-        # self.rect: pygame.FRect = pygame.FRect()  # TODO: I don't think we need this here. MUST BE CAREFULLY CONFIRMED. Set after super.update tho.
+        # self.image: pygame.Surface  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
+        self.mask: pygame.Mask = self.mask_l  # Dummy val for init only.
+        # self.rect: pygame.FRect  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         MapThing.base_instance_count += 1
         self.rect: pygame.FRect = self.surface_l.get_frect(center=(self.x, self.y))
@@ -163,8 +164,8 @@ class Entity(pygame.sprite.Sprite):
         self.surface_r: pygame.Surface = SCACHE[img_filename]['surface_r']
         self.mask_l: pygame.Mask = SCACHE[img_filename]['mask_l']
         self.mask_r: pygame.Mask = SCACHE[img_filename]['mask_r']
-        self.mask_surf_l: pygame.Surface = SCACHE[img_filename]['mask_surf_l']  # TODO: These may be used later for special effects.
-        self.mask_surf_r: pygame.Surface = SCACHE[img_filename]['mask_surf_r']  # TODO: "
+        self.mask_surf_l: pygame.Surface = SCACHE[img_filename]['mask_surf_l']  # For whiteout mode and later, other FX.
+        self.mask_surf_r: pygame.Surface = SCACHE[img_filename]['mask_surf_r']  # (ditto)
         self.x: float = x
         self.y: float = y
         self.dir: pygame.math.Vector2 = direction
@@ -172,9 +173,9 @@ class Entity(pygame.sprite.Sprite):
         self.angle: float = angle
         self.angular_vel: float = angular_vel
         self.e_spec = e_spec
-        # self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # TODO: OK TO REMOVE
-        # self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # TODO: OK TO REMOVE
-        # self.rect: pygame.FRect = pygame.FRect()  # TODO: OK TO REMOVE
+        # self.image: pygame.Surface  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
+        self.mask: pygame.Mask = self.mask_l  # Dummy val for init only.
+        # self.rect: pygame.FRect  # No need to initialize w/dummy val in init as this seems to exist via Sprite cls.
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
         self.rect = self.surface_l.get_frect(center=(self.x, self.y))  # Must be done before we update(), because we must have a center attr.
@@ -193,32 +194,12 @@ class Entity(pygame.sprite.Sprite):
         self.rect.center += delta_vector
         # ***************************
 
-        self.physics_outer_walls()  # Handle bouncing off walls. NOTE: Props override this and pass. Props ignore walls.
-        # In fact, inside Props we override and pass update() too, so calling of physics_outer_walls() will never occur
-        # here for props. To clarify, inside Prop, BOTH update() and physics_outer_walls() are overridden and passed.
+        self.physics_outer_walls()  # Handle bouncing off walls.
 
-        # Activate the correctly-facing image and mask, based on X direction. Use expensive rotation, if enabled.
+        # ROTATION AND HORIZONTAL ORIENTATION (LEFT/RIGHT)
         if cfg.ROTATION:
-            # TODO: FIX DELTA_TIME ISSUE. I cannot scale rotation like this with current delta_time being so small. When you
-            #     enable this and do it like linear velocity, it just looks like rotation stops. I think I hit this issue earlier
-            #     with speed and then just increased my speeds artificially. The problem has to do with the units I am using
-            #     vs. the frame rate. I should problably set a baseline based on ROTATION through 360 and then figure things
-            #     backwards to determine my ARBITRARY speed/linear-vel values and thus end up with something I can use the same
-            #     delta_time value. Degress with there being 360 cannot be scaled like an arbitrary linear velocity/distance can.
-            #     I suppose we could use a separate/modified delta_time to use for rotation, but the first plan is the best by far.
-            # self.angle += self.angular_vel * delta_time  # ROTATE BY THE ANGULAR VELOCITY    *** CURRENTLY JUST MAKES ROTATION WAY WAY TOO SLOW ***
+            # self.angle += self.angular_vel * delta_time  # Not with the current very small delta_time. TODO: Fix.
             self.angle += self.angular_vel  # ROTATE BY THE ANGULAR VELOCITY
-            # TODO: Make this reset to 360 degrees PLUS the amount it just PASSED 260 degrees. No jerking. Best general behavior.
-            #     Think about this though for full context. When the rotation transform method is called and if it is given
-            #     a parameter > 360 degrees, one might safely assume that it is going to do the exact same thing. In fact,
-            #     the math libraries inevitably used by the rotation method in PyGame will likely do that. It will be
-            #     an automatic result. STILL, I fill like adding my own code here for that. This can be considered more
-            #     On a performance note, it might be MOST efficient to pass the angle unchanged, even if it is > 360.
-            #     This is because the code that checks or resolbes the issue downstream is going to most likely run (or take effect via math) anyhow.
-            #     So earlier additional checks to convert to < 360 would then be totally unnecessary and wasted cycles.
-            #     When you are optimizing for performance and other resources, you have to think about it carefully ..
-            #     and then ultimately you need to do performance profiling (running code a measuring time spent in
-            #     specific code lines/routines).
             if self.angle >= 360:
                 self.angle = 0.0
             if self.dir.x < 0:  # MOVING LEFT - ROTATION ENABLED
@@ -227,15 +208,25 @@ class Entity(pygame.sprite.Sprite):
             else:  # MOVING RIGHT - ROTATION ENABLED
                 self.image = pygame.transform.rotozoom(self.surface_r, self.angle, 1.0)
                 self.mask = self.mask_r  # TODO: FIX THIS. WRONG MASK. NEEDS ROTATE.
-        else:  # No rotation:
+        else:  # No rotation. Rotation disabled.
             if self.dir.x < 0:  # MOVING LEFT
                 self.image = self.surface_l
                 self.mask = self.mask_l
             else:  # MOVING RIGHT
                 self.image = self.surface_r
                 self.mask = self.mask_r
+        # end ROTATION AND HORIZONTAL ORIENTATION processing  -  # Rotation is currently expensive as it does not
+        #   use pre-computed/stored images. Raw pixels are manilulated so this is an area of performance concern,
+        #   especially since this occurs every frame for some Entity instances.
+        #   TODO: delta_time is too small to directly multiply against rotation. I think my speeds are artificially
+        #     large to account for multiplying directly against this delta_time (about 0.016).
+        #   Need to solve this issue before I can use dalta_time to scale rotation speed. (And do we always want to?
+        #   Yes probabl so. delta_time should scale ALL movement in the game, period.
+        #   TODO: Normalize anything > 360 to the smaller angle after subtracting 360. OR, actually allowing downstream
+        #       PyGame (or even the math libs it uses) to handle this MIGHT be even more efficient. Profile it to know.
 
         self.rect = self.image.get_frect(center=self.rect.center)
+        # end def Entity.update()  -  #
 
     def physics_outer_walls(self):
         # Bounce off LEFT wall in X Axis
@@ -257,6 +248,8 @@ class Entity(pygame.sprite.Sprite):
         if self.rect.bottom >= cfg.SCREEN_HEIGHT:
             self.rect.bottom = cfg.SCREEN_HEIGHT
             self.dir.y *= -1
+    # end def Entity.physics_outer_walls()  -  # For any Entity which does not bounce off walls, this can be
+    #   overridden and 'passed', or in that case maybe you want some new base class. This is how MapThing came about.
 # end class Entity()  -  #
 
 
@@ -331,6 +324,7 @@ class Player(Entity):
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
         super().update(delta_time, ephase_name)
+    # end def Player.update()  -  #
 # end class Player()  -  #
 
 
@@ -525,15 +519,15 @@ def load_image(
         surface_l = pygame.transform.flip(surface_l, True, False)
 
     mask_l: pygame.Mask = pygame.mask.from_surface(surface_l)  # Mask from surface LEFT. Done after possible flip and regardless of resize or not.
-    mask_surf_l: pygame.Surface = mask_l.to_surface()  # Now a 'mask surface' from that (black & white silhouette)  # TODO: NOT USING THIS YET. Remove?
+    mask_surf_l: pygame.Surface = mask_l.to_surface()  # Now a LEFT 'mask surface' from that.
 
     # Create RIGHT-facing surface and mask:
     surface_r: pygame.Surface = pygame.transform.flip(surface_l, True, False)
     mask_r: pygame.Mask = pygame.mask.from_surface(surface_r)  # Mask from surface RIGHT
     # And Mask Surface RIGHT:
     mask_surf_r: pygame.Surface = mask_r.to_surface()  # Now a 'mask surface' from that (black & white silhouette)
-
-    # TODO: Mask Surfaces (not Masks) mask_surf_l and mask_surf_r MAY be used later for special effects.
+    # Created from masks, mask surfaces (mask_surf_l and mask_surf_r) are black & white silhouettes, used for the
+    # WHITEOUT effect and later other effects like flashing.
 
     sc_item: SurfCacheItem = {
             'surface_l': surface_l,
@@ -684,11 +678,6 @@ def template_generated_prop_specs():
 # end def template_generated_prop_specs()  -  #
 
 
-# Takes av values and looks for special values for SLOW, MED. FAST or FULL-RANGE random rotation speed (angular velocity).
-# 7701 - SLOW, 7702 - MED, 7703 - FAST, 7704 - FULL RANGE. The values involved will be changing as how delta_time is
-# used will be changing. Returns a random angular velocity.
-# We don't need a ROT_SLOW_MIN for now. But we use ROT_MAX as a sort of defualt SUPER FAST, so we have that one.
-#     So if you go for FULL-RANGE 7704, or just let the default apply, then you get the SUPER FAST option.
 def random_angular_vel(av_special_value: float) -> float:
     av: float = 1.222  # Specific only for troubleshooting. This is a default value to be replaced in all valid cases.
     if av_special_value == 7701.0:
@@ -702,7 +691,12 @@ def random_angular_vel(av_special_value: float) -> float:
     if bool(random.getrandbits(1)):  # Rotation direction is simply random. TODO: Later it may be configurable via additional special values.
         av = av * -1.0
     return av
-# end def random_angular_vel()  -  #
+# end def random_angular_vel()  -  # Takes av values and looks for special values for SLOW, MED. FAST or FULL-RANGE
+#   random rotation speed (angular velocity).
+#   7701 - SLOW, 7702 - MED, 7703 - FAST, 7704 - FULL RANGE. The values involved will be changing as how delta_time is
+#   used will be changing. Returns a random angular velocity.
+#   We don't need a ROT_SLOW_MIN for now. But we use ROT_MAX as a sort of defualt SUPER FAST, so we have that one.
+#     So if you go for FULL-RANGE 7704, or just let the default apply, then you get the SUPER FAST option.
 
 
 # ###############################################    INITIALIZATION    #################################################
@@ -950,7 +944,6 @@ while running:
         if greenball_col_sprites:
             for col in greenball_col_sprites:
                 g_score += 1  # g_ variable from outer scope. We do not need 'global' keyword. Limited use of these.
-                print("                   *  *  *  BOOM!  *  *  *")
                 greenball.explode()
                 greenball.kill()
     # end greenball (player projectile) collision-detection  -  # NOTES REGARDING: PyCharm Warning, POSSIBLY FALSE, on:
