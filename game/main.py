@@ -13,13 +13,8 @@ from game.entity import anim_specs
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
 
-# TODO: Document how filename and frames_dir will be unique (both are relative paths under /assets/ and files/dirs)
-#     in the same dir must have unique names. THUS, these are used as the keys to the hash entries for the resources
-#     stored in the cache for these unique paths. One is an image filename and the other is a directory name, which
-#     will be full of sequentially-named image files. In both cases these are unique identifiers, enforced by the fact
-#     that these are paths within the same base path in the filesystem. This is a nice clean and simple mechanism
-#     to use for unique keys for the cache which also have excellent semantics.
-# SURFACE CACHE - 'SCACHE'
+
+# --------  SURFACE CACHE  -  SCACHE  --------  # TODO: Move this description below, etc.
 # The Surface Cache SCACHE pre-loads images into surfaces. When sprites are instantiated, they will use this cache
 # for surfaces and not need to load them from disk. This is important for dynamically/frequently spawned/destroyed sprites.
 SurfCacheItem = TypedDict('SurfCacheItem',
@@ -33,16 +28,24 @@ SurfCacheItem = TypedDict('SurfCacheItem',
     }
 )  # SurfCacheitem
 SCACHE: dict[str, SurfCacheItem] = {}  # The Surface Cache. Key = filename, Value = SurfCacheItem.
+# end SURFACE CACHE global initialization  -  # # TODO: Document how filename and frames_dir will be unique
+#   (both are relative paths under /assets/ and files/dirs)
+#   in the same dir must have unique names. THUS, these are used as the keys to the hash entries for the resources
+#   stored in the cache for these unique paths. One is an image filename and the other is a directory name, which
+#   will be full of sequentially-named image files. In both cases these are unique identifiers, enforced by the fact
+#   that these are paths within the same base path in the filesystem. This is a nice clean and simple mechanism
+#   to use for unique keys for the cache which also have excellent semantics.
 
-# TODO: Description.
+
+# --------  ANIMATION CACHE  -  ACACHE  --------
 AnimCacheItem = TypedDict('AnimCacheItem',
     {
         'frames': list[pygame.Surface],
     }
 )  # AnimCacheItem
 ACACHE: dict[str, AnimCacheItem] = {}  # The Animation Cache. Key = frames_dir, Value = AnimCacheItem.
-
-# TODO: I don't know that we need any masks for the animations/frames at this point, or ever would. It's not impossible.
+# end ANIMATION CACHE global initialization  -  # Current animation type does not need masks as there is are no physics
+#   or collisions involved, but this could change.
 
 
 # #############################################    CLASS DEFINITIONS    ################################################
@@ -261,6 +264,7 @@ class Player(Entity):
                 weapon_spec: ent.WeaponSpec,
                 weapon_e_spec: ent.EnviroSpec,
                 weapons_groups: list[pygame.sprite.Group],
+                weapon_anim_groups: list[pygame.sprite.Group],
                 x: float,
                 y: float,
                 direction: pygame.math.Vector2,
@@ -273,6 +277,7 @@ class Player(Entity):
         self.weapon_spec = weapon_spec
         self.weapon_e_spec = weapon_e_spec
         self.weapons_groups = weapons_groups
+        self.weapon_anim_groups = weapon_anim_groups
         self.can_shoot: bool = True
         self.laser_shoot_time: int = 0
         self.cooldown_duration: int = cfg.LASER_COOLDOWN_DURATION  # milliseconds
@@ -318,8 +323,9 @@ class Player(Entity):
                     speed=self.weapon_spec['s'],
                     angle=self.weapon_spec['a'],
                     angular_vel=self.weapon_spec['av'],
+                    final_anim_groups=self.weapon_anim_groups,
                     e_spec=self.weapon_e_spec,
-                    final_anim_spec=self.weapon_spec['final_anim_spec']
+                    final_anim_spec=self.weapon_spec['final_anim_spec'],
                 )
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
@@ -339,8 +345,9 @@ class Weapon(Entity):
                 speed: float,
                 angle: float,
                 angular_vel: float,
-                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
-                final_anim_spec: ent.AnimSpec | None = None,  # Optional. Currently, greenball has one, meatball does not.
+                final_anim_groups: list[pygame.sprite.Group],
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.  TODO: CLARIFY. See extensive comments below.
+                final_anim_spec: ent.AnimSpec | None = None,  # Optional. Currently, greenball has one, meatball does not.  TODO: CLARIFY. See extensive comments below.
             ):
         self.instance_id: int = Weapon.instance_count
         super().__init__(
@@ -355,13 +362,13 @@ class Weapon(Entity):
             e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Weapon.instance_count += 1
         self.final_anim_spec = final_anim_spec
+        self.final_anim_groups = final_anim_groups
 
     def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
 
     def physics_outer_walls(self):  # Overrides Entity.physics_outer_walls().
-        # Projectiles/weapons are deleted beyond some margin and do not bounce off the outer walls.
         if self.rect.left <= 0 - cfg.PROJECTILE_MARGIN:  # A little beyond LEFT wall in X Axis
             self.kill()
         if self.rect.right >= cfg.SCREEN_WIDTH + cfg.PROJECTILE_MARGIN:  # A little beyond RIGHT wall in X Axis
@@ -370,18 +377,21 @@ class Weapon(Entity):
             self.kill()
         if self.rect.bottom >= cfg.SCREEN_HEIGHT + cfg.PROJECTILE_MARGIN:  # A little beyond BOTTOM wall in Y Axis
             self.kill()
+    # end def Weapon.physics_outer_walls()  -  # Projectiles/weapons are deleted beyond some margin and do not bounce
+    #   off the outer walls.
 
     def explode(self):
         if not self.final_anim_spec:
             return
         explosion: Anim = Anim(
-            groups=[all_anims],  # TODO: Abstract out this hardcoded hack. Or not.
+            groups=self.final_anim_groups,
             frames_dir=self.final_anim_spec['frames_dir'],
             x=self.rect.midtop[0],
             y=self.rect.midtop[1],
             frame_delay=self.final_anim_spec['frame_delay'],  # TODO: THIS IS NOT USED YET. We use inter_frame_delay.
             repeat_count=self.final_anim_spec['repeat_count'],
         )
+    # end def Weapon.explode()  -  #
 # end class Weapon()  -  #
 
 
@@ -396,7 +406,7 @@ class Npc(Entity):
                 speed: float,
                 angle: float,
                 angular_vel: float,
-                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.
+                e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.  # TODO: CLARIFY.
             ):
         self.instance_id: int = Npc.instance_count
         super().__init__(
@@ -408,13 +418,14 @@ class Npc(Entity):
             speed=speed,
             angle=angle,
             angular_vel=angular_vel,
-            e_spec=e_spec)  # super.update() could be done first before setting all the self.* but for now I have them last.
+            e_spec=e_spec)
 
         Npc.instance_count += 1
 
     def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
         super().update(delta_time, ephase_name)
+    # end def Npc.update()  -  #
 # end class Npc()  -  #
 
 
@@ -581,7 +592,11 @@ def load_anim_frames(
 #        rather lean and optimized right from the beginning. Some users have slower machines. We need to remember that as well.
 
 
-def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.EnviroSpec):
+def event_meatball(
+            groups: list[pygame.sprite.Group],
+            anim_groups: list[pygame.sprite.Group],
+            e_spec_meatball: ent.EnviroSpec,
+        ) -> None:
     meatball_spec = ent.weapon_specs[1]
     spawn_x = random.randint((0 - cfg.MEATBALL_SPAWN_MARGIN), (cfg.SCREEN_WIDTH + cfg.MEATBALL_SPAWN_MARGIN))
     spawn_y = random.randint((0 - 2 * cfg.MEATBALL_SPAWN_MARGIN), ( 0 - cfg.MEATBALL_SPAWN_MARGIN))
@@ -597,6 +612,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             speed=meatball_spec['s'],
             angle=meatball_spec['a'],
             angular_vel=random_av,
+            final_anim_groups=anim_groups,
             e_spec=e_spec_meatball,
         )
 # end def event_meatball()  -  #
@@ -728,6 +744,8 @@ all_anims: pygame.sprite.Group = pygame.sprite.Group()
 # GROUPS FOR DYNAMIC ENTITIES
 new_greenballs_groups: list[pygame.sprite.Group] = [all_sprites, all_greenballs, all_colliders]
 new_meatballs_groups: list[pygame.sprite.Group] = [all_sprites, all_meatballs, all_colliders]
+greenball_anim_groups: list[pygame.sprite.Group] = [all_sprites, all_anims, all_colliders]
+meatball_anim_groups: list[pygame.sprite.Group] = [all_sprites, all_anims, all_colliders]
 # TODO: JUST NOTING HERE AGAIN AS IN OTHER PLACES. WE REALLY DON'T NEED all_sprites. And probably neither all_colliders
 
 generated_prop_specs = template_generated_prop_specs()
@@ -773,6 +791,7 @@ for i, gr_player_spec in enumerate(ent.player_specs):
             weapon_spec=gr_weapon_spec,
             weapon_e_spec=gr_weapon_e_spec,
             weapons_groups=new_greenballs_groups,
+            weapon_anim_groups=greenball_anim_groups,
             x=gr_player_spec['x'],
             y=gr_player_spec['y'],
             direction=gr_player_spec['d'],
@@ -901,7 +920,11 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == meatball_event:
-            event_meatball(groups=new_meatballs_groups, e_spec_meatball=gr_e_spec_meatball)
+            event_meatball(
+                groups=new_meatballs_groups,
+                anim_groups=meatball_anim_groups,
+                e_spec_meatball=gr_e_spec_meatball
+            )
     # end event dispatching  -  # All event-handling is dispatched from this loop. Some events are configured just above
     #   here in CUSTOM EVENTS which is during the start of MAIN EXECUTION. NOTE: Event timers can be set from anywhere.
 
