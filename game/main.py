@@ -172,18 +172,12 @@ class Entity(pygame.sprite.Sprite):
         self.angle: float = angle
         self.angular_vel: float = angular_vel
         self.e_spec = e_spec
-        self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
-        self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
-        self.rect: pygame.FRect = pygame.FRect()  # TODO: TRY TO DELETE THIS AND DO IT LATER. MIGHT BE POSSIBLE
+        # self.image: pygame.Surface | None = None  # Active image (depending on direction of motion).  # TODO: OK TO REMOVE
+        # self.mask: pygame.Mask | None = None  # Active mask (depending on direction of motion).  # TODO: OK TO REMOVE
+        # self.rect: pygame.FRect = pygame.FRect()  # TODO: OK TO REMOVE
         super().__init__(groups)  # super.update() could be done first before setting all the self.* but for now I have them last.
         Entity.base_instance_count += 1
-        self.rect = self.surface_l.get_frect(center=(self.x, self.y))  # TODO: LIKELY EXCESSIVE INIT WE CAN MAKE NONE
-        # TODO: We can do this if we confirm that update() will ALWAYS be called first, even in edge cases.
-        # Also the canonically-correct thing to do is to get this rect from self.image, but at this point in may simply
-        # be premature to do certain init activities. If that is the conclusion, then we need more of the Type | None = None
-        # True, we are in the process of replacing more init to the more lightweight Type | None = None. It's a case by case
-        # basis but this one also looks like it will be able to be None here. Just check when update() first gets called,
-        # like when the game first starts etc. Or for weapons newly instantiated etc.
+        self.rect = self.surface_l.get_frect(center=(self.x, self.y))  # Must be done before we update(), because we must have a center attr.
 
         if cfg.WHITEOUT_MODE:
             self.mask_surf_l.set_colorkey((0, 0, 0))  # Make the black transparent.
@@ -447,22 +441,7 @@ class Prop(MapThing):
 
 # #############################################    FUNCTION DEFINITIONS    #############################################
 
-# I'm making environ_influence robust to being called with missing argument values in which case it silently does nothing,
-# and this is because having both a valid espec AND a current and valid ephase_name might not always be guaranteed as
-# this app gets more complex. Not to say bugs are expected, but these are not essential to the game functioning and they
-# sort of are optional/temporary things and require a fair amount to be in place and correct to be ready to function for
-# enviro_influence. Let's just say that in a more complex and dynamic game that might be loading environmental factors
-# dynamically or even from intermittent online sources, making this part flexible/robust is not a bad idea. ALSO, and
-# perhaps more importantly, I WANT A FEATURE CAPABILTIY, to be able to omit one or the other from some other strategic
-# perspective and use that as part of the INTENDED INTERFACE to allow additional modes of control. Thus, one can deliberately
-# eliminate (make None) either xself or (much more likely) ephase_name and not worry about the fact that update() for some
-# classes is hard-coded to call environ_influence(), and thus BE ABLE TO DISABLE ENVIRO INFLUENCE IN THIS ADDITIONAL WAY,
-# (by making ephase_name None).
-# ALTERNATE STRATEGY: I think we could still do this or variants by REQUIRING this func to have all args .. then
-# INSIDE the relevant update() methods (Player, Npc, Weapon) WE CHECK FOR ephase_name to be NOT None before attempting
-# to call enviro_influence. TODO: Consider the best approach and finalize this. MyPy might require this alternate to be happy.
-# Since we reference the subscripts like 'e_p' .. there is no way for MyPy to be happy about the | None option on the type.
-# I think this means we will need to check before calling and not allow Nones here. TODO: Make it so.
+
 def enviro_influence(xself: Player | Weapon | Npc | None, ephase_name: str | None) -> None:
     if xself is None or ephase_name is None:
         return
@@ -477,7 +456,24 @@ def enviro_influence(xself: Player | Weapon | Npc | None, ephase_name: str | Non
     else:
         raise ValueError(f"FATAL: Invalid ephase_name '{ephase_name}'. "
                          "Check values in ENVIRO_PHASES config.")
-# end def enviro_influence()  -  #
+# end def enviro_influence()  -  # I'm making environ_influence robust to being called with missing argument
+#   values in which case it silently does nothing, and this is because having both a valid espec AND a current
+#   and valid ephase_name might not always be guaranteed as this app gets more complex. Not to say bugs are
+#   expected, but these are not essential to the game functioning and they sort of are optional/temporary things
+#   and require a fair amount to be in place and correct to be ready to function for enviro_influence.
+#   Let's just say that in a more complex and dynamic game that might be loading environmental factors dynamically
+#   or even from intermittent online sources, making this part flexible/robust is not a bad idea. ALSO, and perhaps
+#   more importantly, I WANT A FEATURE CAPABILTIY, to be able to omit one or the other from some other strategic
+#   perspective and use that as part of the INTENDED INTERFACE to allow additional modes of control. Thus, one
+#   can deliberately eliminate (make None) either xself or (much more likely) ephase_name and not worry about
+#   the fact that update() for some classes is hard-coded to call environ_influence(),
+#   and thus BE ABLE TO DISABLE ENVIRO INFLUENCE IN THIS ADDITIONAL WAY, (by making ephase_name None).
+#   ALTERNATE STRATEGY: I think we could still do this or variants by REQUIRING this func to have all args ..
+#   then INSIDE the relevant update() methods (Player, Npc, Weapon) WE CHECK FOR ephase_name to be NOT None
+#   before attempting to call enviro_influence. TODO: Consider the best approach and finalize this.
+#    MyPy might require this alternate to be happy. Since we reference the subscripts like 'e_p' ..
+#    there is no way for MyPy to be happy about the | None option on the type. I think this means we will
+#    need to check before calling and not allow Nones here. TODO: Make it so.
 
 
 def load_image(
@@ -558,13 +554,12 @@ def load_anim_frames(
             width: int | None,
             height: int | None,
         ) -> None:
-    frames_path = os.path.join(cfg.ASSET_PATH, frames_dir)
+    frames_path = os.path.join(cfg.ASSET_PATH, 'anim', frames_dir)
     frames: list[pygame.Surface] = []
     file_path_sequence = sorted(os.listdir(frames_path))
     for filename in file_path_sequence:
         if filename.endswith('.png'):
             image_path = os.path.join(frames_path, filename)
-            print(image_path)  #  ***  DEBUG  ***
             frame_surface = pygame.image.load(image_path).convert_alpha()  # For clarity.  TODO: Inline to optimize.
             frames.append(frame_surface)
 
@@ -572,15 +567,13 @@ def load_anim_frames(
             'frames': frames,
         }
     ACACHE[frames_dir] = ac_item
-# end def load_amim_frames()  -  #
-
-
-# UPDATE: Below is already fixed just above here but this issue needs consistent resolution throught this project.
-# TODO: *** CRITICAL ***  OK, We cannot do TYPE | None = None INITS in some new places I just discovered or re-discovered.
-#    At least with respect to PyGame warnings and possibly also MyPy (not confirmed yet) I am getting a waring about the | None.
-#    This is the error, about the value/variable I am passing to frames attribute in AnimCacheItem above:
-#    ERROR: Expected type 'list[Surface]', got 'list[Surface] | None' instead
-#    *** This changes things. I thought I could be more efficient in MANY places by adding the | None and thus removing some
+# end def load_amim_frames()  -  # PDATE: Below is already fixed just above here but this issue needs consistent
+#   resolution throught this project.
+#   TODO: *** CRITICAL ***  OK, We cannot do TYPE | None = None INITS in some new places I just discovered or re-discovered.
+#     At least with respect to PyGame warnings and possibly also MyPy (not confirmed yet) I am getting a waring about the | None.
+#     This is the error, about the value/variable I am passing to frames attribute in AnimCacheItem above:
+#     ERROR: Expected type 'list[Surface]', got 'list[Surface] | None' instead
+#     *** This changes things. I thought I could be more efficient in MANY places by adding the | None and thus removing some
 #        more heavyweight INIT like creating a surface etc. But I guess I cannot and still keep PyCharm and MyPy warnings happy.
 #        Am I looking at a strong reason to now selectively suppress some warnings? I hate seeing them, but I still would
 #        like to stay ahead of performance optimization and not create objects simply to satisfy static code inspection.
@@ -612,7 +605,7 @@ def event_meatball(groups: list[pygame.sprite.Group], e_spec_meatball: ent.Envir
             angular_vel=random_av,
             e_spec=e_spec_meatball,
         )
-# end def event_meatball()
+# end def event_meatball()  -  #
 
 
 def update_and_draw_scoreboard(
@@ -620,7 +613,7 @@ def update_and_draw_scoreboard(
             arg_scoreboard_font: pygame.font.Font,
             score: int,
         ) -> None:
-    # -------- SCOREBOARD TEXT
+    #  --------  SCOREBOARD TEXT  --------
     score_text = str(score)
     scoreboard_surf: pygame.Surface = arg_scoreboard_font.render(
             text=score_text,
@@ -631,7 +624,7 @@ def update_and_draw_scoreboard(
     scoreboard_rect: pygame.FRect = scoreboard_surf.get_frect(center=(cfg.SCR_X, cfg.SCR_Y))
     arg_display_surface.blit(scoreboard_surf, scoreboard_rect)
 
-    # -------- SCORBOARD BORDER
+    #  --------  SCORBOARD BORDER  --------
     pygame.draw.rect(
             arg_display_surface,
             cfg.SCR_BORDER_COLOR,
@@ -720,7 +713,7 @@ pygame.init()
 if cfg.SCR_FONT_FORCE_SYSTEM:
     scoreboard_font = pygame.font.SysFont(cfg.SCR_SYSTEM_FONT, cfg.SCR_FONT_SIZE)
 else:
-    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, cfg.SCR_FONT_FILENAME), cfg.SCR_FONT_SIZE)
+    scoreboard_font = pygame.font.Font(os.path.join(cfg.ASSET_PATH, 'font', cfg.SCR_FONT_FILENAME), cfg.SCR_FONT_SIZE)
 
 
 # INITIALIZE THE MAIN DISPLAY SURFACE (SCREEN / WINDOW)
@@ -795,7 +788,7 @@ for i, gr_player_spec in enumerate(ent.player_specs):
             e_spec=gr_e_spec,
         )
     players[gr_player_spec['name']] = player  # Key off name or instance id. name should be unique
-# end PLAYER instantiation(s)  -  # 
+# end PLAYER instantiation(s)  -  #
 
 
 # INSTANITATE NPC SPRITES
@@ -899,7 +892,7 @@ clock = pygame.time.Clock()
 meatball_event = pygame.event.custom_type()
 pygame.time.set_timer(meatball_event, cfg.MEATBALL_SPAWN_TIME_MIN + cfg.MEATBALL_SPAWN_TIME_RANGE)
 # TODO: Meatball spawn time with current timer is only set randomly once at game start. MAKE IT VARY ALL THE TIME.
-e_spec_meatball = composed_enviro_spec(ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX])
+gr_e_spec_meatball = composed_enviro_spec(ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX])
 
 #   * * * * * * * * * * * * * * * * * * * * * * * *
 #   * * * * * * * *    MAIN LOOP    * * * * * * * *
@@ -914,13 +907,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == meatball_event:
-            event_meatball(groups=new_meatballs_groups, e_spec_meatball=e_spec_meatball)
+            event_meatball(groups=new_meatballs_groups, e_spec_meatball=gr_e_spec_meatball)
+    # end event dispatching  -  # All event-handling is dispatched from this loop. Some events are configured just above
+    #   here in CUSTOM EVENTS which is during the start of MAIN EXECUTION. NOTE: Event timers can be set from anywhere.
 
 
     # #######################################    ENVIRONMENT PHASE PROCESSING    #######################################
 
-    # We rotate this list of tuples by popping off the left (next-in-line/first-in) and appending back onto the right
-    # (end-of-line/recently-added).
     if ephase is None:
         ephase = cfg.ENVIRO_PHASES[0]
         g_ephase_name = ephase[0]
@@ -931,7 +924,8 @@ while running:
         ephase_count -= 1  # Decrement the counter for the current ephase while we use it for its specified duration.
         if ephase_count < 1:
             ephase = None
-    # end ENVIRO PHASE management/rotation  -  #
+    # end ENVIRO PHASE management/rotation  -  # We rotate this list of tuples by popping off the left
+    #   (next-in-line/first-in/waiting-the-longest) and appending back onto the right (end-of-line/recently-added).
 
 
     # #################################################    UPDATE    ###################################################
@@ -948,13 +942,10 @@ while running:
 
     if players['buck0'].rect.collidepoint(pygame.mouse.get_pos()):  # Rect collision example. Mainly we will use sprite collisions, often using collide_mask.
         print("BOINGGGGGGG!!")
+    # end mouse-pointer input/collision example  -  #
+
 
     for greenball in all_greenballs:
-        # PyCharm Warning, POSSIBLY FALSE, on: "pygame.sprite.collide_mas" callback argument.
-        # Expected type '(_SpriteSupportsGroup | Any, _TSprite2) -> Any | None'
-        # (matched generic type '(_TSprite ≤: _SpriteSupportsGroup, _TSprite2 ≤: _SpriteSupportsGroup) -> Any | None'),
-        # got '(left: _HasImageAndRect | _HasMaskAndRect, right: _HasImageAndRect | _HasMaskAndRect) -> tuple[int, int] | None' instead
-        # NOTE: MyPy does not complain about this, only PyCharm. I have had other false warnings like this and some went away with PyCharm upgrades.
         greenball_col_sprites = pygame.sprite.spritecollide(greenball, all_meatballs, True, pygame.sprite.collide_mask)
         if greenball_col_sprites:
             for col in greenball_col_sprites:
@@ -962,7 +953,15 @@ while running:
                 print("                   *  *  *  BOOM!  *  *  *")
                 greenball.explode()
                 greenball.kill()
-    # end greenball (player projectile) collision-detection  -  #
+    # end greenball (player projectile) collision-detection  -  # NOTES REGARDING: PyCharm Warning, POSSIBLY FALSE, on:
+    #   "pygame.sprite.collide_mas" callback argument.
+    #   Expected type '(_SpriteSupportsGroup | Any, _TSprite2) -> Any | None'
+    #   (matched generic type '(_TSprite ≤: _SpriteSupportsGroup, _TSprite2 ≤: _SpriteSupportsGroup) -> Any | None'),
+    #   got:
+    #   '(left: _HasImageAndRect | _HasMaskAndRect, right: _HasImageAndRect | _HasMaskAndRect) -> tuple[int, int] | None'
+    #   instead.  NOTE: MyPy does not complain about this, only PyCharm. I have had other false warnings like this and
+    #   some went away with PyCharm upgrades.
+
 
     # ##################################################    DRAW    ####################################################
 
@@ -970,12 +969,13 @@ while running:
     if cfg.ACID_MODE is False:
         display_surface.blit(bg_surface, (0, 0))
 
-    # IN ORDER OF DESIRED VISIBILITY-PRECEDENCE:
+    # DRAW ALL ACTORS AND PROPS - IN ORDER OF DESIRED VISIBILITY-PRECEDENCE (front-most last):
     all_props.draw(display_surface)
     all_npcs.draw(display_surface)
     all_meatballs.draw(display_surface)
     all_greenballs.draw(display_surface)
     all_anims.draw(display_surface)
+    # end actor drawing  -  # We do not use all_sprites.draw() because if we did, we could not manage layers like this.
 
     # SCOREBOARD
     if cfg.SCR:
