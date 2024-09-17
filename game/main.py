@@ -3,15 +3,28 @@
 import config as cfg
 import entity as ent
 import sys
-import os.path
+import os.path  # TODO: Change to just using the import os. Change where invoked at os.path.join() - many places.
+import os  # Because now we want to use os.environ. (But maybe we won't after all. Trying to get SDL/audio/mixer to initialize.
 from typing import TypedDict
 import pygame
 import random
 import resizer
-from game.entity import anim_specs
+
 
 # ###########################################    GLOBAL INITIALIZATION    ##############################################
 
+
+# TODO: Mixer init fix attempt. Did not work. NOTE: We are using SDL 2.30.3  pygame-ce 2.5.0  Python 3.12.4
+# os.environ['SDL_AUDIODRIVER'] = 'pulseaudio'  # Attempt to fix problem with pygame.mixer.init()
+
+# ERROR:
+#     pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)
+# pygame.error: dsp: No such audio device
+# DIFFERENT ERROR WHEN USING 'directsound' INSTEAD OF 'dsl':
+#     pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)
+# pygame.error: Audio target 'directsound' not available
+#     * 'dsound' appears to be an alias for 'directsound. SAME RESULT: 'directsound' not available.
+#     * Also not available: 'waveout' and 'winmm'.
 
 
 # --------  SURFACE CACHE  -  SCACHE  --------
@@ -54,7 +67,7 @@ ACACHE: dict[str, AnimCacheItem] = {}  # The Animation Cache. Key = frames_dir, 
 # --------  AUDIO CACHE  -  AUDCACHE  --------
 AudioCacheItem = TypedDict('AudioCacheItem',
     {
-        'audio': pygame.mixer.Sound,
+        'audio': pygame.mixer.Sound | None,
     }
 )  # AudioCacheItem
 AUDCACHE: dict[str, AudioCacheItem] = {}  # The Audio Cache. Key = filename, Value = AudioCacheItem.
@@ -341,6 +354,8 @@ class Player(Entity):
                     final_anim_groups=self.weapon_anim_groups,
                     e_spec=self.weapon_e_spec,
                     final_anim_spec=self.weapon_spec['final_anim_spec'],
+                    start_audio=self.weapon_spec['start_audio'],
+                    final_audio=self.weapon_spec['final_audio'],
                 )
         self.laser_timer()
         # NOTE: WE UPDATE BASED ON INPUT --BEFORE-- WE CHECK FOR WALL COLLISION/BOUNCING (in super/Entity).
@@ -363,6 +378,8 @@ class Weapon(Entity):
                 final_anim_groups: list[pygame.sprite.Group],
                 e_spec: ent.EnviroSpec | None = None,  # =None makes it optional. Don't pass e_spec and you get no enviro-behavior.  TODO: CLARIFY. See extensive comments below.
                 final_anim_spec: ent.AnimSpec | None = None,  # Optional. Currently, greenball has one, meatball does not.  TODO: CLARIFY. See extensive comments below.
+                start_audio: str | None = None,
+                final_audio: str | None = None,
             ):
         self.instance_id: int = Weapon.instance_count
         super().__init__(
@@ -378,6 +395,9 @@ class Weapon(Entity):
         Weapon.instance_count += 1
         self.final_anim_spec = final_anim_spec
         self.final_anim_groups = final_anim_groups
+        self.start_audio = start_audio
+        self.final_audio = final_audio
+        self.play_start_audio()
 
     def update(self, delta_time: float, ephase_name: str | None):
         enviro_influence(self, ephase_name)
@@ -398,6 +418,7 @@ class Weapon(Entity):
     def explode(self):
         if not self.final_anim_spec:
             return
+        self.play_final_audio()
         explosion: Anim = Anim(
             groups=self.final_anim_groups,
             frames_dir=self.final_anim_spec['frames_dir'],
@@ -407,6 +428,14 @@ class Weapon(Entity):
             repeat_count=self.final_anim_spec['repeat_count'],
         )
     # end def Weapon.explode()  -  #
+
+    def play_start_audio(self):
+        print(f"START AUDIO: {self.start_audio}")
+    # end def Weapon.play_start_audio()  -  #
+
+    def play_final_audio(self):
+        print(f"FINAL AUDIO: {self.final_audio}")
+    # end def Weapon.play_final_audio()  -  #
 # end class Weapon()  -  #
 
 
@@ -503,7 +532,7 @@ def load_image(
             width: int | None,
             height: int | None,
         ) -> None:
-    image_path = os.path.join(cfg.ASSET_PATH, filename)
+    image_path = os.path.join(cfg.ASSET_PATH, 'img', filename)
     surface_l: pygame.Surface = pygame.Surface((0, 0))  # TODO: Make thiS TYPE | None = None (after analysis)
     if resize:
         if width and height:
@@ -567,6 +596,37 @@ def load_image(
 # end def load_image()  -  #
 
 
+def load_audio(
+            filename: str,
+        ) -> None:
+    # audio_data = pygame.mixer.Sound(os.path.join(cfg.ASSET_PATH, 'audio', filename))   # BLOCKED - SEE BELOW
+    audio_data = None  # PLACEHOLDER TO DISABLE SOUND MINIMALLY. (Playing audio not yet implemented.)
+    # NOTE: To disable this using None, I had to allow None in the TYPE DEFINITION. ONCE THIS IS UNBLOCKED AND FIXED WE CAN REMOVE THE None from TYPE HINTS.
+    # Type is defined at top of this file near line 70.
+    audc_item: AudioCacheItem = {
+            'audio': audio_data,
+        }
+    AUDCACHE[filename] = audc_item
+# end def load_image()  -  # TODO: * * * * * POINT OF WINDOWS AUDIO DRIVER, MIXER INITIALITATION BLOCKER * * * * *
+#   TODO: Development paused here since I am on Windows and after 3-4 days of effort I cannot find a solution to allow
+#     use of sound on my Windows hardware. I have just finished implementing much of the foundation of sound/audio support
+#     in this project, but I need to work on some machine learning projects so this is a good reason to pause here. I
+#     have three powerful Windows NVIDIA GPU machines I use for a lot of my work nowadays and if I cannot get audio worlking
+#     for PyGame-CE (which uses SDL2) on these machines, then I have to consider how to fix that issue and maby pick this
+#     project back up on a macOS development machine until the issue with SDL2 and my NVIDIA audio drivers can be resolved.
+#     I tried everything I could think of for 3-4 days to get SDL2 to recognize/initialize my audio driver and never gained
+#     much traction. I used SDL libs and 2-3 other libraries (not just PyGame-CE) to try to get audio working with Python
+#     in ANY way I could. I was going to use some other library or workaround temporarily, but the issues were always the
+#     same: can't ID and initialize the driver. My machine is using the NVIDA HDMI out for audio in this case and also
+#     has RealTek audio hardware/drivers. I cannot select/identify/initialize with either. Of course I can dig a lot further,
+#     but right now it is safe to say this project is BLOCKED for AUDIO in PYGAME-CE on WINDOWS.
+#
+#     I have disabled the minimal audio code, allowing the game to run very well as it was developed up to the start of
+#     adding audio. My development was up to the point of loading audio, with almost everything ready for playing/usage.
+#     Almost all features in place and in a fairly robust state, so once we fix this, only a small amount of work remains
+#     for audio support leveraging a memory cache like out other caches, entity/spec configuration and other features.
+
+
 def load_anim_frames(
             frames_dir: str,
             flip: bool,
@@ -607,6 +667,7 @@ def load_anim_frames(
 #        rather lean and optimized right from the beginning. Some users have slower machines. We need to remember that as well.
 
 
+# TODO: EXPAND ARGS FOR audio - ALSO WITHIN PLAYER WHEN PROJECTILE FIRED
 def event_meatball(
             groups: list[pygame.sprite.Group],
             anim_groups: list[pygame.sprite.Group],
@@ -629,6 +690,8 @@ def event_meatball(
             angular_vel=random_av,
             final_anim_groups=anim_groups,
             e_spec=e_spec_meatball,
+            start_audio=meatball_spec['start_audio'],
+            final_audio=meatball_spec['final_audio'],
         )
 # end def event_meatball()  -  #
 
@@ -732,7 +795,15 @@ def random_angular_vel(av_special_value: float) -> float:
 
 # ###############################################    INITIALIZATION    #################################################
 
+pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=2048)
 pygame.init()
+
+print(f"TROUBLESHOOTING: IS PYGAME MIXER INITIALIZED NOW? (None means NO.) ---->  {pygame.mixer.get_init()}")
+print(f"PYGAME MIXER SDL VERSION: {pygame.mixer.get_sdl_mixer_version()}")  # (2, 8, 0) is returned.
+# pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)  # Should not actually have to do this. Our pre_init then the normal init should include this.
+
+# print(pygame.mixer.get_driver())  # CANNOT DO THIS - Needs to be initialized first.
+
 
 # INIT SCOREBOARD
 if cfg.SCR_FONT_FORCE_SYSTEM:
@@ -800,7 +871,7 @@ for i, gr_player_spec in enumerate(ent.player_specs):
     #     is specified within the specs of the weapon. Makes sense and I see that the mechanics of this will be clean.
     gr_weapon_spec = ent.weapon_specs[cfg.PLAYER_MAIN_WEAPON_INDEX]
     # NEW: We insert the anim spec into the weapon spec. The anim is selected vi Config.
-    gr_weapon_spec['final_anim_spec'] = anim_specs[cfg.MAIN_WEAPON_EXP_ANIM_INDEX]
+    gr_weapon_spec['final_anim_spec'] = ent.anim_specs[cfg.MAIN_WEAPON_EXP_ANIM_INDEX]
     gr_weapon_e_spec = composed_enviro_spec(gr_weapon_spec)  # TODO: This call COULD be done inside Player. Then we would not pass it to Player().
     player: Player = Player(
             groups=[all_players],
@@ -871,6 +942,7 @@ for i, generated_prop_spec in enumerate(generated_prop_specs):
 
 
 # LOAD SURFACE CACHE WITH WEAPON DATA. (No Weapons have been instantiated at this point. Just loading the cache.)
+# ALSO LOAD AUDIO CACHE WITH WEAPON SOUNDS.
 for i, gr_weapon_spec in enumerate(ent.weapon_specs):
     gr_weapon_spec['instance_id'] = i
     load_image(
@@ -880,7 +952,10 @@ for i, gr_weapon_spec in enumerate(ent.weapon_specs):
             width=gr_weapon_spec['w'],
             height=gr_weapon_spec['h'],
         )
-# end WEAPON surface/image cache loading into SCACHE  -  #
+    load_audio(filename=gr_weapon_spec['start_audio'])
+    load_audio(filename=gr_weapon_spec['final_audio'])
+# end WEAPON surface/image loading into SCACHE and audio loading into AUDCACHE  -  # This makes this data available in
+#   memory so that when Weapons are instantiated, this data can be obtained efficiently.
 
 
 # LOAD ANIMATION CACHE WITH FRAMES DATA. (No Animations have been instantiated at this point. Just loading the cache.)

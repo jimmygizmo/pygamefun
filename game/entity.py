@@ -169,6 +169,8 @@ WeaponSpec = TypedDict('WeaponSpec',
         'e_c': float,  # Enviro: Chaos (speed)
         'e_f': float,  # Enviro: Frozen (speed)
         'final_anim_spec': AnimSpec | None,
+        'start_audio': str | None,
+        'final_audio': str | None,
     }
 )  # WeaponSpec
 
@@ -177,7 +179,7 @@ weapon_specs: list[WeaponSpec] = [
     {
         'name': 'orb',
         'instance_id': -1,
-        'img_filename':  'green-ball-140x140.png',
+        'img_filename': 'green-ball-140x140.png',
         'flip': False,
         'resize': True,
         'w': 70,
@@ -194,11 +196,13 @@ weapon_specs: list[WeaponSpec] = [
         'e_c': 840.0,
         'e_f': 2350.0,
         'final_anim_spec': None,
+        'start_audio': 'pop.wav',
+        'final_audio': None,
     },
     {
         'name': 'meatball',
         'instance_id': -1,
-        'img_filename':  'meatball-204x220.png',
+        'img_filename': 'meatball-204x220.png',
         'flip': False,
         'resize': True,
         'w': 102,
@@ -215,6 +219,8 @@ weapon_specs: list[WeaponSpec] = [
         'e_c': 1640.0,
         'e_f': 3350.0,
         'final_anim_spec': None,
+        'start_audio': None,
+        'final_audio': None,
     },
 ]  # weapon_specs: list[WeaponSpec]
 
